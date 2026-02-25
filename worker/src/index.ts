@@ -3,6 +3,8 @@
  * Registers all queue workers and starts processing jobs.
  *
  * Health score recalculation runs nightly at 02:00 UTC.
+ * Task reminders run every 15 minutes.
+ * Email tracking processes engagement events on demand.
  */
 import type { PrismaClient } from '@prisma/client';
 import type { ConnectionOptions } from 'bullmq';
@@ -10,6 +12,10 @@ import pino from 'pino';
 
 import { createHealthScoreQueue } from './queues/health-score.queue.js';
 import { createHealthScoreWorker } from './jobs/health-score.job.js';
+import { createEmailTrackingQueue } from './queues/email-tracking.queue.js';
+import { createEmailTrackingWorker } from './jobs/email-tracking.job.js';
+import { createTaskReminderQueue } from './queues/task-reminder.queue.js';
+import { createTaskReminderWorker } from './jobs/task-reminder.job.js';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -48,11 +54,39 @@ export async function startWorkers(config: WorkerConfig): Promise<void> {
 
   logger.info('Health score worker registered and nightly schedule configured');
 
+  // Create email tracking queue and worker
+  const emailTrackingQueue = createEmailTrackingQueue(redis);
+  const emailTrackingWorker = createEmailTrackingWorker(redis, prisma);
+
+  logger.info('Email tracking worker registered');
+
+  // Create task reminder queue and worker
+  const taskReminderQueue = createTaskReminderQueue(redis);
+  const taskReminderWorker = createTaskReminderWorker(redis, prisma);
+
+  // Schedule task reminders every 15 minutes
+  await taskReminderQueue.upsertJobScheduler(
+    'periodic-task-reminders',
+    {
+      pattern: '*/15 * * * *', // Every 15 minutes
+    },
+    {
+      name: 'periodic-task-reminder-check',
+      data: { tenantId: '' }, // Will need to be populated per-tenant
+    },
+  );
+
+  logger.info('Task reminder worker registered and periodic schedule configured');
+
   // Graceful shutdown
   const shutdown = async (): Promise<void> => {
     logger.info('Shutting down workers...');
     await healthScoreWorker.close();
     await healthScoreQueue.close();
+    await emailTrackingWorker.close();
+    await emailTrackingQueue.close();
+    await taskReminderWorker.close();
+    await taskReminderQueue.close();
     logger.info('Workers shut down gracefully');
   };
 

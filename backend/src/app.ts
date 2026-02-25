@@ -15,6 +15,8 @@ import { auditTrailPlugin } from './shared/middleware/audit-trail.js';
 import { authRoutes } from './auth/auth.routes.js';
 import { globalRateLimitConfig, rateLimitConfig } from './auth/rate-limit.middleware.js';
 import { accountRoutes } from './domains/accounts/account.routes.js';
+import { activityRoutes } from './domains/activities/activity.routes.js';
+import { taskRoutes } from './domains/tasks/task.routes.js';
 
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development';
 
@@ -94,6 +96,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Account routes (each route has its own extractUser + requireRole preHandlers)
   await app.register(accountRoutes);
+
+  // Activity and email tracking routes
+  await app.register(activityRoutes);
+
+  // Task routes
+  await app.register(taskRoutes);
 
   // Health check endpoint
   app.get('/api/health', async (_request, reply): Promise<void> => {
