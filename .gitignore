@@ -53,3 +53,10 @@ frontend/next-env.d.ts
 
 # Local research/notes
 research/
+
+# Claude Code local config
+.claude/commands/
+
+# Spec-kit templates/scripts (local tooling)
+.specify/scripts/
+.specify/templates/
