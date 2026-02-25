@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "cd backend && npx vitest run --reporter=min 2>&1 | tail -20"
+      },
+      {
+        "matcher": "Edit|Write",
+        "command": "npx eslint --no-error-on-unmatched-pattern $(git diff --name-only --diff-filter=M '*.ts' '*.tsx') 2>&1 | tail -10"
+      }
+    ]
+  }
+}

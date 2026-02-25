@@ -1,0 +1,33 @@
+{
+  "name": "@haversack/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Haversack Unified Platform — Bull job processor",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "lint": "eslint src/ --ext .ts",
+    "lint:fix": "eslint src/ --ext .ts --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bullmq": "^5.25.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.5.0",
+    "zod": "^3.23.0",
+    "@haversack/shared": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

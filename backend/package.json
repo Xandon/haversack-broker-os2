@@ -1,0 +1,53 @@
+{
+  "name": "@haversack/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Haversack Unified Platform — Fastify API backend",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit",
+    "start": "node dist/server.js",
+    "lint": "eslint src/ --ext .ts,.tsx",
+    "lint:fix": "eslint src/ --ext .ts,.tsx --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcrypt": "^5.1.1",
+    "bullmq": "^5.25.0",
+    "fastify": "^4.28.0",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/sensible": "^5.6.0",
+    "ioredis": "^5.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9.5.0",
+    "zod": "^3.23.0",
+    "uuid": "^10.0.0",
+    "@anthropic-ai/sdk": "^0.32.0",
+    "openai": "^4.70.0",
+    "nodemailer": "^6.9.0",
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.15.0",
+    "@haversack/shared": "*"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.17.0",
+    "@types/nodemailer": "^6.4.16",
+    "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "prisma": "^5.22.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}
