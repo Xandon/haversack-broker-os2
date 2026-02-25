@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-import { apiClient, setAccessToken } from '@/lib/api-client';
+import { apiClient, setAccessToken, setRefreshToken, refreshSession } from '@/lib/api-client';
 import type { AuthUser } from '@/providers/auth-provider';
 
 // -------------------------------------------------------------------
@@ -11,13 +11,11 @@ import type { AuthUser } from '@/providers/auth-provider';
 // -------------------------------------------------------------------
 
 interface LoginResponse {
-  accessToken: string;
-  user: AuthUser;
-}
-
-interface RefreshResponse {
-  accessToken: string;
-  user: AuthUser;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  };
 }
 
 interface LoginCredentials {
@@ -52,9 +50,10 @@ export function useLogin(): UseLoginResult {
     mutationFn: async (credentials: LoginCredentials): Promise<LoginResponse> => {
       return apiClient.post<LoginResponse>('/api/auth/login', credentials);
     },
-    onSuccess: (data: LoginResponse) => {
-      setAccessToken(data.accessToken);
-      queryClient.setQueryData(AUTH_KEYS.session, data.user);
+    onSuccess: (response: LoginResponse) => {
+      setAccessToken(response.data.accessToken);
+      setRefreshToken(response.data.refreshToken);
+      queryClient.setQueryData(AUTH_KEYS.session, response.data.user);
     },
   });
 
@@ -86,6 +85,7 @@ export function useLogout(): UseLogoutResult {
     },
     onSettled: () => {
       setAccessToken(null);
+      setRefreshToken(null);
       queryClient.setQueryData(AUTH_KEYS.session, null);
       queryClient.clear();
     },
@@ -115,14 +115,8 @@ export function useRefreshToken(): UseRefreshTokenResult {
   const query = useQuery<AuthUser | null, Error>({
     queryKey: AUTH_KEYS.session,
     queryFn: async (): Promise<AuthUser | null> => {
-      try {
-        const data = await apiClient.post<RefreshResponse>('/api/auth/refresh');
-        setAccessToken(data.accessToken);
-        return data.user;
-      } catch {
-        setAccessToken(null);
-        return null;
-      }
+      const result = await refreshSession();
+      return result ? (result.user as AuthUser) : null;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     refetchInterval: 13 * 60 * 1000, // Refresh before 15-min token expiry

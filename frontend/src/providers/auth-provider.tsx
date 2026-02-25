@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { apiClient, setAccessToken } from '@/lib/api-client';
+import { apiClient, setAccessToken, setRefreshToken, refreshSession } from '@/lib/api-client';
 
 // -------------------------------------------------------------------
 // Types
@@ -64,13 +64,11 @@ export function useAuth(): AuthContextValue {
 // -------------------------------------------------------------------
 
 interface LoginResponse {
-  accessToken: string;
-  user: AuthUser;
-}
-
-interface RefreshResponse {
-  accessToken: string;
-  user: AuthUser;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  };
 }
 
 // -------------------------------------------------------------------
@@ -90,17 +88,15 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   });
 
   const refresh = useCallback(async (): Promise<void> => {
-    try {
-      const data = await apiClient.post<RefreshResponse>('/api/auth/refresh');
-      setAccessToken(data.accessToken);
+    const result = await refreshSession();
+    if (result) {
       setState({
-        user: data.user,
-        token: data.accessToken,
+        user: result.user as AuthUser,
+        token: result.accessToken,
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch {
-      setAccessToken(null);
+    } else {
       setState({
         user: null,
         token: null,
@@ -111,11 +107,12 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<void> => {
-    const data = await apiClient.post<LoginResponse>('/api/auth/login', { email, password });
-    setAccessToken(data.accessToken);
+    const response = await apiClient.post<LoginResponse>('/api/auth/login', { email, password });
+    setAccessToken(response.data.accessToken);
+    setRefreshToken(response.data.refreshToken);
     setState({
-      user: data.user,
-      token: data.accessToken,
+      user: response.data.user,
+      token: response.data.accessToken,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -128,6 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       // Logout best-effort — always clear local state
     } finally {
       setAccessToken(null);
+      setRefreshToken(null);
       setState({
         user: null,
         token: null,

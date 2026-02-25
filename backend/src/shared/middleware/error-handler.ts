@@ -55,6 +55,18 @@ async function errorHandlerPluginHandler(fastify: FastifyInstance): Promise<void
         return;
       }
 
+      // Handle rate limit errors (code set by @fastify/rate-limit)
+      if ((error as FastifyError).code === 'FST_RATE_LIMIT_429' || error.message.includes('Rate limit')) {
+        const response: ErrorResponse = {
+          error: 'RATE_LIMIT_EXCEEDED',
+          message: error.message,
+          code: 'RATE_LIMIT_EXCEEDED',
+          requestId,
+        };
+        void reply.status(429).send(response);
+        return;
+      }
+
       // Handle Fastify errors (has statusCode)
       const statusCode = (error as FastifyError).statusCode ?? 500;
       const isServerError = statusCode >= 500;

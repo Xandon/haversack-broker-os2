@@ -77,13 +77,13 @@ async function generateAndStoreTokens(
  */
 export async function login(
   prisma: PrismaClient,
-  tenantId: string,
+  tenantId: string | undefined,
   email: string,
   password: string,
 ): Promise<LoginResult> {
   const user = await prisma.user.findFirst({
     where: {
-      tenant_id: tenantId,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
       email: email.toLowerCase(),
       deleted_at: null,
     },

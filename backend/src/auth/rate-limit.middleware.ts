@@ -1,18 +1,24 @@
 /**
  * Rate limiting configuration for auth endpoints.
- * 10 requests/minute/IP on authentication routes (NFR-007).
+ * Production: 10 requests/minute/IP on authentication routes (NFR-007).
+ * Development: 60 requests/minute/IP (relaxed for hot-reload + StrictMode).
  * Uses @fastify/rate-limit plugin.
  */
 import type { RateLimitPluginOptions } from '@fastify/rate-limit';
 
+const IS_DEV = process.env['NODE_ENV'] !== 'production';
+
 /**
  * Rate limit configuration for authentication endpoints.
- * - 10 requests per minute per IP address
+ * - Production: 10 requests per minute per IP address
+ * - Development: 60 requests per minute per IP address
  * - Applies to /api/auth/* routes
  */
 export const rateLimitConfig: RateLimitPluginOptions = {
-  max: 10,
+  max: IS_DEV ? 60 : 10,
   timeWindow: '1 minute',
+  hook: 'onRequest',
+  statusCode: 429,
   keyGenerator: (request): string => {
     return request.ip;
   },
@@ -38,6 +44,8 @@ export const rateLimitConfig: RateLimitPluginOptions = {
 export const globalRateLimitConfig: RateLimitPluginOptions = {
   max: 100,
   timeWindow: '1 minute',
+  hook: 'onRequest',
+  statusCode: 429,
   keyGenerator: (request): string => {
     return request.ip;
   },

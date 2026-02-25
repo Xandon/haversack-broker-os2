@@ -64,6 +64,18 @@ describe('Auth Schemas', () => {
       expect(result.success).toBe(false);
     });
 
+    test('FR-001: accepts login without tenantId (auto-resolve)', () => {
+      const result = loginSchema.safeParse({
+        email: 'admin@haversack.com',
+        password: 'password123',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.tenantId).toBeUndefined();
+      }
+    });
+
     test('FR-001: rejects missing fields', () => {
       expect(loginSchema.safeParse({}).success).toBe(false);
       expect(loginSchema.safeParse({ email: 'a@b.com' }).success).toBe(false);

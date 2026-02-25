@@ -16,7 +16,8 @@ export const loginSchema = z.object({
     .max(128, 'Password must not exceed 128 characters'),
   tenantId: z
     .string()
-    .uuid('Invalid tenant ID'),
+    .uuid('Invalid tenant ID')
+    .optional(),
 });
 
 export const refreshSchema = z.object({

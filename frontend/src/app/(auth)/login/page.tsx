@@ -52,7 +52,7 @@ export default function LoginPage(): React.JSX.Element {
 
       try {
         await login(result.data.email, result.data.password);
-        router.push('/dashboard');
+        router.push('/accounts');
       } catch (err: unknown) {
         if (err instanceof ApiError) {
           if (err.status === 401) {

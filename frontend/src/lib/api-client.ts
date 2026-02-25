@@ -29,6 +29,7 @@ export class ApiError extends Error {
 }
 
 let accessToken: string | null = null;
+let refreshToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 
 export function setAccessToken(token: string | null): void {
@@ -39,24 +40,36 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+export function setRefreshToken(token: string | null): void {
+  refreshToken = token;
+}
+
 async function refreshAccessToken(): Promise<string | null> {
+  if (!refreshToken) {
+    return null;
+  }
+
   try {
     const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
       credentials: 'include',
     });
 
     if (!response.ok) {
       setAccessToken(null);
+      setRefreshToken(null);
       return null;
     }
 
-    const data = (await response.json()) as { accessToken: string };
-    setAccessToken(data.accessToken);
-    return data.accessToken;
+    const data = (await response.json()) as { data: { accessToken: string; refreshToken: string } };
+    setAccessToken(data.data.accessToken);
+    setRefreshToken(data.data.refreshToken);
+    return data.data.accessToken;
   } catch {
     setAccessToken(null);
+    setRefreshToken(null);
     return null;
   }
 }
@@ -129,6 +142,46 @@ async function request<T>(
   }
 
   return response.json() as Promise<T>;
+}
+
+/**
+ * Attempt to refresh the session using the stored refresh token.
+ * Returns the new tokens and user data, or null if no refresh token / refresh failed.
+ */
+export async function refreshSession(): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  user: unknown;
+} | null> {
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      setAccessToken(null);
+      setRefreshToken(null);
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      data: { accessToken: string; refreshToken: string; user: unknown };
+    };
+    setAccessToken(data.data.accessToken);
+    setRefreshToken(data.data.refreshToken);
+    return data.data;
+  } catch {
+    setAccessToken(null);
+    setRefreshToken(null);
+    return null;
+  }
 }
 
 export const apiClient = {
