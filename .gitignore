@@ -46,3 +46,10 @@ docker/postgres/data/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Auto-generated
+frontend/next-env.d.ts
+*.tsbuildinfo
+
+# Local research/notes
+research/
