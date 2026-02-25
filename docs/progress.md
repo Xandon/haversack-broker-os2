@@ -11,12 +11,13 @@
 | Batch | Branch | Status | Merged to Dev |
 |-------|--------|--------|---------------|
 | 0 | feature/batch-0-foundation | ✅ Complete | Yes |
+| 1 | feature/batch-1-account-creation | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
 |-------|-------------|--------|---------------|---------------------|
 | 0 | Foundation (T013-T037) | ✅ Complete | 51/51 | N/A (infra batch) |
-| 1 | US-001 Account Creation (T038-T048) | ⬜ Not Started | — | — |
+| 1 | US-001 Account Creation (T038-T048) | ✅ Complete | 143/143 | — |
 | 2 | US-002 Activity Logging (T049-T060) | ⬜ Not Started | — | — |
 | 3 | US-003 Order Entry (T061-T073) | ⬜ Not Started | — | — |
 | 4 | US-004 Commission Calc (T074-T085) | ⬜ Not Started | — | — |
@@ -62,7 +63,23 @@
 | T036 | Auth tests (JWT, schema validation) | ✅ |
 | T037 | RBAC tests (extractUser, requireRole, permissions) | ✅ |
 
+### Batch 1: Account Creation (US-001)
+| Task | Description | Status |
+|------|-------------|--------|
+| T038 | Account Zod schemas (create, update, list query, response) | ✅ |
+| T039 | Account CRUD service with tenant isolation | ✅ |
+| T040 | Duplicate detection service (Levenshtein fuzzy matching) | ✅ |
+| T041 | Account routes (POST, GET, GET/:id, PUT/:id, check-duplicates) | ✅ |
+| T042 | Fuzzy match utility (levenshteinDistance, similarityScore) | ✅ |
+| T043 | Account creation form (React Hook Form + Zod) | ✅ |
+| T044 | Duplicate warning component (confidence bars, actions) | ✅ |
+| T045 | useAccounts TanStack Query hooks | ✅ |
+| T046 | Accounts list page + new account page | ✅ |
+| T047 | Account service tests (40 tests) | ✅ |
+| T048 | Account routes tests (14 tests) + frontend tests (38 tests) | ✅ |
+
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |
 |-------------|-------------|---------|---------|----------|--------|
 | 0 | 51 | 51 | 0 | — | dev |
+| 1 | 143 | 143 | 0 | — | dev |
