@@ -1,0 +1,38 @@
+name: haversack-broker-os
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: haversack-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: haversack_dev
+    volumes:
+      - haversack_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: haversack-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - haversack_redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  haversack_pgdata:
+  haversack_redisdata:

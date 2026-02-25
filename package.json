@@ -35,6 +35,9 @@
     "turbo": "^2.3.0",
     "typescript": "^5.4.0"
   },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
