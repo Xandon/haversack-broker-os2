@@ -290,3 +290,166 @@ export async function updateAccount(
 
   return updated;
 }
+
+/** Territory info included in account detail */
+interface TerritoryInfo {
+  id: string;
+  name: string;
+  region: string;
+}
+
+/** Assigned rep info included in account detail */
+interface AssignedRepInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+/** Child account summary for detail view */
+interface ChildAccountSummary {
+  id: string;
+  name: string;
+  account_type: string;
+  health_score: number | null;
+  is_active: boolean;
+}
+
+/** Recent activity summary */
+interface RecentActivitySummary {
+  id: string;
+  activity_type: string;
+  subject: string | null;
+  occurred_at: Date;
+  user_id: string;
+}
+
+/** Full account detail including related data for the detail view */
+export interface AccountDetail {
+  account: Account & { contacts: unknown[] };
+  territory: TerritoryInfo | null;
+  assignedRep: AssignedRepInfo | null;
+  childAccounts: ChildAccountSummary[];
+  recentActivities: RecentActivitySummary[];
+}
+
+/**
+ * Get full account detail view with enriched data:
+ * - Contacts (non-deleted, primary first)
+ * - Territory info
+ * - Assigned rep info
+ * - Child accounts (for parent-child hierarchy)
+ * - Last 5 recent activities
+ *
+ * @param prisma - PrismaClient instance
+ * @param tenantId - Tenant ID for isolation
+ * @param accountId - The account ID to fetch
+ * @returns Full account detail, or null if not found
+ */
+export async function getAccountDetail(
+  prisma: PrismaClient,
+  tenantId: string,
+  accountId: string,
+): Promise<AccountDetail | null> {
+  // Fetch the account with contacts, territory, assigned rep, children, and recent activities
+  const account = await prisma.account.findFirst({
+    where: {
+      id: accountId,
+      tenant_id: tenantId,
+      deleted_at: null,
+    },
+    include: {
+      contacts: {
+        where: { deleted_at: null },
+        orderBy: { is_primary: 'desc' },
+      },
+      territory: {
+        select: {
+          id: true,
+          name: true,
+          region: true,
+        },
+      },
+      assigned_rep: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+        },
+      },
+      child_accounts: {
+        where: { deleted_at: null },
+        select: {
+          id: true,
+          name: true,
+          account_type: true,
+          health_score: true,
+          is_active: true,
+        },
+        orderBy: { name: 'asc' },
+      },
+    },
+  });
+
+  if (!account) {
+    return null;
+  }
+
+  // Fetch last 5 recent activities separately for the account
+  const recentActivities = await prisma.activity.findMany({
+    where: {
+      tenant_id: tenantId,
+      account_id: accountId,
+    },
+    select: {
+      id: true,
+      activity_type: true,
+      subject: true,
+      occurred_at: true,
+      user_id: true,
+    },
+    orderBy: { occurred_at: 'desc' },
+    take: 5,
+  });
+
+  // Extract territory, assignedRep, and childAccounts from the included data
+  const territory: TerritoryInfo | null = account.territory
+    ? {
+        id: account.territory.id,
+        name: account.territory.name,
+        region: account.territory.region,
+      }
+    : null;
+
+  const assignedRep: AssignedRepInfo | null = account.assigned_rep
+    ? {
+        id: account.assigned_rep.id,
+        first_name: account.assigned_rep.first_name,
+        last_name: account.assigned_rep.last_name,
+        email: account.assigned_rep.email,
+      }
+    : null;
+
+  const childAccounts: ChildAccountSummary[] = account.child_accounts.map(
+    (child: { id: string; name: string; account_type: string; health_score: number | null; is_active: boolean }) => ({
+      id: child.id,
+      name: child.name,
+      account_type: child.account_type,
+      health_score: child.health_score,
+      is_active: child.is_active,
+    }),
+  );
+
+  // Build the base account without the extra included relations for the response
+  // We keep contacts on the account object as before
+  const { territory: _t, assigned_rep: _ar, child_accounts: _ca, ...accountData } = account;
+
+  return {
+    account: accountData as Account & { contacts: unknown[] },
+    territory,
+    assignedRep,
+    childAccounts,
+    recentActivities,
+  };
+}
