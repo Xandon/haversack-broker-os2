@@ -1,3 +1,14 @@
 // Shared Zod validation schemas for API contracts
-// Will be populated per domain as schemas are implemented
-export {};
+export {
+  accountTypeEnum,
+  createAccountSchema,
+  updateAccountSchema,
+  accountResponseSchema,
+  accountListQuerySchema,
+} from './account.schema.js';
+export type {
+  CreateAccountInput,
+  UpdateAccountInput,
+  AccountResponse,
+  AccountListQuery,
+} from './account.schema.js';
