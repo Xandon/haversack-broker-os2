@@ -13,6 +13,7 @@
 | 0 | feature/batch-0-foundation | ✅ Complete | Yes |
 | 1 | feature/batch-1-account-creation | ✅ Complete | Yes |
 | 2 | feature/batch-2-account-detail-search | ✅ Complete | Yes |
+| 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -20,8 +21,8 @@
 | 0 | Foundation (T013-T037) | ✅ Complete | 51/51 | N/A (infra batch) |
 | 1 | US-001 Account Creation (T038-T048) | ✅ Complete | 143/143 | — |
 | 2 | US-002/003 Account Detail + Search (T049-T060) | ✅ Complete | 232/232 | — |
-| 3 | US-003 Order Entry (T061-T073) | ⬜ Not Started | — | — |
-| 4 | US-004 Commission Calc (T074-T085) | ⬜ Not Started | — | — |
+| 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
+| 4 | US-006 Order Entry (T081-T095) | ⬜ Not Started | — | — |
 | 5 | US-005 Pipeline (T086-T094) | ⬜ Not Started | — | — |
 | 6 | US-006 Email (T095-T104) | ⬜ Not Started | — | — |
 | 7 | US-007 AI (T105-T115) | ⬜ Not Started | — | — |
@@ -95,9 +96,30 @@
 | T059 | Search route (GET /api/accounts/search) | ✅ |
 | T060 | Global search bar (300ms debounce, keyboard nav) | ✅ |
 
+### Batch 3: Activity Logging + Task Management (US-004/005)
+| Task | Description | Status |
+|------|-------------|--------|
+| T063 | Activity + Task Zod schemas | ✅ |
+| T064 | Activity service (quick-log, type templates) | ✅ |
+| T065 | Activity routes (POST, GET with infinite scroll) | ✅ |
+| T066 | Email tracking service (match, engagement events) | ✅ |
+| T067 | Email tracking Bull job | ✅ |
+| T068 | Unmatched email queue endpoint | ✅ |
+| T069 | Quick-log activity form (<60s target) | ✅ |
+| T070 | useActivities hook (infinite scroll) | ✅ |
+| T071 | Activity timeline component | ✅ |
+| T072 | Activity + email tracking tests | ✅ |
+| T073-T075 | Task service + routes (CRUD, complete) | ✅ |
+| T076 | Task reminder Bull job (24h/1h) | ✅ |
+| T077 | Task form (due date, priority) | ✅ |
+| T078 | Task dashboard page (filters, overdue) | ✅ |
+| T079 | Notification provider (30s polling) | ✅ |
+| T080 | Task service tests | ✅ |
+
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |
 |-------------|-------------|---------|---------|----------|--------|
 | 0 | 51 | 51 | 0 | — | dev |
 | 1 | 143 | 143 | 0 | — | dev |
 | 2 | 232 | 232 | 0 | — | dev |
+| 3 | 340 | 340 | 0 | — | dev |
