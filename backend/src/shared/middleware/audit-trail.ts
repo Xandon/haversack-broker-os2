@@ -5,7 +5,7 @@
  * Uses fire-and-forget writes to minimize impact on request latency.
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import fp from 'fastify-plugin';
 import { logger } from '../utils/logger.js';
 
@@ -53,7 +53,7 @@ export async function createAuditEntry(
         field_name: input.fieldName ?? null,
         old_value: input.oldValue ?? null,
         new_value: input.newValue ?? null,
-        change_summary: input.changeSummary ?? null,
+        change_summary: (input.changeSummary as Prisma.InputJsonValue) ?? undefined,
         ip_address: input.ipAddress ?? null,
         user_agent: input.userAgent ?? null,
         request_id: input.requestId ?? null,
