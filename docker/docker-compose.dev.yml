@@ -1,6 +1,7 @@
 name: haversack-broker-os
 
 services:
+  # ── Database ────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: haversack-postgres
@@ -19,6 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Cache / Queue ───────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: haversack-redis
@@ -33,6 +35,83 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Backend (Fastify API) ──────────────────────────────────────────────
+  backend:
+    container_name: haversack-backend
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+      target: backend
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    env_file: ../.env.docker
+    volumes:
+      - ..:/app
+      - backend_node_modules:/app/node_modules
+      - shared_node_modules:/app/packages/shared/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/api/health']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ── Worker (BullMQ jobs) ───────────────────────────────────────────────
+  worker:
+    container_name: haversack-worker
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+      target: worker
+    restart: unless-stopped
+    env_file: ../.env.docker
+    volumes:
+      - ..:/app
+      - worker_node_modules:/app/node_modules
+      - shared_node_modules_worker:/app/packages/shared/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  # ── Frontend (Next.js) ─────────────────────────────────────────────────
+  frontend:
+    container_name: haversack-frontend
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+      target: frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file: ../.env.docker
+    environment:
+      - PORT=3000
+    volumes:
+      - ..:/app
+      - frontend_node_modules:/app/node_modules
+      - shared_node_modules_frontend:/app/packages/shared/node_modules
+      - frontend_next:/app/frontend/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   haversack_pgdata:
   haversack_redisdata:
+  backend_node_modules:
+  worker_node_modules:
+  frontend_node_modules:
+  shared_node_modules:
+  shared_node_modules_worker:
+  shared_node_modules_frontend:
+  frontend_next:

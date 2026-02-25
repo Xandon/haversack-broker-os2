@@ -1,0 +1,40 @@
+# =============================================================================
+# Haversack Unified Platform — Development Dockerfile
+# Multi-stage with targets: frontend, backend, worker
+# Usage: docker compose -f docker/docker-compose.dev.yml up
+# =============================================================================
+
+# ── Base stage ──────────────────────────────────────────────────────────────
+FROM node:20-alpine AS base
+
+# Required for Prisma (OpenSSL) and native modules (libc6-compat)
+RUN apk add --no-cache libc6-compat openssl
+
+WORKDIR /app
+
+# ── Frontend target ─────────────────────────────────────────────────────────
+FROM base AS frontend
+
+EXPOSE 3000
+
+CMD ["sh", "-c", "npm ci --workspace=@haversack/frontend --workspace=@haversack/shared --include-workspace-root && npx --workspace=frontend next dev --hostname 0.0.0.0"]
+
+# ── Backend target ──────────────────────────────────────────────────────────
+FROM base AS backend
+
+EXPOSE 3001
+
+COPY docker/entrypoint-backend.sh /usr/local/bin/entrypoint-backend.sh
+RUN chmod +x /usr/local/bin/entrypoint-backend.sh
+
+ENTRYPOINT ["entrypoint-backend.sh"]
+CMD ["npx", "--workspace=backend", "tsx", "watch", "src/server.ts"]
+
+# ── Worker target ───────────────────────────────────────────────────────────
+FROM base AS worker
+
+COPY docker/entrypoint-worker.sh /usr/local/bin/entrypoint-worker.sh
+RUN chmod +x /usr/local/bin/entrypoint-worker.sh
+
+ENTRYPOINT ["entrypoint-worker.sh"]
+CMD ["npx", "--workspace=worker", "tsx", "watch", "src/bootstrap.ts"]

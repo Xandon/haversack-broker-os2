@@ -1,0 +1,46 @@
+# Dependencies (installed inside containers)
+node_modules/
+
+# Build outputs
+.next/
+dist/
+out/
+build/
+.turbo/
+
+# Version control
+.git/
+.gitignore
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+*.lcov
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Research/notes
+research/
+
+# Claude Code
+.claude/
