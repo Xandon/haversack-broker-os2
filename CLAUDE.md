@@ -28,7 +28,16 @@ Dockerized monorepo. All code lives in one repository with separate Docker conta
 # PRD validation (30 tests across 7 categories)
 node scripts/validate-prd.js
 
-# Pre-commit hook runs PRD validation automatically when docs/prd.md is modified
+# Spec-kit validation (90 tests across 7 step categories)
+node scripts/validate-speckit.js --all          # Full-chain validation
+node scripts/validate-speckit.js --step constitution  # Per-step validation
+node scripts/validate-speckit.js --step specify
+node scripts/validate-speckit.js --step plan
+node scripts/validate-speckit.js --step analyze
+node scripts/validate-speckit.js --step tasks
+node scripts/validate-speckit.js --step checklist
+
+# Pre-commit hook runs PRD and spec-kit validation automatically when artifacts are modified
 ```
 
 ## Project Structure
@@ -36,9 +45,20 @@ node scripts/validate-prd.js
 ```
 docs/prd.md                  # Production PRD (30 FRs, 14 NFRs, 12 USs) — validated by scripts/validate-prd.js
 docs/sections/               # Supplementary detailed user stories and UI/UX specs
-docs/prd-archive/            # Archived PRD versions (named prd-YYYY-MM-DD.md)
 research/                    # Source research materials (comprehensive PRD docx)
 scripts/validate-prd.js      # PRD validation framework — exit 0 = pass, exit 1 = fail
+scripts/validate-speckit.js  # Spec-kit validation framework — 90 tests, exit 0 = pass, exit 1 = fail
+
+.specify/memory/constitution.md                              # 7 constitutional principles (tech stack, architecture, quality, testing, security, observability, data integrity)
+.specify/specs/001-haversack-unified-platform/
+├── spec.md          # Feature specification (14 user stories, 36 FRs, 14 NFRs, 18 entities, 55 acceptance scenarios)
+├── plan.md          # Implementation plan (11 phases, tech context, constitution check, project structure)
+├── research.md      # Technology research (13 technologies with versions, rationale, alternatives)
+├── data-model.md    # Data model (18+ entities with field tables, relationships, validation rules, audit trail)
+├── quickstart.md    # Validation scenarios (10 end-to-end scenarios with FR references)
+├── tasks.md         # Implementation tasks (177 tasks across 17 phases, 70 parallel, 100% FR coverage)
+├── checklist.md     # Readiness checklist (50 items across 8 categories)
+└── contracts/       # API contracts (8 domain files with endpoint definitions)
 ```
 
 ## PRD Conventions
