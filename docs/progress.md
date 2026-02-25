@@ -12,13 +12,14 @@
 |-------|--------|--------|---------------|
 | 0 | feature/batch-0-foundation | ✅ Complete | Yes |
 | 1 | feature/batch-1-account-creation | ✅ Complete | Yes |
+| 2 | feature/batch-2-account-detail-search | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
 |-------|-------------|--------|---------------|---------------------|
 | 0 | Foundation (T013-T037) | ✅ Complete | 51/51 | N/A (infra batch) |
 | 1 | US-001 Account Creation (T038-T048) | ✅ Complete | 143/143 | — |
-| 2 | US-002 Activity Logging (T049-T060) | ⬜ Not Started | — | — |
+| 2 | US-002/003 Account Detail + Search (T049-T060) | ✅ Complete | 232/232 | — |
 | 3 | US-003 Order Entry (T061-T073) | ⬜ Not Started | — | — |
 | 4 | US-004 Commission Calc (T074-T085) | ⬜ Not Started | — | — |
 | 5 | US-005 Pipeline (T086-T094) | ⬜ Not Started | — | — |
@@ -78,8 +79,25 @@
 | T047 | Account service tests (40 tests) | ✅ |
 | T048 | Account routes tests (14 tests) + frontend tests (38 tests) | ✅ |
 
+### Batch 2: Account Detail, Health Score, Search (US-002/003)
+| Task | Description | Status |
+|------|-------------|--------|
+| T049 | Enhanced account detail endpoint (contacts, activities, hierarchy) | ✅ |
+| T050 | Parent-child hierarchy service with circular ref prevention | ✅ |
+| T051 | Health score calculation (0-100, 4 weighted factors) | ✅ |
+| T052 | Nightly health score recalculation Bull job (02:00 UTC) | ✅ |
+| T053 | Account detail component (responsive, mobile-first) | ✅ |
+| T054 | Health badge component (color-coded, compact/expanded) | ✅ |
+| T055 | Account detail page with skeleton loading | ✅ |
+| T056 | Tests (55 backend + 34 frontend new tests) | ✅ |
+| T057 | pg_trgm GIN index migration for full-text search | ✅ |
+| T058 | Search service with relevance ranking | ✅ |
+| T059 | Search route (GET /api/accounts/search) | ✅ |
+| T060 | Global search bar (300ms debounce, keyboard nav) | ✅ |
+
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |
 |-------------|-------------|---------|---------|----------|--------|
 | 0 | 51 | 51 | 0 | — | dev |
 | 1 | 143 | 143 | 0 | — | dev |
+| 2 | 232 | 232 | 0 | — | dev |
