@@ -1,4 +1,6 @@
 // Shared constants (pipeline stages, roles, etc.)
-// This file will be populated in Phase 5
-
-export {};
+export {
+  type PipelineStageDefinition,
+  PIPELINE_STAGES,
+  STAGE_PROBABILITIES,
+} from './pipeline-stages.js';

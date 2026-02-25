@@ -1,0 +1,1021 @@
+// Haversack Unified Platform — Prisma Schema
+// Database: PostgreSQL 16+ with Row-Level Security (RLS)
+// ORM: Prisma 5+ with strict TypeScript mode
+//
+// Conventions:
+// - Every model has id (UUID), created_at, updated_at
+// - Every model (except Organization and AuditTrail) has tenant_id -> Organization
+// - Soft-delete models use deleted_at DateTime?
+// - Table names are snake_case via @@map
+// - Field names are snake_case via @map where needed
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------------
+
+enum SubscriptionStatus {
+  active
+  suspended
+  cancelled
+
+  @@map("subscription_status")
+}
+
+enum UserRole {
+  admin
+  manager
+  rep
+  logistics
+  viewer
+
+  @@map("user_role")
+}
+
+enum AccountType {
+  store
+  restaurant
+  distributor
+  other
+
+  @@map("account_type")
+}
+
+enum RevenueModel {
+  broker
+  wholesale
+
+  @@map("revenue_model")
+}
+
+enum AvailabilityStatus {
+  in_stock
+  limited
+  out_of_stock
+  discontinued
+
+  @@map("availability_status")
+}
+
+enum OrderStatus {
+  draft
+  pending
+  pending_approval
+  approved
+  confirmed
+  rejected
+  cancelled
+
+  @@map("order_status")
+}
+
+enum ActivityType {
+  visit
+  call
+  email
+  demo
+  sampling
+  task
+  note
+  system
+
+  @@map("activity_type")
+}
+
+enum DemoOutcome {
+  interested
+  not_interested
+  order_placed
+  follow_up_needed
+
+  @@map("demo_outcome")
+}
+
+enum EmailDirection {
+  inbound
+  outbound
+
+  @@map("email_direction")
+}
+
+enum EmailEngagementStatus {
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  unsubscribed
+
+  @@map("email_engagement_status")
+}
+
+enum EmailTemplateCategory {
+  line_card
+  follow_up
+  notification
+  custom
+
+  @@map("email_template_category")
+}
+
+enum OpportunityStage {
+  prospecting
+  qualified
+  proposal
+  negotiation
+  closed_won
+  closed_lost
+
+  @@map("opportunity_stage")
+}
+
+enum CommissionStatus {
+  pending
+  pending_approval
+  approved
+  exported
+  disputed
+
+  @@map("commission_status")
+}
+
+enum BusinessRuleEntityType {
+  account
+  contact
+  order
+  opportunity
+  activity
+  product
+
+  @@map("business_rule_entity_type")
+}
+
+enum BusinessRuleTrigger {
+  create
+  update
+  delete
+  schedule
+  field_change
+
+  @@map("business_rule_trigger")
+}
+
+enum TaskPriority {
+  high
+  medium
+  low
+
+  @@map("task_priority")
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+
+  @@map("task_status")
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+
+  @@map("audit_action")
+}
+
+enum ImportEntityType {
+  account
+  contact
+  product
+  order
+
+  @@map("import_entity_type")
+}
+
+enum ImportJobStatus {
+  uploaded
+  validating
+  preview
+  importing
+  completed
+  failed
+
+  @@map("import_job_status")
+}
+
+enum NotificationType {
+  task_reminder
+  approval_request
+  approval_result
+  commission_approved
+  rule_triggered
+  system
+  import_complete
+
+  @@map("notification_type")
+}
+
+enum NotificationChannel {
+  in_app
+  email
+  both
+
+  @@map("notification_channel")
+}
+
+// ---------------------------------------------------------------------------
+// MODELS
+// ---------------------------------------------------------------------------
+
+/// Top-level tenant entity. All other entities reference tenant_id -> Organization.id for RLS isolation.
+model Organization {
+  id                  String             @id @default(uuid()) @db.Uuid
+  name                String             @unique @db.VarChar(255)
+  address_line1       String             @db.VarChar(255)
+  address_line2       String?            @db.VarChar(255)
+  city                String             @db.VarChar(100)
+  state               String             @db.VarChar(50)
+  zip_code            String             @db.VarChar(20)
+  phone               String?            @db.VarChar(30)
+  website             String?            @db.VarChar(500)
+  logo_url            String?            @db.VarChar(500)
+  configuration       Json               @default("{}")
+  subscription_status SubscriptionStatus @default(active)
+  created_at          DateTime           @default(now()) @db.Timestamptz
+  updated_at          DateTime           @updatedAt @db.Timestamptz
+
+  // Reverse relations (tenant children)
+  users               User[]
+  territories         Territory[]
+  accounts            Account[]
+  contacts            Contact[]
+  brands              Brand[]
+  products            Product[]
+  orders              Order[]
+  order_items         OrderItem[]
+  activities          Activity[]
+  demos               Demo[]
+  email_records       EmailRecord[]
+  email_templates     EmailTemplate[]
+  opportunities       Opportunity[]
+  commissions         Commission[]
+  commission_rules    CommissionRule[]
+  line_cards          LineCard[]
+  business_rules      BusinessRule[]
+  crm_tasks           CrmTask[]
+  audit_trails        AuditTrail[]
+  data_quality_scores DataQualityScore[]
+  import_jobs         ImportJob[]
+  notifications       Notification[]
+
+  @@index([name], map: "idx_organization_name")
+  @@map("organizations")
+}
+
+/// Authenticated platform user. Audit trail required for all mutations per NFR-014.
+model User {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenant_id          String    @db.Uuid
+  email              String    @db.VarChar(255)
+  password_hash      String    @db.VarChar(255)
+  first_name         String    @db.VarChar(100)
+  last_name          String    @db.VarChar(100)
+  role               UserRole
+  territory_id       String?   @db.Uuid
+  is_active          Boolean   @default(true)
+  avatar_url         String?   @db.VarChar(500)
+  last_login_at      DateTime? @db.Timestamptz
+  refresh_token_hash String?   @db.VarChar(255)
+  created_at         DateTime  @default(now()) @db.Timestamptz
+  updated_at         DateTime  @updatedAt @db.Timestamptz
+  deleted_at         DateTime? @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  territory    Territory?   @relation("UserTerritory", fields: [territory_id], references: [id])
+
+  // Reverse relations
+  assigned_territories Territory[]     @relation("TerritoryAssignedRep")
+  assigned_accounts    Account[]       @relation("AccountAssignedRep")
+  activities           Activity[]
+  orders_as_rep        Order[]         @relation("OrderRep")
+  orders_approved      Order[]         @relation("OrderApprovedBy")
+  opportunities        Opportunity[]
+  commissions_as_rep   Commission[]    @relation("CommissionRep")
+  commissions_approved Commission[]    @relation("CommissionApprovedBy")
+  tasks_assigned       CrmTask[]       @relation("TaskAssignedTo")
+  tasks_created        CrmTask[]       @relation("TaskCreatedBy")
+  email_records        EmailRecord[]
+  email_templates      EmailTemplate[]
+  line_cards           LineCard[]
+  business_rules       BusinessRule[]
+  import_jobs          ImportJob[]
+  notifications        Notification[]
+
+  @@unique([tenant_id, email], map: "idx_user_tenant_email")
+  @@index([tenant_id, role], map: "idx_user_tenant_role")
+  @@index([territory_id], map: "idx_user_territory")
+  @@index([tenant_id, is_active], map: "idx_user_is_active")
+  @@map("users")
+}
+
+/// Geographic sales zone. Each territory is assigned to one rep.
+model Territory {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tenant_id           String   @db.Uuid
+  name                String   @db.VarChar(255)
+  region              String   @db.VarChar(100)
+  zip_codes           String[] @default([])
+  boundary            Json?
+  assigned_rep_id     String?  @db.Uuid
+  commission_modifier Decimal  @default(1.00) @db.Decimal(4, 2)
+  is_active           Boolean  @default(true)
+  created_at          DateTime @default(now()) @db.Timestamptz
+  updated_at          DateTime @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  assigned_rep User?        @relation("TerritoryAssignedRep", fields: [assigned_rep_id], references: [id])
+
+  // Reverse relations
+  users            User[]           @relation("UserTerritory")
+  accounts         Account[]
+  commission_rules CommissionRule[]
+
+  @@unique([tenant_id, name], map: "idx_territory_tenant_name")
+  @@index([assigned_rep_id], map: "idx_territory_assigned_rep")
+  @@index([tenant_id, region], map: "idx_territory_region")
+  @@map("territories")
+}
+
+/// Customer business (store, restaurant, distributor). Audit trail required per NFR-014.
+model Account {
+  id                         String      @id @default(uuid()) @db.Uuid
+  tenant_id                  String      @db.Uuid
+  name                       String      @db.VarChar(255)
+  account_type               AccountType
+  address_line1              String      @db.VarChar(255)
+  address_line2              String?     @db.VarChar(255)
+  city                       String      @db.VarChar(100)
+  state                      String      @db.VarChar(50)
+  zip_code                   String      @db.VarChar(20)
+  phone                      String?     @db.VarChar(30)
+  email                      String?     @db.VarChar(255)
+  website                    String?     @db.VarChar(500)
+  territory_id               String      @db.Uuid
+  assigned_rep_id            String      @db.Uuid
+  parent_account_id          String?     @db.Uuid
+  health_score               Int?
+  health_score_calculated_at DateTime?   @db.Timestamptz
+  notes                      String?     @db.Text
+  tags                       String[]    @default([])
+  metadata                   Json        @default("{}")
+  is_active                  Boolean     @default(true)
+  created_at                 DateTime    @default(now()) @db.Timestamptz
+  updated_at                 DateTime    @updatedAt @db.Timestamptz
+  deleted_at                 DateTime?   @db.Timestamptz
+
+  // Relations
+  organization   Organization @relation(fields: [tenant_id], references: [id])
+  territory      Territory    @relation(fields: [territory_id], references: [id])
+  assigned_rep   User         @relation("AccountAssignedRep", fields: [assigned_rep_id], references: [id])
+  parent_account Account?     @relation("AccountHierarchy", fields: [parent_account_id], references: [id])
+
+  // Reverse relations
+  child_accounts Account[]     @relation("AccountHierarchy")
+  contacts       Contact[]
+  activities     Activity[]
+  orders         Order[]
+  opportunities  Opportunity[]
+  email_records  EmailRecord[]
+  crm_tasks      CrmTask[]
+
+  @@index([tenant_id, name], map: "idx_account_tenant_name")
+  @@index([territory_id], map: "idx_account_territory")
+  @@index([assigned_rep_id], map: "idx_account_assigned_rep")
+  @@index([parent_account_id], map: "idx_account_parent")
+  @@index([tenant_id, health_score], map: "idx_account_health_score")
+  @@index([tenant_id, account_type], map: "idx_account_type")
+  @@index([deleted_at], map: "idx_account_deleted_at")
+  @@map("accounts")
+}
+
+/// Individual person at an Account.
+model Contact {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenant_id     String    @db.Uuid
+  account_id    String    @db.Uuid
+  first_name    String    @db.VarChar(100)
+  last_name     String    @db.VarChar(100)
+  email         String?   @db.VarChar(255)
+  phone         String?   @db.VarChar(30)
+  title         String?   @db.VarChar(100)
+  is_primary    Boolean   @default(false)
+  opt_out_email Boolean   @default(false)
+  notes         String?   @db.Text
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @updatedAt @db.Timestamptz
+  deleted_at    DateTime? @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  account      Account      @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  // Reverse relations
+  activities    Activity[]
+  email_records EmailRecord[]
+  crm_tasks     CrmTask[]
+
+  @@index([account_id], map: "idx_contact_account")
+  @@index([tenant_id, email], map: "idx_contact_tenant_email")
+  @@map("contacts")
+}
+
+/// Food supplier/principal. Brands are the vendor entities that products belong to.
+model Brand {
+  id                      String       @id @default(uuid()) @db.Uuid
+  tenant_id               String       @db.Uuid
+  name                    String       @db.VarChar(255)
+  principal_contact_name  String?      @db.VarChar(200)
+  principal_contact_email String?      @db.VarChar(255)
+  principal_contact_phone String?      @db.VarChar(30)
+  base_commission_rate    Decimal      @db.Decimal(5, 2)
+  default_revenue_model   RevenueModel @default(broker)
+  logo_url                String?      @db.VarChar(500)
+  description             String?      @db.Text
+  is_active               Boolean      @default(true)
+  created_at              DateTime     @default(now()) @db.Timestamptz
+  updated_at              DateTime     @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+
+  // Reverse relations
+  products         Product[]
+  vendor_orders    Order[]          @relation("OrderVendorBrand")
+  commissions      Commission[]
+  commission_rules CommissionRule[]
+  line_cards       LineCard[]
+
+  @@unique([tenant_id, name], map: "idx_brand_tenant_name")
+  @@index([tenant_id, is_active], map: "idx_brand_active")
+  @@map("brands")
+}
+
+/// Catalog item. Supports FSMA 204 traceability (NFR-010) and product search (FR-015).
+model Product {
+  id                  String             @id @default(uuid()) @db.Uuid
+  tenant_id           String             @db.Uuid
+  brand_id            String             @db.Uuid
+  name                String             @db.VarChar(255)
+  sku                 String             @db.VarChar(100)
+  category            String             @db.VarChar(100)
+  subcategory         String?            @db.VarChar(100)
+  unit_price          Decimal            @db.Decimal(10, 2)
+  wholesale_price     Decimal?           @db.Decimal(10, 2)
+  case_size           String?            @db.VarChar(50)
+  certifications      String[]           @default([])
+  allergens           String[]           @default([])
+  dietary_attributes  String[]           @default([])
+  availability_status AvailabilityStatus @default(in_stock)
+  image_url           String?            @db.VarChar(500)
+  description         String?            @db.Text
+  revenue_model       RevenueModel
+  promo_price         Decimal?           @db.Decimal(10, 2)
+  promo_start_date    DateTime?          @db.Timestamptz
+  promo_end_date      DateTime?          @db.Timestamptz
+  lot_number          String?            @db.VarChar(100)
+  batch_id            String?            @db.VarChar(100)
+  origin              String?            @db.VarChar(255)
+  is_active           Boolean            @default(true)
+  created_at          DateTime           @default(now()) @db.Timestamptz
+  updated_at          DateTime           @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  brand        Brand        @relation(fields: [brand_id], references: [id])
+
+  // Reverse relations
+  order_items OrderItem[]
+  demos       Demo[]
+
+  @@unique([tenant_id, sku], map: "idx_product_tenant_sku")
+  @@index([brand_id], map: "idx_product_brand")
+  @@index([tenant_id, category], map: "idx_product_category")
+  @@index([tenant_id, availability_status], map: "idx_product_availability")
+  @@index([tenant_id, is_active], map: "idx_product_active")
+  @@index([promo_start_date, promo_end_date], map: "idx_product_promo_dates")
+  @@map("products")
+}
+
+/// Sales transaction. Audit trail required per NFR-014. Core entity for FR-013 through FR-017.
+model Order {
+  id                   String      @id @default(uuid()) @db.Uuid
+  tenant_id            String      @db.Uuid
+  order_number         String      @db.VarChar(50)
+  account_id           String      @db.Uuid
+  rep_id               String      @db.Uuid
+  status               OrderStatus @default(draft)
+  parent_order_id      String?     @db.Uuid
+  vendor_brand_id      String?     @db.Uuid
+  subtotal             Decimal     @default(0.00) @db.Decimal(12, 2)
+  tax_amount           Decimal     @default(0.00) @db.Decimal(12, 2)
+  total                Decimal     @default(0.00) @db.Decimal(12, 2)
+  approval_required    Boolean     @default(false)
+  approved_by_id       String?     @db.Uuid
+  approved_at          DateTime?   @db.Timestamptz
+  rejection_reason     String?     @db.Text
+  confirmed_at         DateTime?   @db.Timestamptz
+  exported_at          DateTime?   @db.Timestamptz
+  accounting_reference String?     @db.VarChar(100)
+  notes                String?     @db.Text
+  fsma_lot_numbers     Json        @default("[]")
+  created_at           DateTime    @default(now()) @db.Timestamptz
+  updated_at           DateTime    @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  account      Account      @relation(fields: [account_id], references: [id])
+  rep          User         @relation("OrderRep", fields: [rep_id], references: [id])
+  parent_order Order?       @relation("OrderVendorSplit", fields: [parent_order_id], references: [id])
+  vendor_brand Brand?       @relation("OrderVendorBrand", fields: [vendor_brand_id], references: [id])
+  approved_by  User?        @relation("OrderApprovedBy", fields: [approved_by_id], references: [id])
+
+  // Reverse relations
+  sub_orders  Order[]      @relation("OrderVendorSplit")
+  order_items OrderItem[]
+  commissions Commission[]
+
+  @@unique([tenant_id, order_number], map: "idx_order_tenant_number")
+  @@index([account_id], map: "idx_order_account")
+  @@index([rep_id], map: "idx_order_rep")
+  @@index([tenant_id, status], map: "idx_order_status")
+  @@index([parent_order_id], map: "idx_order_parent")
+  @@index([vendor_brand_id], map: "idx_order_vendor_brand")
+  @@index([confirmed_at], map: "idx_order_confirmed_at")
+  @@index([tenant_id, approval_required, status], map: "idx_order_approval_required")
+  @@map("orders")
+}
+
+/// Line item within an Order. Each item references a product with quantity, price, and revenue model.
+model OrderItem {
+  id              String       @id @default(uuid()) @db.Uuid
+  tenant_id       String       @db.Uuid
+  order_id        String       @db.Uuid
+  product_id      String       @db.Uuid
+  quantity        Int
+  unit_price      Decimal      @db.Decimal(10, 2)
+  line_total      Decimal      @db.Decimal(12, 2)
+  revenue_model   RevenueModel
+  commission_rate Decimal?     @db.Decimal(5, 2)
+  promo_applied   Boolean      @default(false)
+  lot_number      String?      @db.VarChar(100)
+  batch_id        String?      @db.VarChar(100)
+  notes           String?      @db.Text
+  created_at      DateTime     @default(now()) @db.Timestamptz
+  updated_at      DateTime     @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  order        Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [product_id], references: [id])
+
+  // Reverse relations
+  commissions Commission[]
+
+  @@index([order_id], map: "idx_orderitem_order")
+  @@index([product_id], map: "idx_orderitem_product")
+  @@index([tenant_id, revenue_model], map: "idx_orderitem_revenue_model")
+  @@map("order_items")
+}
+
+/// Logged interaction (visit, call, email, demo, sampling). Core entity for FR-008 through FR-009.
+model Activity {
+  id               String       @id @default(uuid()) @db.Uuid
+  tenant_id        String       @db.Uuid
+  account_id       String       @db.Uuid
+  user_id          String       @db.Uuid
+  contact_id       String?      @db.Uuid
+  activity_type    ActivityType
+  subject          String?      @db.VarChar(255)
+  notes            String?      @db.Text
+  occurred_at      DateTime     @default(now()) @db.Timestamptz
+  duration_minutes Int?
+  metadata         Json         @default("{}")
+  created_at       DateTime     @default(now()) @db.Timestamptz
+  updated_at       DateTime     @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  account      Account      @relation(fields: [account_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
+  contact      Contact?     @relation(fields: [contact_id], references: [id])
+
+  // Reverse relations
+  demos         Demo[]
+  email_records EmailRecord[]
+
+  @@index([account_id, occurred_at(sort: Desc)], map: "idx_activity_account")
+  @@index([user_id, occurred_at(sort: Desc)], map: "idx_activity_user")
+  @@index([tenant_id, activity_type], map: "idx_activity_type")
+  @@index([tenant_id, occurred_at(sort: Desc)], map: "idx_activity_occurred_at")
+  @@index([contact_id], map: "idx_activity_contact")
+  @@map("activities")
+}
+
+/// Product sampling detail linked to an Activity. Captures demo-specific data per FR-008.
+model Demo {
+  id               String      @id @default(uuid()) @db.Uuid
+  tenant_id        String      @db.Uuid
+  activity_id      String      @db.Uuid
+  product_id       String      @db.Uuid
+  quantity_sampled Int
+  buyer_feedback   String?     @db.Text
+  outcome          DemoOutcome @default(follow_up_needed)
+  created_at       DateTime    @default(now()) @db.Timestamptz
+  updated_at       DateTime    @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  activity     Activity     @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [product_id], references: [id])
+
+  @@index([activity_id], map: "idx_demo_activity")
+  @@index([product_id], map: "idx_demo_product")
+  @@map("demos")
+}
+
+/// Tracked email message. Supports FR-010 (email auto-linking) and FR-011 (unmatched queue).
+model EmailRecord {
+  id                 String                @id @default(uuid()) @db.Uuid
+  tenant_id          String                @db.Uuid
+  account_id         String?               @db.Uuid
+  contact_id         String?               @db.Uuid
+  user_id            String?               @db.Uuid
+  activity_id        String?               @db.Uuid
+  direction          EmailDirection
+  subject            String?               @db.VarChar(500)
+  body_preview       String?               @db.Text
+  from_address       String                @db.VarChar(255)
+  to_addresses       String[]
+  cc_addresses       String[]              @default([])
+  message_id         String?               @db.VarChar(500)
+  thread_id          String?               @db.VarChar(500)
+  engagement_status  EmailEngagementStatus @default(sent)
+  opened_at          DateTime?             @db.Timestamptz
+  clicked_at         DateTime?             @db.Timestamptz
+  bounced_at         DateTime?             @db.Timestamptz
+  is_matched         Boolean               @default(false)
+  can_spam_compliant Boolean               @default(true)
+  created_at         DateTime              @default(now()) @db.Timestamptz
+  updated_at         DateTime              @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  account      Account?     @relation(fields: [account_id], references: [id])
+  contact      Contact?     @relation(fields: [contact_id], references: [id])
+  user         User?        @relation(fields: [user_id], references: [id])
+  activity     Activity?    @relation(fields: [activity_id], references: [id])
+
+  @@index([account_id], map: "idx_email_account")
+  @@index([contact_id], map: "idx_email_contact")
+  @@index([user_id], map: "idx_email_user")
+  @@index([tenant_id, from_address], map: "idx_email_from")
+  @@index([tenant_id, is_matched], map: "idx_email_unmatched")
+  @@index([tenant_id, message_id], map: "idx_email_message_id")
+  @@index([tenant_id, engagement_status], map: "idx_email_engagement")
+  @@map("email_records")
+}
+
+/// Reusable email template with merge fields. Supports FR-020 and FR-034.
+model EmailTemplate {
+  id               String                @id @default(uuid()) @db.Uuid
+  tenant_id        String                @db.Uuid
+  name             String                @db.VarChar(255)
+  subject_template String                @db.VarChar(500)
+  body_template    String                @db.Text
+  category         EmailTemplateCategory @default(custom)
+  merge_fields     String[]              @default([])
+  is_active        Boolean               @default(true)
+  created_by_id    String                @db.Uuid
+  created_at       DateTime              @default(now()) @db.Timestamptz
+  updated_at       DateTime              @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  created_by   User         @relation(fields: [created_by_id], references: [id])
+
+  @@unique([tenant_id, name], map: "idx_emailtemplate_tenant_name")
+  @@index([tenant_id, category], map: "idx_emailtemplate_category")
+  @@index([tenant_id, is_active], map: "idx_emailtemplate_active")
+  @@map("email_templates")
+}
+
+/// Prospective deal linked to an Account. Supports FR-021, FR-022.
+model Opportunity {
+  id                   String           @id @default(uuid()) @db.Uuid
+  tenant_id            String           @db.Uuid
+  account_id           String           @db.Uuid
+  name                 String           @db.VarChar(255)
+  stage                OpportunityStage @default(prospecting)
+  probability          Decimal          @db.Decimal(5, 2)
+  estimated_value      Decimal          @db.Decimal(12, 2)
+  weighted_value       Decimal          @db.Decimal(12, 2)
+  close_date           DateTime         @db.Date
+  close_reason         String?          @db.Text
+  assigned_rep_id      String           @db.Uuid
+  notes                String?          @db.Text
+  associated_brand_ids String[]         @default([]) @db.Uuid
+  created_at           DateTime         @default(now()) @db.Timestamptz
+  updated_at           DateTime         @updatedAt @db.Timestamptz
+  deleted_at           DateTime?        @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  account      Account      @relation(fields: [account_id], references: [id])
+  assigned_rep User         @relation(fields: [assigned_rep_id], references: [id])
+
+  // Reverse relations
+  crm_tasks CrmTask[]
+
+  @@index([account_id], map: "idx_opportunity_account")
+  @@index([tenant_id, stage], map: "idx_opportunity_stage")
+  @@index([assigned_rep_id], map: "idx_opportunity_rep")
+  @@index([tenant_id, close_date], map: "idx_opportunity_close_date")
+  @@index([tenant_id, stage, weighted_value], map: "idx_opportunity_tenant_stage_value")
+  @@map("opportunities")
+}
+
+/// Earnings record per broker line item per period. Audit trail required per NFR-014.
+model Commission {
+  id                     String           @id @default(uuid()) @db.Uuid
+  tenant_id              String           @db.Uuid
+  rep_id                 String           @db.Uuid
+  order_id               String           @db.Uuid
+  order_item_id          String           @db.Uuid
+  brand_id               String           @db.Uuid
+  period                 String           @db.VarChar(7)
+  line_total             Decimal          @db.Decimal(12, 2)
+  base_rate              Decimal          @db.Decimal(5, 2)
+  territory_modifier     Decimal          @db.Decimal(4, 2)
+  volume_tier            String?          @db.VarChar(50)
+  volume_tier_adjustment Decimal          @default(0.00) @db.Decimal(5, 2)
+  effective_rate         Decimal          @db.Decimal(5, 2)
+  amount                 Decimal          @db.Decimal(12, 2)
+  status                 CommissionStatus @default(pending)
+  approved_by_id         String?          @db.Uuid
+  approved_at            DateTime?        @db.Timestamptz
+  exported_at            DateTime?        @db.Timestamptz
+  accounting_reference   String?          @db.VarChar(100)
+  calculation_log        Json
+  created_at             DateTime         @default(now()) @db.Timestamptz
+  updated_at             DateTime         @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  rep          User         @relation("CommissionRep", fields: [rep_id], references: [id])
+  order        Order        @relation(fields: [order_id], references: [id])
+  order_item   OrderItem    @relation(fields: [order_item_id], references: [id])
+  brand        Brand        @relation(fields: [brand_id], references: [id])
+  approved_by  User?        @relation("CommissionApprovedBy", fields: [approved_by_id], references: [id])
+
+  @@index([rep_id, period], map: "idx_commission_rep_period")
+  @@index([order_id], map: "idx_commission_order")
+  @@index([order_item_id], map: "idx_commission_order_item")
+  @@index([tenant_id, status], map: "idx_commission_status")
+  @@index([brand_id], map: "idx_commission_brand")
+  @@index([tenant_id, period], map: "idx_commission_period")
+  @@index([tenant_id, exported_at], map: "idx_commission_exported")
+  @@map("commissions")
+}
+
+/// Configurable commission rate rules per brand, territory, and volume tier. Supports FR-023.
+model CommissionRule {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenant_id         String    @db.Uuid
+  brand_id          String    @db.Uuid
+  territory_id      String?   @db.Uuid
+  base_rate         Decimal   @db.Decimal(5, 2)
+  volume_tier_label String?   @db.VarChar(50)
+  volume_threshold  Decimal?  @db.Decimal(12, 2)
+  tier_adjustment   Decimal   @default(0.00) @db.Decimal(5, 2)
+  effective_date    DateTime  @db.Date
+  end_date          DateTime? @db.Date
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  brand        Brand        @relation(fields: [brand_id], references: [id])
+  territory    Territory?   @relation(fields: [territory_id], references: [id])
+
+  @@index([brand_id, effective_date(sort: Desc)], map: "idx_commrule_brand_effective")
+  @@index([territory_id], map: "idx_commrule_territory")
+  @@index([tenant_id, is_active, effective_date], map: "idx_commrule_active")
+  @@map("commission_rules")
+}
+
+/// Generated brand product catalog document. Supports FR-020.
+model LineCard {
+  id                  String    @id @default(uuid()) @db.Uuid
+  tenant_id           String    @db.Uuid
+  brand_id            String    @db.Uuid
+  generated_by_id     String    @db.Uuid
+  document_url        String    @db.VarChar(500)
+  document_size_bytes Int?
+  product_count       Int
+  generated_at        DateTime  @default(now()) @db.Timestamptz
+  expires_at          DateTime? @db.Timestamptz
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  brand        Brand        @relation(fields: [brand_id], references: [id])
+  generated_by User         @relation(fields: [generated_by_id], references: [id])
+
+  @@index([brand_id, generated_at(sort: Desc)], map: "idx_linecard_brand")
+  @@index([generated_by_id], map: "idx_linecard_generated_by")
+  @@map("line_cards")
+}
+
+/// IF/THEN automation rule. Supports FR-034.
+model BusinessRule {
+  id                String                 @id @default(uuid()) @db.Uuid
+  tenant_id         String                 @db.Uuid
+  name              String                 @db.VarChar(255)
+  description       String?                @db.Text
+  entity_type       BusinessRuleEntityType
+  conditions        Json
+  actions           Json
+  trigger_event     BusinessRuleTrigger
+  priority          Int                    @default(100)
+  is_active         Boolean                @default(true)
+  last_triggered_at DateTime?              @db.Timestamptz
+  trigger_count     Int                    @default(0)
+  created_by_id     String                 @db.Uuid
+  created_at        DateTime               @default(now()) @db.Timestamptz
+  updated_at        DateTime               @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  created_by   User         @relation(fields: [created_by_id], references: [id])
+
+  @@index([tenant_id, entity_type, is_active], map: "idx_businessrule_tenant_entity")
+  @@index([tenant_id, priority], map: "idx_businessrule_priority")
+  @@index([tenant_id, trigger_event, is_active], map: "idx_businessrule_trigger")
+  @@map("business_rules")
+}
+
+/// Follow-up task with reminders. Supports FR-012.
+/// Named CrmTask to avoid conflict with Prisma reserved words; maps to "tasks" table.
+model CrmTask {
+  id                String       @id @default(uuid()) @db.Uuid
+  tenant_id         String       @db.Uuid
+  title             String       @db.VarChar(255)
+  description       String?      @db.Text
+  due_date          DateTime     @db.Timestamptz
+  priority          TaskPriority @default(medium)
+  status            TaskStatus   @default(pending)
+  assigned_to_id    String       @db.Uuid
+  created_by_id     String       @db.Uuid
+  account_id        String?      @db.Uuid
+  contact_id        String?      @db.Uuid
+  opportunity_id    String?      @db.Uuid
+  reminder_24h_sent Boolean      @default(false)
+  reminder_1h_sent  Boolean      @default(false)
+  completed_at      DateTime?    @db.Timestamptz
+  created_at        DateTime     @default(now()) @db.Timestamptz
+  updated_at        DateTime     @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  assigned_to  User         @relation("TaskAssignedTo", fields: [assigned_to_id], references: [id])
+  created_by   User         @relation("TaskCreatedBy", fields: [created_by_id], references: [id])
+  account      Account?     @relation(fields: [account_id], references: [id])
+  contact      Contact?     @relation(fields: [contact_id], references: [id])
+  opportunity  Opportunity? @relation(fields: [opportunity_id], references: [id])
+
+  @@index([assigned_to_id, status, due_date], map: "idx_task_assigned_to")
+  @@index([tenant_id, due_date], map: "idx_task_due_date")
+  @@index([account_id], map: "idx_task_account")
+  @@index([opportunity_id], map: "idx_task_opportunity")
+  @@index([tenant_id, status, due_date], map: "idx_task_overdue")
+  @@map("tasks")
+}
+
+/// Immutable audit log for all write operations on Account, Order, Commission, and User entities.
+/// Required by NFR-014. INSERT-ONLY — UPDATE and DELETE prohibited at DB level.
+/// Partitioned by RANGE on created_at (monthly). Retained 3 years minimum.
+model AuditTrail {
+  id             String      @id @default(uuid()) @db.Uuid
+  tenant_id      String      @db.Uuid
+  actor_id       String      @db.Uuid
+  actor_email    String      @db.VarChar(255)
+  entity_type    String      @db.VarChar(50)
+  entity_id      String      @db.Uuid
+  action         AuditAction
+  field_name     String?     @db.VarChar(100)
+  old_value      String?     @db.Text
+  new_value      String?     @db.Text
+  change_summary Json?
+  ip_address     String?     @db.VarChar(45)
+  user_agent     String?     @db.VarChar(500)
+  request_id     String?     @db.Uuid
+  created_at     DateTime    @default(now()) @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+
+  @@index([entity_type, entity_id, created_at(sort: Desc)], map: "idx_audit_entity")
+  @@index([actor_id, created_at(sort: Desc)], map: "idx_audit_actor")
+  @@index([tenant_id, created_at(sort: Desc)], map: "idx_audit_tenant_created")
+  @@index([request_id], map: "idx_audit_request_id")
+  @@map("audit_trails")
+}
+
+/// Nightly data quality scorecard. Supports FR-033.
+model DataQualityScore {
+  id                             String   @id @default(uuid()) @db.Uuid
+  tenant_id                      String   @db.Uuid
+  calculated_at                  DateTime @default(now()) @db.Timestamptz
+  account_field_completeness_pct Decimal  @db.Decimal(5, 2)
+  contact_email_validity_pct     Decimal  @db.Decimal(5, 2)
+  product_image_coverage_pct     Decimal  @db.Decimal(5, 2)
+  duplicate_account_count        Int
+  stale_account_count            Int
+  overall_score                  Decimal  @db.Decimal(5, 2)
+  details                        Json     @default("{}")
+  created_at                     DateTime @default(now()) @db.Timestamptz
+  updated_at                     DateTime @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id, calculated_at(sort: Desc)], map: "idx_dqs_tenant_date")
+  @@map("data_quality_scores")
+}
+
+/// Tracks CSV/XLSX import operations. Supports FR-031, FR-032.
+model ImportJob {
+  id              String           @id @default(uuid()) @db.Uuid
+  tenant_id       String           @db.Uuid
+  uploaded_by_id  String           @db.Uuid
+  entity_type     ImportEntityType
+  file_name       String           @db.VarChar(255)
+  file_size_bytes Int
+  status          ImportJobStatus  @default(uploaded)
+  total_rows      Int?
+  valid_rows      Int?
+  error_rows      Int?
+  imported_rows   Int?
+  error_log_url   String?          @db.VarChar(500)
+  preview_data    Json?
+  completed_at    DateTime?        @db.Timestamptz
+  created_at      DateTime         @default(now()) @db.Timestamptz
+  updated_at      DateTime         @updatedAt @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  uploaded_by  User         @relation(fields: [uploaded_by_id], references: [id])
+
+  @@index([tenant_id, status], map: "idx_import_tenant_status")
+  @@index([uploaded_by_id], map: "idx_import_uploaded_by")
+  @@map("import_jobs")
+}
+
+/// In-app and email notifications. Supports FR-012 (task reminders), FR-017 (approval notifications).
+model Notification {
+  id             String              @id @default(uuid()) @db.Uuid
+  tenant_id      String              @db.Uuid
+  user_id        String              @db.Uuid
+  type           NotificationType
+  title          String              @db.VarChar(255)
+  body           String              @db.Text
+  reference_type String?             @db.VarChar(50)
+  reference_id   String?             @db.Uuid
+  channel        NotificationChannel @default(both)
+  is_read        Boolean             @default(false)
+  read_at        DateTime?           @db.Timestamptz
+  email_sent_at  DateTime?           @db.Timestamptz
+  created_at     DateTime            @default(now()) @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [tenant_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, is_read, created_at(sort: Desc)], map: "idx_notification_user_unread")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_notification_user_created")
+  @@map("notifications")
+}
