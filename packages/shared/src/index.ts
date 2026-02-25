@@ -1,4 +1,4 @@
 // Shared package entry point — schemas, types, and constants
-// This file will be populated in Phase 5 with shared Zod schemas and TypeScript types
-
-export {};
+export * from './types/index.js';
+export * from './constants/index.js';
+// schemas re-exported once populated
