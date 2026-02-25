@@ -1,0 +1,2 @@
+// Fastify app bootstrap — placeholder for Phase 2 implementation
+export {};
