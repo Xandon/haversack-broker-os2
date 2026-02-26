@@ -14,7 +14,7 @@
 | 1 | feature/batch-1-account-creation | ✅ Complete | Yes |
 | 2 | feature/batch-2-account-detail-search | ✅ Complete | Yes |
 | 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
-| 4 | feature/batch-4-order-entry | 🔨 In Progress | No |
+| 4 | feature/batch-4-order-entry | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -23,7 +23,7 @@
 | 1 | US-001 Account Creation (T038-T048) | ✅ Complete | 143/143 | — |
 | 2 | US-002/003 Account Detail + Search (T049-T060) | ✅ Complete | 232/232 | — |
 | 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
-| 4 | US-006 Order Entry (T081-T095) | 🔨 In Progress | 255/255 (backend) | — |
+| 4 | US-006 Order Entry (T081-T095) | ✅ Complete | 389/389 | — |
 | 5 | US-005 Pipeline (T086-T094) | ⬜ Not Started | — | — |
 | 6 | US-006 Email (T095-T104) | ⬜ Not Started | — | — |
 | 7 | US-007 AI (T105-T115) | ⬜ Not Started | — | — |
@@ -143,3 +143,4 @@
 | 1 | 143 | 143 | 0 | — | dev |
 | 2 | 232 | 232 | 0 | — | dev |
 | 3 | 340 | 340 | 0 | — | dev |
+| 4 | 389 | 389 | 0 | — | dev |
