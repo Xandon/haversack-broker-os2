@@ -80,6 +80,18 @@ export type {
 } from './user.schema.js';
 
 export {
+  certificationEnum,
+  generateLineCardSchema,
+  shareLineCardSchema,
+  lineCardListQuerySchema,
+} from './product.schema.js';
+export type {
+  GenerateLineCardInput,
+  ShareLineCardInput,
+  LineCardListQuery,
+} from './product.schema.js';
+
+export {
   reorderSuggestionRequestSchema,
   submitReorderSchema,
 } from './ai.schema.js';

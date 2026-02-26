@@ -10,7 +10,7 @@ import fp from 'fastify-plugin';
 import { logger } from '../utils/logger.js';
 
 /** Entity types that require audit trail records */
-export const AUDITED_ENTITIES = ['Account', 'Order', 'Commission', 'User'] as const;
+export const AUDITED_ENTITIES = ['Account', 'Order', 'Commission', 'User', 'Product'] as const;
 type AuditedEntity = (typeof AUDITED_ENTITIES)[number];
 
 type AuditAction = 'create' | 'update' | 'delete';

@@ -3,6 +3,9 @@
  * GET    /api/products/search  — search products (rep, manager, admin)
  * GET    /api/products         — list products with filters/pagination
  * GET    /api/products/:id     — get product by ID
+ * POST   /api/products         — create product (admin only)
+ * PUT    /api/products/:id     — update product (admin only)
+ * DELETE /api/products/:id     — soft-delete product (admin only)
  *
  * All routes require authentication and enforce tenant isolation.
  */
@@ -11,12 +14,17 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import {
   productSearchQuerySchema,
   productListQuerySchema,
+  createProductSchema,
+  updateProductSchema,
 } from '@haversack/shared';
 import { extractUser, requireRole } from '../../auth/rbac.middleware.js';
 import {
   searchProducts,
   listProducts,
   getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 } from './product.service.js';
 
 export async function productRoutes(app: FastifyInstance): Promise<void> {
@@ -166,6 +174,147 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       }
 
       void reply.status(200).send({ data: product });
+    },
+  );
+
+  /**
+   * POST /api/products
+   * Create a new product (admin only, FR-019).
+   */
+  app.post(
+    '/api/products',
+    {
+      preHandler: [extractUser, requireRole('admin')],
+    },
+    async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const body = createProductSchema.parse(request.body);
+
+      try {
+        const product = await createProduct(
+          app.prisma,
+          user.tenantId,
+          body,
+          user.userId,
+          user.email,
+        );
+
+        void reply.status(201).send({ data: product });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        if (message === 'Brand not found') {
+          void reply.status(400).send({
+            error: 'VALIDATION_ERROR',
+            message: 'Brand not found',
+            code: 'VALIDATION_ERROR',
+            requestId: request.requestId ?? 'unknown',
+          });
+          return;
+        }
+        throw err;
+      }
+    },
+  );
+
+  /**
+   * PUT /api/products/:id
+   * Update an existing product (admin only, FR-019).
+   */
+  app.put<{ Params: { id: string } }>(
+    '/api/products/:id',
+    {
+      preHandler: [extractUser, requireRole('admin')],
+    },
+    async (request, reply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const body = updateProductSchema.parse(request.body);
+
+      const product = await updateProduct(
+        app.prisma,
+        user.tenantId,
+        request.params.id,
+        body,
+        user.userId,
+        user.email,
+      );
+
+      if (!product) {
+        void reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: 'Product not found',
+          code: 'NOT_FOUND',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      void reply.status(200).send({ data: product });
+    },
+  );
+
+  /**
+   * DELETE /api/products/:id
+   * Soft-delete a product (admin only, FR-019).
+   */
+  app.delete<{ Params: { id: string } }>(
+    '/api/products/:id',
+    {
+      preHandler: [extractUser, requireRole('admin')],
+    },
+    async (request, reply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const deleted = await deleteProduct(
+        app.prisma,
+        user.tenantId,
+        request.params.id,
+        user.userId,
+        user.email,
+      );
+
+      if (!deleted) {
+        void reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: 'Product not found',
+          code: 'NOT_FOUND',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      void reply.status(204).send();
     },
   );
 }
