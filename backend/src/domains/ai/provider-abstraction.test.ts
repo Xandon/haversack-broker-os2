@@ -3,7 +3,7 @@
  * Verifies FR-035 (AI-generated content), FR-036 (graceful degradation),
  * and NFR-005 (3s p95, 10s hard timeout).
  */
-import { describe, expect, test, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, test, vi, beforeEach } from 'vitest';
 
 import {
   callAiProvider,
@@ -22,9 +22,18 @@ const TEST_SYSTEM_PROMPT = 'You are a specialty food sales assistant.';
 // -------------------------------------------------------------------
 
 describe('AI Provider Abstraction (T109)', () => {
+  const originalEnv = { ...process.env };
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
+    // Set test API keys so provider calls proceed to fetch
+    process.env['ANTHROPIC_API_KEY'] = 'test-anthropic-key';
+    process.env['OPENAI_API_KEY'] = 'test-openai-key';
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
   });
 
   describe('Timeout configuration', () => {
@@ -115,10 +124,15 @@ describe('AI Provider Abstraction (T109)', () => {
     });
 
     test('NFR-005: respects per-provider timeout', async () => {
+      // Mock fetch to respect AbortSignal
       const mockFetch = vi.fn().mockImplementation(
-        () =>
-          new Promise((_resolve) => {
-            // Never resolves — simulates timeout
+        (_url: string, options: { signal?: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            if (options?.signal) {
+              options.signal.addEventListener('abort', () => {
+                reject(new Error('The operation was aborted'));
+              });
+            }
           }),
       );
       vi.stubGlobal('fetch', mockFetch);
@@ -132,9 +146,9 @@ describe('AI Provider Abstraction (T109)', () => {
       const elapsed = Date.now() - start;
 
       expect(result.success).toBe(false);
-      // Should complete reasonably quickly with 100ms timeout per provider
+      // Should complete within ~200ms (100ms per provider x 2 providers)
       expect(elapsed).toBeLessThan(1000);
-    });
+    }, 10000);
   });
 
   describe('API key validation', () => {
