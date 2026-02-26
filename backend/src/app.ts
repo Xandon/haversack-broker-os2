@@ -17,6 +17,8 @@ import { globalRateLimitConfig, rateLimitConfig } from './auth/rate-limit.middle
 import { accountRoutes } from './domains/accounts/account.routes.js';
 import { activityRoutes } from './domains/activities/activity.routes.js';
 import { taskRoutes } from './domains/tasks/task.routes.js';
+import { orderRoutes } from './domains/orders/order.routes.js';
+import { productRoutes } from './domains/products/product.routes.js';
 
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development';
 
@@ -102,6 +104,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Task routes
   await app.register(taskRoutes);
+
+  // Order routes
+  await app.register(orderRoutes);
+
+  // Product routes
+  await app.register(productRoutes);
 
   // Health check endpoint
   app.get('/api/health', async (_request, reply): Promise<void> => {
