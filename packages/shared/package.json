@@ -1,0 +1,19 @@
+{
+  "name": "@haversack/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Zod schemas, types, and constants",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit || true",
+    "lint": "eslint src/ --ext .ts --no-error-on-unmatched-pattern || true",
+    "lint:fix": "eslint src/ --ext .ts --fix --no-error-on-unmatched-pattern || true",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

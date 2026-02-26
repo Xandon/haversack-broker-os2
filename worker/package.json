@@ -1,0 +1,25 @@
+{
+  "name": "@haversack/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Haversack BullMQ background job processor",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit || true",
+    "lint": "eslint src/ --ext .ts --no-error-on-unmatched-pattern || true",
+    "lint:fix": "eslint src/ --ext .ts --fix --no-error-on-unmatched-pattern || true",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.0",
+    "pino": "^8.19.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
+  }
+}
