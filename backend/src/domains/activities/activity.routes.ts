@@ -4,6 +4,7 @@ import {
   updateActivitySchema,
   activityListQuerySchema,
   activityMetricsQuerySchema,
+  timelineQuerySchema,
 } from '@haversack/shared';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { authorize } from '../../shared/middleware/authorize';
@@ -16,6 +17,7 @@ import {
   ActivityError,
 } from './activity.service';
 import { getActivityMetrics } from './metrics.service';
+import { getTimeline } from './timeline.service';
 
 function getAuditContext(request: {
   user?: { userId: string; email: string };
@@ -191,6 +193,32 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
       try {
         const result = await listActivities(app.prisma, tenantId, id, {
           type: query.type,
+          startDate: query.startDate,
+          endDate: query.endDate,
+          cursor: query.cursor,
+          limit: query.limit,
+        });
+
+        return reply.status(200).send(result);
+      } catch (error: unknown) {
+        return handleActivityError(error, request.requestId, reply);
+      }
+    },
+  );
+
+  // GET /api/accounts/:id/timeline
+  app.get(
+    '/api/accounts/:id/timeline',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const query = timelineQuerySchema.parse(request.query);
+      const tenantId = request.user!.tenantId;
+
+      try {
+        const result = await getTimeline(app.prisma, tenantId, id, {
+          types: query.types,
+          activityType: query.activityType,
           startDate: query.startDate,
           endDate: query.endDate,
           cursor: query.cursor,
