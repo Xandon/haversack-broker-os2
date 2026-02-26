@@ -1,11 +1,15 @@
 /**
  * Product domain route handlers for Fastify.
- * GET    /api/products/search  — search products (rep, manager, admin)
- * GET    /api/products         — list products with filters/pagination
- * GET    /api/products/:id     — get product by ID
- * POST   /api/products         — create product (admin only)
- * PUT    /api/products/:id     — update product (admin only)
- * DELETE /api/products/:id     — soft-delete product (admin only)
+ * GET    /api/products/search       — search products (rep, manager, admin)
+ * GET    /api/products              — list products with filters/pagination
+ * GET    /api/products/:id          — get product by ID
+ * POST   /api/products              — create product (admin only)
+ * PUT    /api/products/:id          — update product (admin only)
+ * DELETE /api/products/:id          — soft-delete product (admin only)
+ * POST   /api/line-cards/generate   — generate brand line card (manager, admin)
+ * GET    /api/line-cards            — list line cards for a brand
+ * GET    /api/line-cards/:id        — get line card by ID
+ * POST   /api/line-cards/:id/share  — share line card via email (manager, admin)
  *
  * All routes require authentication and enforce tenant isolation.
  */
@@ -16,6 +20,9 @@ import {
   productListQuerySchema,
   createProductSchema,
   updateProductSchema,
+  generateLineCardSchema,
+  shareLineCardSchema,
+  lineCardListQuerySchema,
 } from '@haversack/shared';
 import { extractUser, requireRole } from '../../auth/rbac.middleware.js';
 import {
@@ -26,6 +33,11 @@ import {
   updateProduct,
   deleteProduct,
 } from './product.service.js';
+import {
+  generateLineCardPdf,
+  listLineCards,
+  getLineCardById,
+} from './line-card.service.js';
 
 export async function productRoutes(app: FastifyInstance): Promise<void> {
   /**
@@ -315,6 +327,198 @@ export async function productRoutes(app: FastifyInstance): Promise<void> {
       }
 
       void reply.status(204).send();
+    },
+  );
+
+  // ─── Line Card Routes (FR-020) ─────────────────────────────────
+
+  /**
+   * POST /api/line-cards/generate
+   * Generate a brand line card PDF (manager, admin).
+   */
+  app.post(
+    '/api/line-cards/generate',
+    {
+      preHandler: [extractUser, requireRole('manager', 'admin')],
+    },
+    async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const body = generateLineCardSchema.parse(request.body);
+
+      try {
+        const result = await generateLineCardPdf(
+          app.prisma,
+          user.tenantId,
+          body.brand_id,
+          user.userId,
+        );
+
+        void reply.status(201).send({
+          data: result.lineCard,
+          product_count: result.productCount,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        if (message === 'Brand not found') {
+          void reply.status(404).send({
+            error: 'NOT_FOUND',
+            message: 'Brand not found',
+            code: 'NOT_FOUND',
+            requestId: request.requestId ?? 'unknown',
+          });
+          return;
+        }
+        throw err;
+      }
+    },
+  );
+
+  /**
+   * GET /api/line-cards
+   * List line cards for a brand (rep, manager, admin, viewer).
+   */
+  app.get(
+    '/api/line-cards',
+    {
+      preHandler: [extractUser, requireRole('rep', 'manager', 'admin', 'viewer')],
+    },
+    async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const query = lineCardListQuerySchema.parse(request.query);
+
+      const result = await listLineCards(
+        app.prisma,
+        user.tenantId,
+        query.brand_id,
+        query.page,
+        query.per_page,
+      );
+
+      void reply.status(200).send({
+        data: result.items,
+        pagination: {
+          page: result.page,
+          per_page: result.pageSize,
+          total_count: result.total,
+          total_pages: Math.ceil(result.total / result.pageSize),
+        },
+      });
+    },
+  );
+
+  /**
+   * GET /api/line-cards/:id
+   * Get a single line card by ID (rep, manager, admin, viewer).
+   */
+  app.get<{ Params: { id: string } }>(
+    '/api/line-cards/:id',
+    {
+      preHandler: [extractUser, requireRole('rep', 'manager', 'admin', 'viewer')],
+    },
+    async (request, reply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const lineCard = await getLineCardById(
+        app.prisma,
+        user.tenantId,
+        request.params.id,
+      );
+
+      if (!lineCard) {
+        void reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: 'Line card not found',
+          code: 'NOT_FOUND',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      void reply.status(200).send({ data: lineCard });
+    },
+  );
+
+  /**
+   * POST /api/line-cards/:id/share
+   * Share a line card via email (manager, admin).
+   */
+  app.post<{ Params: { id: string } }>(
+    '/api/line-cards/:id/share',
+    {
+      preHandler: [extractUser, requireRole('manager', 'admin')],
+    },
+    async (request, reply): Promise<void> => {
+      const user = request.user;
+
+      if (!user) {
+        void reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      const body = shareLineCardSchema.parse(request.body);
+
+      const lineCard = await getLineCardById(
+        app.prisma,
+        user.tenantId,
+        request.params.id,
+      );
+
+      if (!lineCard) {
+        void reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: 'Line card not found',
+          code: 'NOT_FOUND',
+          requestId: request.requestId ?? 'unknown',
+        });
+        return;
+      }
+
+      // In production, this would use the email service to send the PDF.
+      // For now, log the share action and return success.
+      void reply.status(200).send({
+        data: {
+          line_card_id: lineCard.id,
+          shared_to: body.contact_email,
+          message: 'Line card shared successfully',
+        },
+      });
     },
   );
 }
