@@ -9,6 +9,10 @@ handoffs:
     agent: speckit.tasks
     prompt: Regenerate the task breakdown
     send: true
+  - label: Run E2E Tests
+    agent: e2e-test
+    prompt: Run comprehensive end-to-end browser testing for the current feature
+    send: true
 ---
 
 ## User Input
@@ -132,6 +136,7 @@ Based on the resume point:
 |-------------|-----------|-------------|
 | PLANNING | Step 2.X unchecked | STAGE 2, continue from Step 2.X |
 | BUILDING | Batch N in progress | STAGE 3, continue from batch N |
+| E2E_TESTING | E2E in progress or failed | STAGE 4, Step 4.2 (re-run e2e-test) |
 | COMPLETE | More features pending | STAGE 4, transition to next |
 | COMPLETE | All features done | STAGE 5, final acceptance |
 
@@ -472,13 +477,34 @@ git checkout {BASE_BRANCH}
 bash scripts/verify-regression.sh
 ```
 
-### Step 4.2: Mark Feature Complete
+### Step 4.2: E2E Feature Validation
+
+**Required:** Every completed feature MUST pass E2E browser testing before being marked complete.
+
+1. Invoke the `e2e-test` skill with the current feature name:
+   - The skill launches parallel research agents, starts the application, and tests every user journey with browser automation + database validation.
+   - It covers: user journey testing, RBAC enforcement, tenant isolation, responsive viewports (320px, 375px, 768px, 1440px), and database record verification.
+   - Screenshots are saved to `e2e-screenshots/{feature-slug}/`.
+   - A detailed report is written to `e2e-screenshots/{feature-slug}/report.md`.
+
+2. Wait for the skill to complete and check the exit status:
+   - **E2E: PASS** -> proceed to Step 4.3
+   - **E2E: FAIL** -> fix the reported issues:
+     a. Read the report at `e2e-screenshots/{feature-slug}/report.md`
+     b. Fix each failing acceptance criterion and high-severity issue
+     c. Commit fixes: `fix(e2e): {description}`
+     d. Re-run the e2e-test skill (max 3 attempts)
+     e. If still failing after 3 attempts: **STOP** and report with full diagnostics. Update manifest: `Status: E2E_FAIL (attempt 3/3)`
+
+3. Update manifest: `E2E: PASS — {N} journeys, {M} screenshots, {K} issues fixed`
+
+### Step 4.3: Mark Feature Complete
 
 1. Update manifest: feature status -> `COMPLETE`
-2. Record final test count and batches used
-3. Update `docs/progress.md` with feature completion summary
+2. Record final test count, batches used, and E2E results
+3. Update `docs/progress.md` with feature completion summary (including E2E pass status)
 
-### Step 4.3: Check Next Feature
+### Step 4.4: Check Next Feature
 
 Parse manifest feature queue for the next PENDING feature.
 
@@ -488,6 +514,8 @@ Parse manifest feature queue for the next PENDING feature.
   FEATURE COMPLETE: {name}
   Tests: {baseline} -> {new total} (+{added})
   Batches: {start}-{end} merged to {BASE_BRANCH}
+  E2E: PASS — {N} journeys, {M} screenshots
+  Report: e2e-screenshots/{feature-slug}/report.md
 
   Next: {next feature name}
   Run /phase5 resume in a new conversation.
@@ -542,9 +570,16 @@ npm run test:e2e 2>/dev/null || echo "No E2E tests configured"
   Type check clean:          {YES/NO}
   Build succeeds:            {YES/NO}
 
+  E2E Summary:
+  ----------------------
+  Per-feature E2E:       {count} features tested
+  Total journeys:        {count}
+  Total screenshots:     {count}
+  Issues fixed in E2E:   {count}
+
   Feature Summary:
   ----------------------
-  {For each feature: name, batches, tests added, status}
+  {For each feature: name, batches, tests added, E2E status, status}
 
 ======================================================
   OVERALL STATUS: {READY FOR PRODUCTION MERGE / NEEDS ATTENTION}
@@ -618,10 +653,11 @@ Layer 1: Per-task      Task tests pass + no regressions
 Layer 2: Per-batch     finish-batch.sh (unit, integration, lint, typecheck, coverage, build)
 Layer 3: Pre-merge     merge-batch.sh (post-merge regression)
 Layer 4: Cross-batch   verify-regression.sh (on integration branch)
-Layer 5: Final         Full acceptance suite (STAGE 5)
+Layer 5: Per-feature   E2E browser testing via e2e-test skill (STAGE 4, Step 4.2)
+Layer 6: Final         Full acceptance suite (STAGE 5) + E2E regression
 ```
 
-Six layers. Feature branch isolation means a failed batch never pollutes the integration branch.
+Seven layers. Feature branch isolation means a failed batch never pollutes the integration branch. E2E browser testing catches visual, UX, RBAC, and data integrity issues that unit/integration tests miss.
 
 ---
 
@@ -632,6 +668,7 @@ Six layers. Feature branch isolation means a failed batch never pollutes the int
 | Context exhausted mid-planning | Step 2.X marked [x], 2.Y still [ ] | Continues from step 2.Y |
 | Build batch fails verification | `Status: FAILED (attempt N/5)` | Retries from clean state |
 | Post-merge regression fails | `Status: REGRESSION_FAIL` | Reports to user, awaits guidance |
+| E2E testing fails | `Status: E2E_FAIL (attempt N/3)` | Fix issues and re-run e2e-test skill |
 | User wants to skip a feature | User says "skip {feature}" | Mark SKIPPED in manifest, advance |
 | BREAKING conflict found | `Status: BLOCKED (BREAKING)` | Present conflicts, await resolution |
 | Conversation ended mid-batch | Build checklist shows batch in progress | Resume from batch start (3A) |
@@ -654,14 +691,14 @@ Six layers. Feature branch isolation means a failed batch never pollutes the int
 
 ## Feature Queue
 
-| # | Feature | Spec Dir | Status | Batches | Tests Added |
-|---|---------|----------|--------|---------|-------------|
-| 1 | Pipeline & Opportunities | 002-pipeline-opportunities | PENDING | -- | -- |
-| 2 | Commissions | 003-commissions | PENDING | -- | -- |
-| 3 | Dashboards & Reports | 004-dashboards-reports | PENDING | -- | -- |
-| 4 | Business Rules Engine | 005-business-rules | PENDING | -- | -- |
-| 5 | AI Meeting Briefs | 006-ai-meeting-briefs | PENDING | -- | -- |
-| 6 | Polish & NFRs | 007-polish-nfrs | PENDING | -- | -- |
+| # | Feature | Spec Dir | Status | Batches | Tests Added | E2E |
+|---|---------|----------|--------|---------|-------------|-----|
+| 1 | Pipeline & Opportunities | 002-pipeline-opportunities | PENDING | -- | -- | -- |
+| 2 | Commissions | 003-commissions | PENDING | -- | -- | -- |
+| 3 | Dashboards & Reports | 004-dashboards-reports | PENDING | -- | -- | -- |
+| 4 | Business Rules Engine | 005-business-rules | PENDING | -- | -- | -- |
+| 5 | AI Meeting Briefs | 006-ai-meeting-briefs | PENDING | -- | -- | -- |
+| 6 | Polish & NFRs | 007-polish-nfrs | PENDING | -- | -- | -- |
 
 ## Current State
 
@@ -691,6 +728,9 @@ Six layers. Feature branch isolation means a failed batch never pollutes the int
 (populated after planning completes)
 - [ ] Batch {N}: {description} -- {test count} tests
 - [ ] Batch {N+1}: {description} -- {test count} tests
+
+### E2E Validation
+- [ ] E2E browser testing -- {N} journeys, {M} screenshots, {K} issues fixed
 ```
 
 **Key properties:**
@@ -698,7 +738,7 @@ Six layers. Feature branch isolation means a failed batch never pollutes the int
 - Checklists are updated one line at a time (minimal writes)
 - Batch numbering is global and sequential across all features (continues from 7)
 - Only the active feature has a detailed section; pending features show only their queue row
-- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`
+- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `E2E_TESTING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`, `E2E_FAIL`
 
 ---
 

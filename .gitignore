@@ -12,6 +12,7 @@ coverage/
 test-results/
 playwright-report/
 .nyc_output/
+e2e-screenshots/
 
 # Environment
 .env
