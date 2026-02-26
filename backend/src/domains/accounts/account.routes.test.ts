@@ -190,6 +190,59 @@ describe('FR-001: Account routes integration', () => {
       expect(body.pagination).toBeDefined();
     });
 
+    it('FR-006: filters accounts by healthScoreMin', async () => {
+      mockPrisma.account.findMany.mockResolvedValue([
+        mockAccountRecord({ healthScore: 80 }),
+      ]);
+      mockPrisma.account.count.mockResolvedValue(1);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/accounts?healthScoreMin=70',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].healthScore).toBe(80);
+    });
+
+    it('FR-006: filters accounts by healthScoreMax', async () => {
+      mockPrisma.account.findMany.mockResolvedValue([
+        mockAccountRecord({ healthScore: 30 }),
+      ]);
+      mockPrisma.account.count.mockResolvedValue(1);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/accounts?healthScoreMax=50',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].healthScore).toBe(30);
+    });
+
+    it('FR-006: filters accounts by healthScore range', async () => {
+      mockPrisma.account.findMany.mockResolvedValue([
+        mockAccountRecord({ healthScore: 60 }),
+      ]);
+      mockPrisma.account.count.mockResolvedValue(1);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/accounts?healthScoreMin=50&healthScoreMax=70',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(1);
+    });
+
     it('FR-003: searches accounts when search query provided', async () => {
       mockPrisma.$queryRawUnsafe
         .mockResolvedValueOnce([{ total: 1 }])
@@ -218,6 +271,7 @@ describe('FR-001: Account routes integration', () => {
   describe('GET /api/accounts/:id', () => {
     it('US2-AC1: returns account detail with contacts', async () => {
       mockPrisma.account.findFirst.mockResolvedValue(mockAccountWithRelations());
+      mockPrisma.accountHealthScore.findFirst.mockResolvedValue(null);
 
       const response = await app.inject({
         method: 'GET',
@@ -229,6 +283,54 @@ describe('FR-001: Account routes integration', () => {
       const body = JSON.parse(response.body);
       expect(body.data.name).toBe('Pacific Bistro');
       expect(body.data.contacts).toHaveLength(1);
+    });
+
+    it('FR-006: includes health score factor breakdown in detail', async () => {
+      const factorBreakdown = {
+        daysSinceLastActivity: { value: 5, score: 92, weight: 0.30 },
+        orderFrequency: { value: 1.2, score: 80, weight: 0.25 },
+        orderValueTrend: { value: 1.0, score: 83, weight: 0.25 },
+        contactEngagement: { value: 3, score: 95, weight: 0.20 },
+      };
+
+      mockPrisma.account.findFirst.mockResolvedValue({
+        ...mockAccountWithRelations(),
+        healthScore: 87,
+        healthScoreCalculatedAt: new Date('2026-02-26T02:00:00Z'),
+      });
+      mockPrisma.accountHealthScore.findFirst.mockResolvedValue({
+        id: '00000000-0000-4000-a000-000000000030',
+        score: 87,
+        factorBreakdown,
+        calculatedAt: new Date('2026-02-26T02:00:00Z'),
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/accounts/${ACCOUNT_ID}`,
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.healthScore).toBe(87);
+      expect(body.data.healthScoreBreakdown).toBeDefined();
+      expect(body.data.healthScoreBreakdown.daysSinceLastActivity.weight).toBe(0.30);
+    });
+
+    it('FR-006: returns null healthScoreBreakdown when no score calculated', async () => {
+      mockPrisma.account.findFirst.mockResolvedValue(mockAccountWithRelations());
+      mockPrisma.accountHealthScore.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/accounts/${ACCOUNT_ID}`,
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.healthScoreBreakdown).toBeNull();
     });
 
     it('returns 404 for nonexistent account', async () => {
