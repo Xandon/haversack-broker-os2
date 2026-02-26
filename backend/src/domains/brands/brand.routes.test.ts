@@ -166,4 +166,149 @@ describe('FR-019c: Brand routes', () => {
       expect(response.statusCode).toBe(403);
     });
   });
+
+  describe('GET /api/brands/:id/line-card', () => {
+    test('FR-019a: generates line card PDF', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      mockPrisma.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          tenantId: '00000000-0000-4000-a000-000000000001',
+          brandId: 'brand-1',
+          name: 'Test Product',
+          sku: 'TP-001',
+          description: 'Test',
+          unitPrice: 10,
+          wholesalePrice: 8,
+          caseSize: 12,
+          certifications: ['organic'],
+          allergens: [],
+          dietaryAttributes: [],
+          availabilityStatus: 'active',
+          imageUrl: null,
+          isActive: true,
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/brand-1/line-card',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('application/pdf');
+      expect(response.headers['content-disposition']).toContain('line-card');
+    });
+
+    test('FR-019: returns 404 for non-existent brand', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/nonexistent/line-card',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('FR-019: returns 400 when brand has no active products', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      mockPrisma.product.findMany.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/brand-1/line-card',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('POST /api/brands/:id/line-card/share', () => {
+    test('AC-019b: shares line card with account primary contact', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      mockPrisma.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          tenantId: '00000000-0000-4000-a000-000000000001',
+          brandId: 'brand-1',
+          name: 'Test Product',
+          sku: 'TP-001',
+          description: 'Test',
+          unitPrice: 10,
+          wholesalePrice: null,
+          caseSize: 12,
+          certifications: [],
+          allergens: [],
+          dietaryAttributes: [],
+          availabilityStatus: 'active',
+          imageUrl: null,
+          isActive: true,
+        },
+      ]);
+      mockPrisma.account.findFirst.mockResolvedValue({
+        id: 'acct-1',
+        tenantId: '00000000-0000-4000-a000-000000000001',
+        name: 'Test Account',
+        deletedAt: null,
+        contacts: [
+          {
+            id: 'contact-1',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            email: 'jane@example.com',
+            isPrimary: true,
+            deletedAt: null,
+          },
+        ],
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands/brand-1/line-card/share',
+        headers: authHeader(repToken),
+        payload: { accountId: '00000000-0000-4000-a000-000000000030' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.shared).toBe(true);
+      expect(body.data.recipientEmail).toBe('jane@example.com');
+    });
+
+    test('AC-019b: returns 404 when account not found', async () => {
+      mockPrisma.account.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands/brand-1/line-card/share',
+        headers: authHeader(repToken),
+        payload: { accountId: '00000000-0000-4000-a000-000000000099' },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('AC-019b: returns 400 when account has no primary contact', async () => {
+      mockPrisma.account.findFirst.mockResolvedValue({
+        id: 'acct-1',
+        tenantId: '00000000-0000-4000-a000-000000000001',
+        name: 'Test Account',
+        deletedAt: null,
+        contacts: [],
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands/brand-1/line-card/share',
+        headers: authHeader(repToken),
+        payload: { accountId: '00000000-0000-4000-a000-000000000030' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+  });
 });
