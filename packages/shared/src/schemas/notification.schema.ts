@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
-export const notificationTypeSchema = z.enum(['task_reminder', 'task_assigned', 'task_overdue']);
+export const notificationTypeSchema = z.enum([
+  'task_reminder',
+  'task_assigned',
+  'task_overdue',
+  'order_approval_required',
+  'order_approved',
+  'order_rejected',
+  'order_export_failed',
+]);
 export type NotificationType = z.infer<typeof notificationTypeSchema>;
 
 export const notificationResponseSchema = z.object({
