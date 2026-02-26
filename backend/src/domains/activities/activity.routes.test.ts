@@ -44,12 +44,14 @@ describe('FR-007: Activity routes integration', () => {
   let mockPrisma: MockPrismaClient;
   let repToken: string;
   let viewerToken: string;
+  let managerToken: string;
 
   beforeEach(async () => {
     mockPrisma = createMockPrisma();
     app = await buildTestApp(mockPrisma as unknown as PrismaClient);
     repToken = generateTestToken('rep');
     viewerToken = generateTestToken('viewer');
+    managerToken = generateTestToken('manager');
 
     // Default audit log mock
     mockPrisma.auditLog.create.mockResolvedValue({});
@@ -257,6 +259,66 @@ describe('FR-007: Activity routes integration', () => {
       });
 
       expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/activities/metrics', () => {
+    it('FR-010: returns metrics for manager', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([
+        {
+          group_id: TEST_USER_ID,
+          group_name: 'Rep One',
+          activity_type: 'visit',
+          count: BigInt(10),
+          last_activity: new Date('2026-02-25T10:00:00Z'),
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/metrics?startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-28T23:59:59.999Z&groupBy=rep',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.groups).toHaveLength(1);
+      expect(body.data.groups[0].counts.visit).toBe(10);
+      expect(body.data.totals.visit).toBe(10);
+    });
+
+    it('FR-010: returns 403 for rep (manager/admin only)', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/metrics?startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-28T23:59:59.999Z',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('FR-010: returns 401 without auth', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/metrics?startDate=2026-02-01T00:00:00.000Z&endDate=2026-02-28T23:59:59.999Z',
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('FR-010: returns empty groups when no data', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/metrics?startDate=2026-03-01T00:00:00.000Z&endDate=2026-03-31T23:59:59.999Z',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.groups).toHaveLength(0);
+      expect(body.data.totals.visit).toBe(0);
     });
   });
 });

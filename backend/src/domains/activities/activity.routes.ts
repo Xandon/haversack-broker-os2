@@ -3,6 +3,7 @@ import {
   createActivitySchema,
   updateActivitySchema,
   activityListQuerySchema,
+  activityMetricsQuerySchema,
 } from '@haversack/shared';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { authorize } from '../../shared/middleware/authorize';
@@ -14,6 +15,7 @@ import {
   listActivities,
   ActivityError,
 } from './activity.service';
+import { getActivityMetrics } from './metrics.service';
 
 function getAuditContext(request: {
   user?: { userId: string; email: string };
@@ -84,6 +86,24 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
       } catch (error: unknown) {
         return handleActivityError(error, request.requestId, reply);
       }
+    },
+  );
+
+  // GET /api/activities/metrics
+  app.get(
+    '/api/activities/metrics',
+    { preHandler: [authenticate, authorize('manager', 'admin')] },
+    async (request, reply) => {
+      const query = activityMetricsQuerySchema.parse(request.query);
+      const tenantId = request.user!.tenantId;
+
+      const result = await getActivityMetrics(app.prisma, tenantId, {
+        startDate: query.startDate,
+        endDate: query.endDate,
+        groupBy: query.groupBy,
+      });
+
+      return reply.status(200).send({ data: result });
     },
   );
 
