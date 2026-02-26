@@ -69,12 +69,12 @@ export function createDataQualityWorker(
 
       // Product image coverage
       const totalProducts = await prisma.product.count({
-        where: { tenant_id: tenantId, deleted_at: null },
+        where: { tenant_id: tenantId, is_active: true },
       });
       const productsWithImage = await prisma.product.count({
         where: {
           tenant_id: tenantId,
-          deleted_at: null,
+          is_active: true,
           image_url: { not: null },
         },
       });
@@ -82,17 +82,14 @@ export function createDataQualityWorker(
         ? Math.round((productsWithImage / totalProducts) * 1000) / 10
         : 100;
 
-      // Stale accounts (90+ days)
+      // Stale accounts (90+ days since last update)
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       const staleAccountCount = await prisma.account.count({
         where: {
           tenant_id: tenantId,
           deleted_at: null,
-          OR: [
-            { last_activity_date: { lt: ninetyDaysAgo } },
-            { last_activity_date: null },
-          ],
+          updated_at: { lt: ninetyDaysAgo },
         },
       });
 
