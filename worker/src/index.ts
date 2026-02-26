@@ -15,6 +15,15 @@ import {
   EMAIL_NOTIFICATION_QUEUE_NAME,
   type EmailNotificationJobData,
 } from './queues/email-notification.queue';
+import {
+  ORDER_APPROVAL_QUEUE_NAME,
+  type OrderApprovalJobData,
+} from './queues/order-approval.queue';
+import {
+  QUICKBOOKS_EXPORT_QUEUE_NAME,
+  QUICKBOOKS_EXPORT_CRON,
+  type QuickBooksExportJobData,
+} from './queues/quickbooks-export.queue';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -106,6 +115,61 @@ async function start(): Promise<void> {
     logger.error({ jobId: job?.id, err: err.message }, 'Email notification job failed');
   });
 
+  // Order approval notification queue
+  const orderApprovalQueue = new Queue<OrderApprovalJobData>(ORDER_APPROVAL_QUEUE_NAME, {
+    connection: createRedisConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+    },
+  });
+
+  logger.info('Order approval notification queue initialized');
+
+  const orderApprovalWorker = new Worker<OrderApprovalJobData>(
+    ORDER_APPROVAL_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, orderId: job.data.orderId, action: job.data.action }, 'Processing order approval notification');
+      // TODO: wire up processOrderApprovalNotification with real Prisma client
+      logger.info({ jobId: job.id }, 'Order approval notification processed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  orderApprovalWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'Order approval notification job failed');
+  });
+
+  // QuickBooks export queue — hourly cron job
+  const quickBooksExportQueue = new Queue<QuickBooksExportJobData>(QUICKBOOKS_EXPORT_QUEUE_NAME, {
+    connection: createRedisConnection(),
+  });
+
+  await quickBooksExportQueue.upsertJobScheduler(
+    'quickbooks-export-hourly',
+    { pattern: QUICKBOOKS_EXPORT_CRON },
+    {
+      name: 'quickbooks-export',
+      data: { tenantId: 'default', triggeredBy: 'cron', triggeredAt: new Date().toISOString() },
+    },
+  );
+
+  logger.info({ cron: QUICKBOOKS_EXPORT_CRON }, 'QuickBooks export cron job scheduled');
+
+  const quickBooksExportWorker = new Worker<QuickBooksExportJobData>(
+    QUICKBOOKS_EXPORT_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id }, 'Processing QuickBooks export job');
+      // TODO: wire up processQuickBooksExport with real Prisma client
+      logger.info({ jobId: job.id }, 'QuickBooks export job completed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  quickBooksExportWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'QuickBooks export job failed');
+  });
+
   logger.info('Worker started successfully');
 
   // Graceful shutdown
@@ -114,9 +178,13 @@ async function start(): Promise<void> {
     await healthScoreWorker.close();
     await taskReminderWorker.close();
     await emailNotificationWorker.close();
+    await orderApprovalWorker.close();
+    await quickBooksExportWorker.close();
     await healthScoreQueue.close();
     await taskReminderQueue.close();
     await emailNotificationQueue.close();
+    await orderApprovalQueue.close();
+    await quickBooksExportQueue.close();
     await connection.quit();
     process.exit(0);
   };

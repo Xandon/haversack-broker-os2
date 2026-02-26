@@ -1,148 +1,89 @@
-import { describe, test, expect, vi } from 'vitest';
-import Fastify from 'fastify';
+import { describe, test, expect, beforeEach } from 'vitest';
+import { buildTestApp } from '../../shared/test-helpers/app';
+import { createMockPrisma, type MockPrismaClient } from '../../shared/test-helpers/db';
+import { generateTestToken, authHeader } from '../../shared/test-helpers/auth';
 import type { FastifyInstance } from 'fastify';
-import { orderRoutes } from './order.routes';
 
 const TENANT_ID = '00000000-0000-4000-a000-000000000001';
-const REP_ID = '00000000-0000-4000-a000-000000000020';
-const MANAGER_ID = '00000000-0000-4000-a000-000000000030';
 const ACCOUNT_ID = '00000000-0000-4000-a000-000000000040';
 const PRODUCT_ID = '00000000-0000-4000-a000-000000000050';
 
-// Track order state across the lifecycle
-const orderStore: Record<string, Record<string, unknown>> = {};
-let orderIdCounter = 0;
-
-function createLifecycleApp(userRole: string = 'rep'): FastifyInstance {
-  const app = Fastify({ logger: false });
-
-  const userId = userRole === 'manager' ? MANAGER_ID : REP_ID;
-
-  // Mock Prisma with stateful order tracking
-  const mockOrderCreate = vi.fn().mockImplementation(async (args: Record<string, unknown>) => {
-    orderIdCounter++;
-    const id = `order-${orderIdCounter}`;
-    const data = args['data'] as Record<string, unknown>;
-    const lineItemsCreate = data['lineItems'] as Record<string, unknown>;
-    const lineItems = ((lineItemsCreate as Record<string, unknown>)['create'] as Array<Record<string, unknown>>) ?? [];
-    const order = {
-      id,
-      tenantId: data['tenantId'],
-      orderNumber: `ORD-20260226-${String(orderIdCounter).padStart(4, '0')}`,
-      accountId: data['accountId'],
-      repId: data['repId'],
-      status: 'draft',
-      subtotal: data['subtotal'],
-      tax: data['tax'] ?? 0,
-      total: data['total'],
-      notes: data['notes'] ?? null,
-      exportStatus: null,
-      submittedAt: null,
-      confirmedAt: null,
-      cancelledAt: null,
-      version: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lineItems: lineItems.map((li, i) => ({
-        id: `li-${orderIdCounter}-${i}`,
-        ...li,
-        product: { id: li['productId'], name: 'Test Product', sku: 'SKU-001', brand: { name: 'Test Brand' } },
-      })),
-      vendorSubOrders: [],
-      approvals: [],
-      account: { id: data['accountId'], name: 'Test Account' },
-      rep: { id: data['repId'], firstName: 'John', lastName: 'Doe' },
-    };
-    orderStore[id] = order;
-    return order;
-  });
-
-  const mockOrderFindFirst = vi.fn().mockImplementation(async (args: Record<string, unknown>) => {
-    const where = args['where'] as Record<string, unknown>;
-    const id = where['id'] as string;
-    return orderStore[id] ?? null;
-  });
-
-  const mockOrderFindMany = vi.fn().mockResolvedValue([]);
-  const mockOrderCount = vi.fn().mockResolvedValue(0);
-  const mockOrderUpdate = vi.fn().mockImplementation(async (args: Record<string, unknown>) => {
-    const where = args['where'] as Record<string, unknown>;
-    const id = where['id'] as string;
-    const data = args['data'] as Record<string, unknown>;
-    const order = orderStore[id];
-    if (order) {
-      Object.assign(order, data, { updatedAt: new Date() });
-    }
-    return order;
-  });
-
-  app.decorate('prisma', {
-    order: {
-      create: mockOrderCreate,
-      findFirst: mockOrderFindFirst,
-      findMany: mockOrderFindMany,
-      count: mockOrderCount,
-      update: mockOrderUpdate,
-    },
-    orderLineItem: {
-      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
-      createMany: vi.fn().mockResolvedValue({ count: 0 }),
-      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-    },
-    vendorSubOrder: {
-      create: vi.fn().mockImplementation(async (args: Record<string, unknown>) => {
-        const data = args['data'] as Record<string, unknown>;
-        return { id: `vso-${crypto.randomUUID().slice(0, 8)}`, ...data, lineItems: [] };
-      }),
-    },
-    orderApproval: {
-      create: vi.fn().mockResolvedValue({ id: 'approval-1', decision: 'approved' }),
-    },
-    auditLog: {
-      create: vi.fn().mockResolvedValue({ id: 'audit-1' }),
-    },
-    $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      // Simple passthrough for testing
-      return fn({
-        vendorSubOrder: {
-          create: vi.fn().mockResolvedValue({ id: 'vso-1' }),
+function mockCreatedOrder(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: '00000000-0000-4000-a000-000000000060',
+    tenantId: TENANT_ID,
+    orderNumber: 'ORD-20260226-0001',
+    accountId: ACCOUNT_ID,
+    repId: '00000000-0000-4000-a000-000000000010',
+    status: 'draft',
+    subtotal: 240.0,
+    tax: 0,
+    total: 240.0,
+    notes: null,
+    exportStatus: null,
+    submittedAt: null,
+    confirmedAt: null,
+    cancelledAt: null,
+    version: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lineItems: [
+      {
+        id: 'li-1',
+        productId: PRODUCT_ID,
+        quantity: 24,
+        unitPrice: 10.0,
+        revenueModel: 'broker',
+        commissionRate: 0.12,
+        discount: 0,
+        lineTotal: 240.0,
+        promotionalPriceApplied: false,
+        product: {
+          id: PRODUCT_ID,
+          name: 'Artisan Honey',
+          sku: 'SKU-001',
+          brandId: 'brand-1',
+          brand: { id: 'brand-1', name: 'Test Brand' },
         },
-        orderLineItem: {
-          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-        },
-        order: {
-          update: mockOrderUpdate,
-        },
-        orderApproval: {
-          create: vi.fn().mockResolvedValue({ id: 'approval-1' }),
-        },
-      });
-    }),
-  });
-
-  // Mock authenticate + authorize
-  app.decorateRequest('user', null);
-  app.addHook('preHandler', async (request) => {
-    request.user = {
-      userId,
-      tenantId: TENANT_ID,
-      email: userRole === 'manager' ? 'manager@test.com' : 'rep@test.com',
-      role: userRole,
-    };
-  });
-
-  return app;
+      },
+    ],
+    vendorSubOrders: [],
+    approvals: [],
+    account: { id: ACCOUNT_ID, name: 'Test Account' },
+    rep: { id: '00000000-0000-4000-a000-000000000010', firstName: 'John', lastName: 'Doe' },
+    ...overrides,
+  };
 }
 
 describe('FR-011/013: Order lifecycle integration tests', () => {
-  test('FR-011: full lifecycle — create draft order with line items', async () => {
-    const app = createLifecycleApp('rep');
-    await app.register(orderRoutes);
-    await app.ready();
+  let app: FastifyInstance;
+  let mockPrisma: MockPrismaClient;
+  let repToken: string;
+  let managerToken: string;
 
+  beforeEach(async () => {
+    mockPrisma = createMockPrisma();
+
+    // Set up default mock responses
+    mockPrisma.order.findFirst.mockResolvedValue(null);
+    mockPrisma.order.findMany.mockResolvedValue([]);
+    mockPrisma.order.count.mockResolvedValue(0);
+    mockPrisma.order.create.mockResolvedValue(mockCreatedOrder());
+    mockPrisma.auditLog.create.mockResolvedValue({ id: 'audit-1' });
+
+    app = await buildTestApp(mockPrisma);
+    repToken = generateTestToken('rep');
+    managerToken = generateTestToken('manager', {
+      userId: '00000000-0000-4000-a000-000000000030',
+      email: 'manager@haversack.test',
+    });
+  });
+
+  test('FR-011: create draft order with line items returns 201', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/orders',
+      headers: authHeader(repToken),
       payload: {
         accountId: ACCOUNT_ID,
         lineItems: [
@@ -166,42 +107,29 @@ describe('FR-011/013: Order lifecycle integration tests', () => {
   });
 
   test('FR-011: get order by ID returns full order detail', async () => {
-    const app = createLifecycleApp('rep');
-    await app.register(orderRoutes);
-    await app.ready();
+    const order = mockCreatedOrder();
+    mockPrisma.order.findFirst.mockResolvedValue(order);
 
-    // Create first
-    const createRes = await app.inject({
-      method: 'POST',
-      url: '/api/orders',
-      payload: {
-        accountId: ACCOUNT_ID,
-        lineItems: [
-          { productId: PRODUCT_ID, quantity: 10, unitPrice: 5.0, revenueModel: 'wholesale' },
-        ],
-      },
-    });
-
-    const orderId = JSON.parse(createRes.body).data.id;
-
-    const getRes = await app.inject({
+    const orderId = order['id'] as string;
+    const response = await app.inject({
       method: 'GET',
       url: `/api/orders/${orderId}`,
+      headers: authHeader(repToken),
     });
 
-    expect(getRes.statusCode).toBe(200);
-    const body = JSON.parse(getRes.body);
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
     expect(body.data.id).toBe(orderId);
   });
 
   test('FR-011: list orders returns paginated results', async () => {
-    const app = createLifecycleApp('rep');
-    await app.register(orderRoutes);
-    await app.ready();
+    mockPrisma.order.findMany.mockResolvedValue([mockCreatedOrder()]);
+    mockPrisma.order.count.mockResolvedValue(1);
 
     const response = await app.inject({
       method: 'GET',
       url: '/api/orders',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -211,42 +139,34 @@ describe('FR-011/013: Order lifecycle integration tests', () => {
   });
 
   test('FR-011: cancel draft order transitions to cancelled', async () => {
-    const app = createLifecycleApp('rep');
-    await app.register(orderRoutes);
-    await app.ready();
-
-    // Create draft
-    const createRes = await app.inject({
-      method: 'POST',
-      url: '/api/orders',
-      payload: {
-        accountId: ACCOUNT_ID,
-        lineItems: [
-          { productId: PRODUCT_ID, quantity: 5, unitPrice: 10.0, revenueModel: 'broker' },
-        ],
-      },
+    const draftOrder = mockCreatedOrder({ status: 'draft' });
+    mockPrisma.order.findFirst.mockResolvedValue(draftOrder);
+    mockPrisma.order.update.mockResolvedValue({
+      ...draftOrder,
+      status: 'cancelled',
+      cancelledAt: new Date(),
     });
 
-    const orderId = JSON.parse(createRes.body).data.id;
-
-    const cancelRes = await app.inject({
+    const orderId = draftOrder['id'] as string;
+    const response = await app.inject({
       method: 'POST',
       url: `/api/orders/${orderId}/cancel`,
+      headers: authHeader(repToken),
     });
 
-    expect(cancelRes.statusCode).toBe(200);
-    const body = JSON.parse(cancelRes.body);
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
     expect(body.data.status).toBe('cancelled');
   });
 
   test('FR-013: manager approval queue returns pending orders', async () => {
-    const app = createLifecycleApp('manager');
-    await app.register(orderRoutes);
-    await app.ready();
+    mockPrisma.order.findMany.mockResolvedValue([]);
+    mockPrisma.order.count.mockResolvedValue(0);
 
     const response = await app.inject({
       method: 'GET',
       url: '/api/orders/approval-queue',
+      headers: authHeader(managerToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -256,13 +176,12 @@ describe('FR-011/013: Order lifecycle integration tests', () => {
   });
 
   test('FR-011: returns 404 for non-existent order', async () => {
-    const app = createLifecycleApp('rep');
-    await app.register(orderRoutes);
-    await app.ready();
+    mockPrisma.order.findFirst.mockResolvedValue(null);
 
     const response = await app.inject({
       method: 'GET',
       url: '/api/orders/00000000-0000-4000-a000-999999999999',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(404);

@@ -8,6 +8,8 @@ import { accountRoutes } from '../../domains/accounts/account.routes';
 import { activityRoutes } from '../../domains/activities/activity.routes';
 import { emailRecordRoutes } from '../../domains/activities/email-record.routes';
 import { taskRoutes } from '../../domains/tasks/task.routes';
+import { orderRoutes } from '../../domains/orders/order.routes';
+import { productRoutes } from '../../domains/products/product.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -35,6 +37,8 @@ export async function buildTestApp(
   await app.register(activityRoutes);
   await app.register(emailRecordRoutes);
   await app.register(taskRoutes);
+  await app.register(orderRoutes);
+  await app.register(productRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {

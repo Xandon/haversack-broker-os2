@@ -1,63 +1,42 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
-import Fastify from 'fastify';
+import { describe, test, expect, beforeEach } from 'vitest';
+import { buildTestApp } from '../../shared/test-helpers/app';
+import { createMockPrisma, type MockPrismaClient } from '../../shared/test-helpers/db';
+import { generateTestToken, authHeader } from '../../shared/test-helpers/auth';
 import type { FastifyInstance } from 'fastify';
-import { productRoutes } from './product.routes';
 
-function createMockApp(): FastifyInstance {
-  const app = Fastify({ logger: false });
-
-  // Mock prisma on app
-  const mockProducts = [
-    {
-      id: 'prod-1',
-      name: 'Artisan Honey 12oz',
-      sku: 'SKU-HONEY-12',
-      unitPrice: 10.0,
-      wholesalePrice: 8.0,
-      promotionalPrice: null,
-      promotionalPriceStart: null,
-      promotionalPriceEnd: null,
-      caseSize: 12,
-      revenueModelDefault: 'broker',
-      availabilityStatus: 'in_stock',
-      isActive: true,
-      brand: { id: 'brand-1', name: 'Pacific Honey Co' },
-    },
-  ];
-
-  app.decorate('prisma', {
-    product: {
-      findMany: vi.fn().mockResolvedValue(mockProducts),
-    },
-  });
-
-  // Mock authenticate + authorize middleware
-  app.decorateRequest('user', null);
-  app.addHook('preHandler', async (request) => {
-    request.user = {
-      userId: '00000000-0000-4000-a000-000000000020',
-      tenantId: '00000000-0000-4000-a000-000000000001',
-      email: 'rep@test.com',
-      role: 'rep',
-    };
-  });
-
-  return app;
-}
+const MOCK_PRODUCT = {
+  id: 'prod-1',
+  name: 'Artisan Honey 12oz',
+  sku: 'SKU-HONEY-12',
+  unitPrice: 10.0,
+  wholesalePrice: 8.0,
+  promotionalPrice: null,
+  promotionalPriceStart: null,
+  promotionalPriceEnd: null,
+  caseSize: 12,
+  revenueModelDefault: 'broker',
+  availabilityStatus: 'in_stock',
+  isActive: true,
+  brand: { id: 'brand-1', name: 'Pacific Honey Co', commissionRate: 0.12 },
+};
 
 describe('FR-012: Product search routes', () => {
   let app: FastifyInstance;
+  let mockPrisma: MockPrismaClient;
+  let repToken: string;
 
   beforeEach(async () => {
-    app = createMockApp();
-    await app.register(productRoutes);
-    await app.ready();
+    mockPrisma = createMockPrisma();
+    mockPrisma.product.findMany.mockResolvedValue([MOCK_PRODUCT]);
+    app = await buildTestApp(mockPrisma);
+    repToken = generateTestToken('rep');
   });
 
   test('FR-012: GET /api/products/search returns matching products', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/products/search?q=honey',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -70,6 +49,7 @@ describe('FR-012: Product search routes', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/products/search',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(400);
@@ -78,7 +58,8 @@ describe('FR-012: Product search routes', () => {
   test('FR-012: GET /api/products/search filters by brand', async () => {
     const response = await app.inject({
       method: 'GET',
-      url: '/api/products/search?q=honey&brandId=brand-1',
+      url: '/api/products/search?q=honey&brandId=00000000-0000-4000-a000-000000000099',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -89,7 +70,8 @@ describe('FR-012: Product search routes', () => {
   test('FR-012: GET /api/products/search filters by availability', async () => {
     const response = await app.inject({
       method: 'GET',
-      url: '/api/products/search?q=honey&availabilityStatus=in_stock',
+      url: '/api/products/search?q=honey&availabilityStatus=active',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -101,6 +83,7 @@ describe('FR-012: Product search routes', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/products/search?q=honey&limit=5',
+      headers: authHeader(repToken),
     });
 
     expect(response.statusCode).toBe(200);
@@ -110,6 +93,7 @@ describe('FR-012: Product search routes', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/products/search?q=honey',
+      headers: authHeader(repToken),
     });
 
     const body = JSON.parse(response.body);
