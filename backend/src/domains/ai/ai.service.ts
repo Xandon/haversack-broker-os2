@@ -295,7 +295,6 @@ export async function submitReorderAsOrder(
         total: new Decimal(total.toFixed(2)),
         approval_required: approvalRequired,
         notes: input.notes ?? 'Created from AI reorder suggestion',
-        source: 'ai_reorder_suggestion',
       },
     });
 
