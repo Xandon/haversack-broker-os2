@@ -21,6 +21,7 @@ import { orderRoutes } from './domains/orders/order.routes.js';
 import { productRoutes } from './domains/products/product.routes.js';
 import { userRoutes } from './domains/users/user.routes.js';
 import { importRoutes } from './domains/imports/import.routes.js';
+import { aiRoutes } from './domains/ai/ai.routes.js';
 
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development';
 
@@ -118,6 +119,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Import and data quality routes
   await app.register(importRoutes);
+
+  // AI feature routes (reorder suggestions, meeting briefs)
+  await app.register(aiRoutes);
 
   // Health check endpoint
   app.get('/api/health', async (_request, reply): Promise<void> => {

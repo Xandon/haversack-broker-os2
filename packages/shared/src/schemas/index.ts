@@ -80,6 +80,15 @@ export type {
 } from './user.schema.js';
 
 export {
+  reorderSuggestionRequestSchema,
+  submitReorderSchema,
+} from './ai.schema.js';
+export type {
+  ReorderSuggestionRequest,
+  SubmitReorderInput,
+} from './ai.schema.js';
+
+export {
   importEntityTypeEnum,
   importJobStatusEnum,
   importUploadSchema,

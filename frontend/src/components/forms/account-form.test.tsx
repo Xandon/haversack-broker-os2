@@ -133,7 +133,7 @@ describe('T043: AccountForm component', () => {
 
     const nameInput = screen.getByLabelText(/Account name/i) as HTMLInputElement;
     const typeSelect = screen.getByLabelText(/Account type/i) as HTMLSelectElement;
-    const submitButton = screen.getByRole('button', { name: /Saving/i });
+    const submitButton = screen.getByRole('button', { name: /Saving/i }) as HTMLButtonElement;
 
     expect(nameInput.disabled).toBe(true);
     expect(typeSelect.disabled).toBe(true);

@@ -86,7 +86,7 @@ describe('T077: TaskForm component', () => {
     const titleInput = screen.getByLabelText(/Title/i) as HTMLInputElement;
     const dueDateInput = screen.getByLabelText(/Due date/i) as HTMLInputElement;
     const prioritySelect = screen.getByLabelText(/Priority/i) as HTMLSelectElement;
-    const submitButton = screen.getByRole('button', { name: /Saving/i });
+    const submitButton = screen.getByRole('button', { name: /Saving/i }) as HTMLButtonElement;
 
     expect(titleInput.disabled).toBe(true);
     expect(dueDateInput.disabled).toBe(true);

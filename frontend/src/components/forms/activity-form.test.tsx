@@ -168,7 +168,7 @@ describe('T069: ActivityForm component', () => {
     const dateInput = screen.getByLabelText(/Date/i) as HTMLInputElement;
     const typeSelect = screen.getByLabelText(/Activity type/i) as HTMLSelectElement;
     const subjectInput = screen.getByLabelText(/Subject/i) as HTMLInputElement;
-    const submitButton = screen.getByRole('button', { name: /Saving/i });
+    const submitButton = screen.getByRole('button', { name: /Saving/i }) as HTMLButtonElement;
 
     expect(dateInput.disabled).toBe(true);
     expect(typeSelect.disabled).toBe(true);
