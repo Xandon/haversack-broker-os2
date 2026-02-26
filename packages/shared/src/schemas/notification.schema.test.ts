@@ -7,6 +7,10 @@ describe('FR-009: Notification Zod schemas', () => {
       expect(notificationTypeSchema.parse('task_reminder')).toBe('task_reminder');
       expect(notificationTypeSchema.parse('task_assigned')).toBe('task_assigned');
       expect(notificationTypeSchema.parse('task_overdue')).toBe('task_overdue');
+      expect(notificationTypeSchema.parse('order_approval_required')).toBe('order_approval_required');
+      expect(notificationTypeSchema.parse('order_approved')).toBe('order_approved');
+      expect(notificationTypeSchema.parse('order_rejected')).toBe('order_rejected');
+      expect(notificationTypeSchema.parse('order_export_failed')).toBe('order_export_failed');
     });
 
     test('FR-009: rejects invalid notification type', () => {

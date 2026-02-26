@@ -66,6 +66,40 @@ enum NotificationType {
   task_reminder
   task_assigned
   task_overdue
+  order_approval_required
+  order_approved
+  order_rejected
+  order_export_failed
+}
+
+enum OrderStatus {
+  draft
+  pending_approval
+  confirmed
+  rejected
+  cancelled
+}
+
+enum RevenueModel {
+  broker
+  wholesale
+}
+
+enum AvailabilityStatus {
+  active
+  seasonal
+  discontinued
+}
+
+enum ApprovalDecision {
+  approved
+  rejected
+}
+
+enum ExportStatus {
+  queued
+  exported
+  failed
 }
 
 model User {
@@ -91,6 +125,8 @@ model User {
   assignedTasks    Task[]          @relation("TaskAssignee")
   notifications    Notification[]
   emailRecords     EmailRecord[]
+  createdOrders    Order[]          @relation("OrderCreator")
+  approvals        OrderApproval[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -197,6 +233,7 @@ model Account {
   activities    Activity[]
   tasks         Task[]
   emailRecords  EmailRecord[]
+  orders        Order[]
 
   @@unique([tenantId, name])
   @@index([tenantId, territoryId])
@@ -381,4 +418,163 @@ model Notification {
   @@index([tenantId, userId, isRead, createdAt(sort: Desc)])
   @@index([tenantId, userId, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+model Brand {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  name           String   @db.VarChar(255)
+  commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  products       Product[]
+  vendorSubOrders VendorSubOrder[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("brands")
+}
+
+model Product {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String             @map("tenant_id") @db.Uuid
+  brandId               String             @map("brand_id") @db.Uuid
+  name                  String             @db.VarChar(255)
+  sku                   String             @db.VarChar(100)
+  unitPrice             Decimal            @map("unit_price") @db.Decimal(10, 2)
+  wholesalePrice        Decimal?           @map("wholesale_price") @db.Decimal(10, 2)
+  promotionalPrice      Decimal?           @map("promotional_price") @db.Decimal(10, 2)
+  promotionalPriceStart DateTime?          @map("promotional_price_start") @db.Timestamptz()
+  promotionalPriceEnd   DateTime?          @map("promotional_price_end") @db.Timestamptz()
+  caseSize              Int?               @map("case_size")
+  revenueModelDefault   RevenueModel       @map("revenue_model_default")
+  availabilityStatus    AvailabilityStatus @map("availability_status") @default(active)
+  isActive              Boolean            @default(true) @map("is_active")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz()
+
+  brand     Brand           @relation(fields: [brandId], references: [id])
+  lineItems OrderLineItem[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, brandId])
+  @@index([tenantId, availabilityStatus])
+  @@index([tenantId, isActive])
+  @@map("products")
+}
+
+model Order {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  orderNumber  String        @map("order_number") @db.VarChar(20)
+  accountId    String        @map("account_id") @db.Uuid
+  repId        String        @map("rep_id") @db.Uuid
+  status       OrderStatus   @default(draft)
+  subtotal     Decimal       @default(0) @db.Decimal(12, 2)
+  tax          Decimal       @default(0) @db.Decimal(10, 2)
+  total        Decimal       @default(0) @db.Decimal(12, 2)
+  notes        String?       @db.Text
+  submittedAt  DateTime?     @map("submitted_at") @db.Timestamptz()
+  confirmedAt  DateTime?     @map("confirmed_at") @db.Timestamptz()
+  cancelledAt  DateTime?     @map("cancelled_at") @db.Timestamptz()
+  exportStatus ExportStatus? @map("export_status")
+  version      Int           @default(1)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  account         Account          @relation(fields: [accountId], references: [id])
+  rep             User             @relation("OrderCreator", fields: [repId], references: [id])
+  lineItems       OrderLineItem[]
+  vendorSubOrders VendorSubOrder[]
+  approvals       OrderApproval[]
+  quickBooksExport QuickBooksExport?
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId, accountId, createdAt(sort: Desc)])
+  @@index([tenantId, repId, status])
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([tenantId, exportStatus])
+  @@map("orders")
+}
+
+model OrderLineItem {
+  id                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId               String       @map("tenant_id") @db.Uuid
+  orderId                String       @map("order_id") @db.Uuid
+  productId              String       @map("product_id") @db.Uuid
+  vendorSubOrderId       String?      @map("vendor_sub_order_id") @db.Uuid
+  quantity               Int
+  unitPrice              Decimal      @map("unit_price") @db.Decimal(10, 2)
+  revenueModel           RevenueModel @map("revenue_model")
+  commissionRate         Decimal?     @map("commission_rate") @db.Decimal(5, 2)
+  discount               Decimal      @default(0) @db.Decimal(10, 2)
+  lineTotal              Decimal      @map("line_total") @db.Decimal(12, 2)
+  promotionalPriceApplied Boolean     @default(false) @map("promotional_price_applied")
+  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product         @relation(fields: [productId], references: [id])
+  vendorSubOrder VendorSubOrder? @relation(fields: [vendorSubOrderId], references: [id])
+
+  @@index([orderId])
+  @@index([tenantId, productId])
+  @@map("order_line_items")
+}
+
+model VendorSubOrder {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  brandId           String   @map("brand_id") @db.Uuid
+  subtotal          Decimal  @db.Decimal(12, 2)
+  fulfillmentStatus String   @default("pending") @map("fulfillment_status") @db.VarChar(20)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  brand     Brand           @relation(fields: [brandId], references: [id])
+  lineItems OrderLineItem[]
+
+  @@index([orderId])
+  @@index([tenantId, brandId])
+  @@map("vendor_sub_orders")
+}
+
+model OrderApproval {
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String           @map("tenant_id") @db.Uuid
+  orderId    String           @map("order_id") @db.Uuid
+  approverId String           @map("approver_id") @db.Uuid
+  decision   ApprovalDecision
+  reason     String?          @db.Text
+  decidedAt  DateTime         @map("decided_at") @db.Timestamptz()
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  approver User  @relation(fields: [approverId], references: [id])
+
+  @@index([orderId])
+  @@index([tenantId, approverId, decidedAt(sort: Desc)])
+  @@map("order_approvals")
+}
+
+model QuickBooksExport {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  orderId       String       @unique @map("order_id") @db.Uuid
+  status        ExportStatus
+  attemptCount  Int          @default(0) @map("attempt_count")
+  lastAttemptAt DateTime?    @map("last_attempt_at") @db.Timestamptz()
+  errorDetails  String?      @map("error_details") @db.Text
+  csvData       String?      @map("csv_data") @db.Text
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@map("quickbooks_exports")
 }
