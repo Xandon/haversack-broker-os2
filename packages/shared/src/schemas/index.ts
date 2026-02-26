@@ -64,3 +64,32 @@ export type {
   CreateProductInput,
   UpdateProductInput,
 } from './order.schema.js';
+
+export {
+  userRoleEnum,
+  createUserSchema,
+  updateUserSchema,
+  userListQuerySchema,
+  deactivateUserSchema,
+} from './user.schema.js';
+export type {
+  CreateUserInput,
+  UpdateUserInput,
+  UserListQuery,
+  DeactivateUserInput,
+} from './user.schema.js';
+
+export {
+  importEntityTypeEnum,
+  importJobStatusEnum,
+  importUploadSchema,
+  importExecuteSchema,
+  importListQuerySchema,
+  dataQualityQuerySchema,
+} from './import.schema.js';
+export type {
+  ImportUploadInput,
+  ImportExecuteInput,
+  ImportListQuery,
+  DataQualityQuery,
+} from './import.schema.js';

@@ -19,6 +19,8 @@ import { activityRoutes } from './domains/activities/activity.routes.js';
 import { taskRoutes } from './domains/tasks/task.routes.js';
 import { orderRoutes } from './domains/orders/order.routes.js';
 import { productRoutes } from './domains/products/product.routes.js';
+import { userRoutes } from './domains/users/user.routes.js';
+import { importRoutes } from './domains/imports/import.routes.js';
 
 const NODE_ENV = process.env['NODE_ENV'] ?? 'development';
 
@@ -110,6 +112,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   // Product routes
   await app.register(productRoutes);
+
+  // User management routes (admin only)
+  await app.register(userRoutes);
+
+  // Import and data quality routes
+  await app.register(importRoutes);
 
   // Health check endpoint
   app.get('/api/health', async (_request, reply): Promise<void> => {
