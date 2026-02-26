@@ -7,7 +7,7 @@ import { authRoutes } from '../../auth/auth.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
-  prisma: unknown,
+  prisma: Record<string, unknown>,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: false,
