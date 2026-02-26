@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 
 import { AccountDetail } from '@/components/accounts/account-detail';
 import type { AccountDetailData } from '@/components/accounts/account-detail';
+import { ReorderSuggestionCard } from '@/components/accounts/reorder-suggestion-card';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SkeletonLoader } from '@/components/shared/skeleton-loader';
 import { useAccount } from '@/hooks/use-accounts';
@@ -156,6 +157,11 @@ export default function AccountDetailPage(): React.JSX.Element {
       </nav>
 
       <AccountDetail account={accountData} />
+
+      {/* AI Reorder Suggestion (FR-018) */}
+      <div className="mt-6">
+        <ReorderSuggestionCard accountId={accountId} />
+      </div>
     </div>
   );
 }
