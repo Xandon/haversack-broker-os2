@@ -38,3 +38,28 @@ export {
   ERROR_CODES,
   type ErrorCode,
 } from './constants/index';
+
+export {
+  accountTypeSchema,
+  createAccountSchema,
+  updateAccountSchema,
+  accountResponseSchema,
+  accountListQuerySchema,
+  duplicateCheckQuerySchema,
+  createContactInlineSchema,
+  type AccountType,
+  type CreateAccountInput,
+  type UpdateAccountInput,
+  type AccountResponse,
+  type AccountListQuery,
+  type DuplicateCheckQuery,
+} from './schemas/account.schema';
+
+export {
+  createContactSchema,
+  updateContactSchema,
+  contactResponseSchema,
+  type CreateContactInput,
+  type UpdateContactInput,
+  type ContactResponse,
+} from './schemas/contact.schema';
