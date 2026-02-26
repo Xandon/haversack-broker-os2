@@ -199,5 +199,126 @@ describe('FR-008: Timeline Service', () => {
       expect((mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).findMany).not.toHaveBeenCalled();
       expect((mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).findMany).not.toHaveBeenCalled();
     });
+
+    it('T060: merges activities, emails, and tasks in chronological order', async () => {
+      const account = { id: ACCOUNT_ID, tenantId: TENANT_ID };
+      (mockPrisma.account as Record<string, ReturnType<typeof vi.fn>>).findFirst.mockResolvedValue(account);
+
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([
+        mockActivity('a1', '2026-02-26T10:00:00Z'),
+        mockActivity('a2', '2026-02-24T10:00:00Z'),
+      ]);
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(2);
+
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([
+        {
+          id: 'e1',
+          tenantId: TENANT_ID,
+          accountId: ACCOUNT_ID,
+          userId: USER_ID,
+          subject: 'Follow-up',
+          direction: 'outbound',
+          status: 'sent',
+          recipientEmail: 'buyer@store.com',
+          sentAt: new Date('2026-02-25T10:00:00Z'),
+          user: { id: USER_ID, firstName: 'Test', lastName: 'Rep' },
+        },
+      ]);
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(1);
+
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([
+        {
+          id: 't1',
+          tenantId: TENANT_ID,
+          accountId: ACCOUNT_ID,
+          title: 'Follow up',
+          status: 'pending',
+          priority: 'high',
+          createdAt: new Date('2026-02-23T10:00:00Z'),
+          assignee: { id: USER_ID, firstName: 'Test', lastName: 'Rep' },
+        },
+      ]);
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(1);
+
+      const result = await getTimeline(mockPrisma as never, TENANT_ID, ACCOUNT_ID, {});
+
+      // Should be sorted: activity (Feb 26), email (Feb 25), activity (Feb 24), task (Feb 23)
+      expect(result.data).toHaveLength(4);
+      expect(result.data[0]!.type).toBe('activity');
+      expect(result.data[0]!.occurredAt).toBe('2026-02-26T10:00:00.000Z');
+      expect(result.data[1]!.type).toBe('email');
+      expect(result.data[1]!.occurredAt).toBe('2026-02-25T10:00:00.000Z');
+      expect(result.data[2]!.type).toBe('activity');
+      expect(result.data[2]!.occurredAt).toBe('2026-02-24T10:00:00.000Z');
+      expect(result.data[3]!.type).toBe('task');
+      expect(result.data[3]!.occurredAt).toBe('2026-02-23T10:00:00.000Z');
+
+      expect(result.counts.activity).toBe(2);
+      expect(result.counts.email).toBe(1);
+      expect(result.counts.task).toBe(1);
+      expect(result.pagination.total).toBe(4);
+    });
+
+    it('T060: email items include correct data fields', async () => {
+      const account = { id: ACCOUNT_ID, tenantId: TENANT_ID };
+      (mockPrisma.account as Record<string, ReturnType<typeof vi.fn>>).findFirst.mockResolvedValue(account);
+
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([]);
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(0);
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([
+        {
+          id: 'e1',
+          tenantId: TENANT_ID,
+          accountId: ACCOUNT_ID,
+          userId: USER_ID,
+          subject: 'Q2 Pricing',
+          direction: 'outbound',
+          status: 'opened',
+          recipientEmail: 'buyer@store.com',
+          sentAt: new Date('2026-02-25T10:00:00Z'),
+          user: { id: USER_ID, firstName: 'Test', lastName: 'Rep' },
+        },
+      ]);
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(1);
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([]);
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(0);
+
+      const result = await getTimeline(mockPrisma as never, TENANT_ID, ACCOUNT_ID, {});
+
+      expect(result.data[0]!.type).toBe('email');
+      expect(result.data[0]!.data.subject).toBe('Q2 Pricing');
+      expect(result.data[0]!.data.direction).toBe('outbound');
+      expect(result.data[0]!.data.status).toBe('opened');
+    });
+
+    it('T060: task items include correct data fields', async () => {
+      const account = { id: ACCOUNT_ID, tenantId: TENANT_ID };
+      (mockPrisma.account as Record<string, ReturnType<typeof vi.fn>>).findFirst.mockResolvedValue(account);
+
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([]);
+      (mockPrisma.activity as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(0);
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([]);
+      (mockPrisma.emailRecord as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(0);
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).findMany.mockResolvedValue([
+        {
+          id: 't1',
+          tenantId: TENANT_ID,
+          accountId: ACCOUNT_ID,
+          title: 'Send samples',
+          status: 'completed',
+          priority: 'high',
+          createdAt: new Date('2026-02-20T10:00:00Z'),
+          assignee: { id: USER_ID, firstName: 'Test', lastName: 'Rep' },
+        },
+      ]);
+      (mockPrisma.task as Record<string, ReturnType<typeof vi.fn>>).count.mockResolvedValue(1);
+
+      const result = await getTimeline(mockPrisma as never, TENANT_ID, ACCOUNT_ID, {});
+
+      expect(result.data[0]!.type).toBe('task');
+      expect(result.data[0]!.data.title).toBe('Send samples');
+      expect(result.data[0]!.data.status).toBe('completed');
+      expect(result.data[0]!.data.priority).toBe('high');
+    });
   });
 });
