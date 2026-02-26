@@ -16,6 +16,7 @@
 | 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
 | 4 | feature/batch-4-order-entry | ✅ Complete | Yes |
 | 5 | feature/batch-5-data-import-user-mgmt | ✅ Complete | Yes |
+| 6 | feature/batch-6-ai-reorder-suggestions | 🔨 In Progress | No |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -26,6 +27,7 @@
 | 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
 | 4 | US-006 Order Entry (T081-T095) | ✅ Complete | 389/389 | — |
 | 5 | US-012 Data Import & User Mgmt (T096-T108) | ✅ Complete | 435/435 | — |
+| 6 | US-007 AI Reorder Suggestions (T109-T114) | 🔨 In Progress | 474/474 | — |
 
 ## Task Detail
 
@@ -144,6 +146,16 @@
 | T106 | CSV/XLSX import page (upload, preview, execute) | ✅ |
 | T107 | Data quality scorecard dashboard (7-day trend) | ✅ |
 | T108 | Comprehensive tests (46 new tests, 435 total) | ✅ |
+
+### Batch 6: AI Reorder Suggestions (US-007)
+| Task | Description | Status |
+|------|-------------|--------|
+| T109 | AI provider abstraction (Anthropic primary + OpenAI fallback) | ✅ |
+| T110 | AI reorder suggestion service (6+ orders analysis, FR-018) | ✅ |
+| T111 | AI routes (POST /ai/reorder-suggestions, /submit) + Zod schemas | ✅ |
+| T112 | AI label component ("AI-Generated" badge, FR-035) | ✅ |
+| T113 | Reorder suggestion card (editable items, submit as order) | ✅ |
+| T114 | Comprehensive tests (39 new tests, 474 total) | ✅ |
 
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |
