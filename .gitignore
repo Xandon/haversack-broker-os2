@@ -61,3 +61,5 @@ research/
 # Spec-kit templates/scripts (local tooling)
 .specify/scripts/
 .specify/templates/
+frontend/playwright-report/
+frontend/test-results/
