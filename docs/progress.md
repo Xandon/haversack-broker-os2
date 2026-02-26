@@ -14,6 +14,7 @@
 | 1 | feature/batch-1-account-creation | ✅ Complete | Yes |
 | 2 | feature/batch-2-account-detail-search | ✅ Complete | Yes |
 | 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
+| 4 | feature/batch-4-order-entry | 🔨 In Progress | No |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -22,7 +23,7 @@
 | 1 | US-001 Account Creation (T038-T048) | ✅ Complete | 143/143 | — |
 | 2 | US-002/003 Account Detail + Search (T049-T060) | ✅ Complete | 232/232 | — |
 | 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
-| 4 | US-006 Order Entry (T081-T095) | ⬜ Not Started | — | — |
+| 4 | US-006 Order Entry (T081-T095) | 🔨 In Progress | 255/255 (backend) | — |
 | 5 | US-005 Pipeline (T086-T094) | ⬜ Not Started | — | — |
 | 6 | US-006 Email (T095-T104) | ⬜ Not Started | — | — |
 | 7 | US-007 AI (T105-T115) | ⬜ Not Started | — | — |
@@ -115,6 +116,25 @@
 | T078 | Task dashboard page (filters, overdue) | ✅ |
 | T079 | Notification provider (30s polling) | ✅ |
 | T080 | Task service tests | ✅ |
+
+### Batch 4: Order Entry with Multi-Vendor Splitting (US-006)
+| Task | Description | Status |
+|------|-------------|--------|
+| T081 | Order + Product Zod schemas (create, update, list, search) | ✅ |
+| T082 | Product service (search, promo pricing, effective price) | ✅ |
+| T083 | Order CRUD service (create, line items, totals, status) | ✅ |
+| T084 | Vendor split service (auto-split by brand) | ✅ |
+| T085 | Approval service (approve, reject, confirm, $5k threshold) | ✅ |
+| T086 | Order status transitions and validation | ✅ |
+| T087 | Order + Product routes (Fastify, Zod validation, RBAC) | ✅ |
+| T088 | useOrders + useProductSearch TanStack Query hooks | ✅ |
+| T089 | ProductSearch component (search-as-you-type, promo display) | ✅ |
+| T090 | ApprovalBadge + OrderLineItem components | ✅ |
+| T091 | OrderForm (add products, qty, subtotal, approval warning) | ✅ |
+| T092 | Orders list page (filters, pagination, status badges) | ✅ |
+| T093 | Order detail page (info, items, sub-orders, actions) | ✅ |
+| T094 | New order page (account selection + OrderForm) | ✅ |
+| T095 | Order + Product service tests (48 new, 255 total passing) | ✅ |
 
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |

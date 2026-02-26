@@ -81,13 +81,13 @@ export function getEffectivePrice(product: {
   promo_end_date: Date | null;
 }): { price: number; promoApplied: boolean } {
   const unitPrice =
-    typeof product.unit_price === 'object' && product.unit_price !== null && 'toNumber' in product.unit_price
+    typeof product.unit_price === 'object' && product.unit_price !== null && typeof product.unit_price.toNumber === 'function'
       ? product.unit_price.toNumber()
       : Number(product.unit_price);
 
   if (isPromoActive(product) && product.promo_price !== null && product.promo_price !== undefined) {
     const promoPrice =
-      typeof product.promo_price === 'object' && product.promo_price !== null && 'toNumber' in product.promo_price
+      typeof product.promo_price === 'object' && product.promo_price !== null && typeof product.promo_price.toNumber === 'function'
         ? product.promo_price.toNumber()
         : Number(product.promo_price);
     return { price: promoPrice, promoApplied: true };
