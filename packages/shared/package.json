@@ -8,12 +8,16 @@
     "build": "tsc --noEmit || true",
     "lint": "eslint src/ --ext .ts --no-error-on-unmatched-pattern || true",
     "lint:fix": "eslint src/ --ext .ts --fix --no-error-on-unmatched-pattern || true",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
   }
 }
