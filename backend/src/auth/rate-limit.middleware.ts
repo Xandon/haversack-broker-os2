@@ -18,7 +18,6 @@ export const rateLimitConfig: RateLimitPluginOptions = {
   max: IS_DEV ? 60 : 10,
   timeWindow: '1 minute',
   hook: 'onRequest',
-  statusCode: 429,
   keyGenerator: (request): string => {
     return request.ip;
   },
@@ -45,7 +44,6 @@ export const globalRateLimitConfig: RateLimitPluginOptions = {
   max: 100,
   timeWindow: '1 minute',
   hook: 'onRequest',
-  statusCode: 429,
   keyGenerator: (request): string => {
     return request.ip;
   },

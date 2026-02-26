@@ -234,8 +234,13 @@ export function usePendingApproval(): UsePendingApprovalResult {
 // useCreateOrder — mutation for creating an order
 // -------------------------------------------------------------------
 
+interface MutateCallbacks {
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+}
+
 interface UseCreateOrderResult {
-  createOrder: (payload: CreateOrderPayload) => void;
+  createOrder: (payload: CreateOrderPayload, callbacks?: MutateCallbacks) => void;
   createOrderAsync: (payload: CreateOrderPayload) => Promise<OrderResponse>;
   isLoading: boolean;
   isError: boolean;
@@ -257,7 +262,8 @@ export function useCreateOrder(): UseCreateOrderResult {
   });
 
   return {
-    createOrder: mutation.mutate,
+    createOrder: (payload: CreateOrderPayload, callbacks?: MutateCallbacks) =>
+      mutation.mutate(payload, callbacks),
     createOrderAsync: mutation.mutateAsync,
     isLoading: mutation.isPending,
     isError: mutation.isError,
