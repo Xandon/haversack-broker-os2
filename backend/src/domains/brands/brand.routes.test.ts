@@ -310,5 +310,166 @@ describe('FR-019c: Brand routes', () => {
 
       expect(response.statusCode).toBe(400);
     });
+
+    test('C9: viewer cannot share line card', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands/brand-1/line-card/share',
+        headers: authHeader(viewerToken),
+        payload: { accountId: '00000000-0000-4000-a000-000000000030' },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: logistics cannot share line card', async () => {
+      const logisticsToken = generateTestToken('logistics');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands/brand-1/line-card/share',
+        headers: authHeader(logisticsToken),
+        payload: { accountId: '00000000-0000-4000-a000-000000000030' },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe('T110: RBAC enforcement for brand routes', () => {
+    test('C9: viewer can list brands', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands',
+        headers: authHeader(viewerToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('C9: viewer can view brand detail', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/brand-1',
+        headers: authHeader(viewerToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('C9: viewer cannot create brands', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands',
+        headers: authHeader(viewerToken),
+        payload: { name: 'Test', commissionRate: 10 },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: logistics cannot create brands', async () => {
+      const logisticsToken = generateTestToken('logistics');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands',
+        headers: authHeader(logisticsToken),
+        payload: { name: 'Test', commissionRate: 10 },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: logistics cannot update brands', async () => {
+      const logisticsToken = generateTestToken('logistics');
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/brands/brand-1',
+        headers: authHeader(logisticsToken),
+        payload: { name: 'Updated' },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: manager can create brands', async () => {
+      const managerToken = generateTestToken('manager');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/brands',
+        headers: authHeader(managerToken),
+        payload: { name: 'Manager Brand', commissionRate: 10 },
+      });
+      expect(response.statusCode).toBe(201);
+    });
+
+    test('C9: rep can generate line card', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      mockPrisma.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          tenantId: '00000000-0000-4000-a000-000000000001',
+          brandId: 'brand-1',
+          name: 'Test',
+          sku: 'T-01',
+          description: null,
+          unitPrice: 10,
+          wholesalePrice: null,
+          caseSize: null,
+          certifications: [],
+          allergens: [],
+          dietaryAttributes: [],
+          availabilityStatus: 'active',
+          imageUrl: null,
+          isActive: true,
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/brand-1/line-card',
+        headers: authHeader(repToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('C9: unauthenticated request to brands is rejected', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands',
+      });
+      expect(response.statusCode).toBe(401);
+    });
+  });
+
+  describe('T115: Line card edge cases', () => {
+    test('FR-019a: PDF filename format is correct', async () => {
+      mockPrisma.brand.findFirst.mockResolvedValue(MOCK_BRAND);
+      mockPrisma.product.findMany.mockResolvedValue([
+        {
+          id: 'prod-1',
+          tenantId: '00000000-0000-4000-a000-000000000001',
+          brandId: 'brand-1',
+          name: 'Test',
+          sku: 'T-01',
+          description: null,
+          unitPrice: 10,
+          wholesalePrice: null,
+          caseSize: null,
+          certifications: [],
+          allergens: [],
+          dietaryAttributes: [],
+          availabilityStatus: 'active',
+          imageUrl: null,
+          isActive: true,
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/brands/brand-1/line-card',
+        headers: authHeader(repToken),
+      });
+
+      const disposition = response.headers['content-disposition'] as string;
+      expect(disposition).toMatch(/mountain-meadow-farms-line-card-\d{4}-\d{2}-\d{2}\.pdf/);
+    });
   });
 });

@@ -235,4 +235,181 @@ describe('FR-012/FR-018: Product routes', () => {
       expect(body.data.deleted).toBe(true);
     });
   });
+
+  describe('T109: RBAC enforcement', () => {
+    test('C9: manager can create products', async () => {
+      const managerToken = generateTestToken('manager');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/products',
+        headers: authHeader(managerToken),
+        payload: {
+          name: 'Manager Product',
+          sku: 'MP-01',
+          brandId: '00000000-0000-4000-a000-000000000020',
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        },
+      });
+      expect(response.statusCode).toBe(201);
+    });
+
+    test('C9: logistics cannot create products', async () => {
+      const logisticsToken = generateTestToken('logistics');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/products',
+        headers: authHeader(logisticsToken),
+        payload: {
+          name: 'Logistics Product',
+          sku: 'LP-01',
+          brandId: '00000000-0000-4000-a000-000000000020',
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: viewer cannot create products', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/products',
+        headers: authHeader(viewerToken),
+        payload: {
+          name: 'Viewer Product',
+          sku: 'VP-01',
+          brandId: '00000000-0000-4000-a000-000000000020',
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: rep can read product detail', async () => {
+      mockPrisma.product.findFirst.mockResolvedValue(MOCK_PRODUCT);
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products/prod-1',
+        headers: authHeader(repToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('C9: rep cannot update products', async () => {
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/products/prod-1',
+        headers: authHeader(repToken),
+        payload: { name: 'Updated' },
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: rep cannot delete products', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/products/prod-1',
+        headers: authHeader(repToken),
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: viewer can list products', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products',
+        headers: authHeader(viewerToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('C9: viewer cannot search products', async () => {
+      const viewerToken = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products/search?q=honey',
+        headers: authHeader(viewerToken),
+      });
+      expect(response.statusCode).toBe(403);
+    });
+
+    test('C9: unauthenticated request is rejected', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products',
+      });
+      expect(response.statusCode).toBe(401);
+    });
+  });
+
+  describe('T112: Optimistic concurrency via routes', () => {
+    test('FR-018e: update with stale If-Match returns 409', async () => {
+      mockPrisma.product.findFirst.mockResolvedValue(MOCK_PRODUCT);
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/products/prod-1',
+        headers: {
+          ...authHeader(adminToken),
+          'if-match': '2025-01-01T00:00:00.000Z',
+        },
+        payload: { name: 'Updated' },
+      });
+
+      expect(response.statusCode).toBe(409);
+    });
+  });
+
+  describe('T113: SKU uniqueness via routes', () => {
+    test('FR-018d: create with duplicate SKU returns 409', async () => {
+      mockPrisma.product.findFirst.mockResolvedValue(MOCK_PRODUCT);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/products',
+        headers: authHeader(adminToken),
+        payload: {
+          name: 'Duplicate SKU Product',
+          sku: 'SKU-HONEY-12',
+          brandId: '00000000-0000-4000-a000-000000000020',
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        },
+      });
+
+      expect(response.statusCode).toBe(409);
+    });
+  });
+
+  describe('T114: Image URL handling via routes', () => {
+    test('US-5: product with imageUrl is returned in response', async () => {
+      mockPrisma.product.findFirst.mockResolvedValue(MOCK_PRODUCT);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products/prod-1',
+        headers: authHeader(repToken),
+      });
+
+      const body = JSON.parse(response.body);
+      expect(body.data.imageUrl).toBe('https://example.com/honey.jpg');
+    });
+
+    test('US-5: product without imageUrl returns null', async () => {
+      mockPrisma.product.findFirst.mockResolvedValue({ ...MOCK_PRODUCT, imageUrl: null });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/products/prod-1',
+        headers: authHeader(repToken),
+      });
+
+      const body = JSON.parse(response.body);
+      expect(body.data.imageUrl).toBeNull();
+    });
+  });
 });

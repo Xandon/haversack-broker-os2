@@ -12,8 +12,11 @@ import type { AuditContext, BrandWithCounts } from './brand.service';
 import type { PrismaClient, Brand } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+const { mockWriteAuditLog } = vi.hoisted(() => ({
+  mockWriteAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('../../shared/services/audit.service', () => ({
-  writeAuditLog: vi.fn().mockResolvedValue(undefined),
+  writeAuditLog: mockWriteAuditLog,
 }));
 
 const TENANT_ID = '00000000-0000-4000-a000-000000000001';
@@ -334,6 +337,76 @@ describe('FR-019c: Brand service', () => {
 
       expect(result['productCount']).toBe(5);
       expect(result['activeProductCount']).toBe(3);
+    });
+  });
+
+  describe('T111: Audit trail verification', () => {
+    test('SC-004: createBrand calls writeAuditLog', async () => {
+      brandMock.findFirst.mockResolvedValue(null);
+      brandMock.create.mockResolvedValue(createMockBrand());
+
+      await createBrand(prisma, TENANT_ID, {
+        name: 'Test Brand',
+        commissionRate: 10,
+      }, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Brand',
+          action: 'create',
+          actorId: AUDIT_CTX.actorId,
+          actorEmail: AUDIT_CTX.actorEmail,
+        }),
+      );
+    });
+
+    test('SC-004: updateBrand calls writeAuditLog', async () => {
+      brandMock.findFirst
+        .mockResolvedValueOnce(createMockBrand()) // find existing
+        .mockResolvedValueOnce(null); // no name conflict
+      brandMock.update.mockResolvedValue(createMockBrand({ name: 'Updated' }));
+
+      await updateBrand(prisma, TENANT_ID, BRAND_ID, { name: 'Updated' }, undefined, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Brand',
+          action: 'update',
+          entityId: BRAND_ID,
+        }),
+      );
+    });
+  });
+
+  describe('T112: Optimistic concurrency', () => {
+    test('FR-018e: concurrent update with matching timestamp succeeds', async () => {
+      const existing = createMockBrand();
+      brandMock.findFirst
+        .mockResolvedValueOnce(existing) // find existing
+        .mockResolvedValueOnce(null); // no name conflict
+      brandMock.update.mockResolvedValue(createMockBrand({ name: 'Updated' }));
+
+      const result = await updateBrand(
+        prisma, TENANT_ID, BRAND_ID,
+        { name: 'Updated' },
+        existing.updatedAt.toISOString(),
+        AUDIT_CTX,
+      );
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('T113: Edge cases', () => {
+    test('FR-019c: duplicate brand name is case-sensitive in lookup', async () => {
+      brandMock.findFirst.mockResolvedValue(createMockBrand());
+
+      await expect(
+        createBrand(prisma, TENANT_ID, {
+          name: 'Mountain Meadow Farms',
+          commissionRate: 10,
+        }, AUDIT_CTX),
+      ).rejects.toThrow('Brand name already exists');
     });
   });
 });

@@ -14,8 +14,11 @@ import type { ProductWithBrand, AuditContext } from './product.service';
 import type { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+const { mockWriteAuditLog } = vi.hoisted(() => ({
+  mockWriteAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('../../shared/services/audit.service', () => ({
-  writeAuditLog: vi.fn().mockResolvedValue(undefined),
+  writeAuditLog: mockWriteAuditLog,
 }));
 
 function createMockPrisma(): {
@@ -516,6 +519,151 @@ describe('FR-012/FR-018: Product service', () => {
 
       expect(result.price).toBe(10.0);
       expect(result.isPromotional).toBe(false);
+    });
+  });
+
+  describe('T111: Audit trail verification', () => {
+    test('SC-004: createProduct calls writeAuditLog', async () => {
+      productMock.findFirst.mockResolvedValue(null);
+      productMock.create.mockResolvedValue(createMockProduct());
+
+      await createProduct(prisma, TENANT_ID, {
+        name: 'Test',
+        sku: 'T-01',
+        brandId: BRAND_ID,
+        unitPrice: 10,
+        revenueModelDefault: 'broker',
+      }, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Product',
+          action: 'create',
+          actorId: AUDIT_CTX.actorId,
+          actorEmail: AUDIT_CTX.actorEmail,
+        }),
+      );
+    });
+
+    test('SC-004: updateProduct calls writeAuditLog', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct());
+      productMock.update.mockResolvedValue(createMockProduct({ name: 'Updated' }));
+
+      await updateProduct(prisma, TENANT_ID, PRODUCT_ID, { name: 'Updated' }, undefined, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Product',
+          action: 'update',
+          entityId: PRODUCT_ID,
+        }),
+      );
+    });
+
+    test('SC-004: softDeleteProduct calls writeAuditLog', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct());
+      productMock.update.mockResolvedValue({ isActive: false });
+
+      await softDeleteProduct(prisma, TENANT_ID, PRODUCT_ID, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Product',
+          action: 'delete',
+          entityId: PRODUCT_ID,
+        }),
+      );
+    });
+  });
+
+  describe('T113: Edge cases', () => {
+    test('FR-018d: create with duplicate SKU throws', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct()); // SKU exists
+
+      await expect(
+        createProduct(prisma, TENANT_ID, {
+          name: 'Duplicate',
+          sku: 'SKU-HONEY-12',
+          brandId: BRAND_ID,
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        }, AUDIT_CTX),
+      ).rejects.toThrow('SKU already exists');
+    });
+
+    test('FR-018d: SKU uniqueness error is ProductError', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct());
+
+      await expect(
+        createProduct(prisma, TENANT_ID, {
+          name: 'Duplicate',
+          sku: 'SKU-HONEY-12',
+          brandId: BRAND_ID,
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        }, AUDIT_CTX),
+      ).rejects.toThrow(ProductError);
+    });
+
+    test('T114: imageUrl is persisted and returned', () => {
+      const product = createMockProduct({ imageUrl: 'https://example.com/new.jpg' });
+      const result = formatProductResponse(product);
+      expect(result.imageUrl).toBe('https://example.com/new.jpg');
+    });
+
+    test('T114: null imageUrl is returned as null', () => {
+      const product = createMockProduct({ imageUrl: null });
+      const result = formatProductResponse(product);
+      expect(result.imageUrl).toBeNull();
+    });
+
+    test('T107: multi-filter search uses AND logic', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await searchProducts(prisma, TENANT_ID, {
+        q: 'test',
+        brandId: BRAND_ID,
+        category: 'honey',
+        certification: 'organic',
+      });
+
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            brandId: BRAND_ID,
+            category: 'honey',
+            certifications: { hasSome: ['organic'] },
+            isActive: true,
+          }),
+        }),
+      );
+    });
+
+    test('T107: list with multiple filters uses AND logic', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await listProducts(prisma, TENANT_ID, {
+        brandId: BRAND_ID,
+        category: 'honey',
+        certification: 'organic',
+        allergen: 'wheat',
+        dietaryAttribute: 'vegan',
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            brandId: BRAND_ID,
+            category: 'honey',
+            certifications: { hasSome: ['organic'] },
+            allergens: { hasSome: ['wheat'] },
+            dietaryAttributes: { hasSome: ['vegan'] },
+          }),
+        }),
+      );
     });
   });
 });
