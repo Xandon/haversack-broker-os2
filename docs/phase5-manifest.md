@@ -45,6 +45,29 @@ Feature 12 (Polish) depends on ALL above
 - **Active Step:** 2.1
 - **Resume Point:** STAGE 2, Step 2.1
 
+## Feature 6: Pipeline & Opportunities
+
+### PRD References
+- FR-016: Pipeline stage management
+- FR-017: Opportunity tracking and forecasting
+
+### Planning Checklist
+- [ ] 2.1 Create feature directory
+- [ ] 2.2 Generate spec.md
+- [ ] 2.3 Clarify
+- [ ] 2.4 Requirements checklist
+- [ ] 2.5 Conflict analysis
+- [ ] 2.6 Research
+- [ ] 2.7 Plan
+- [ ] 2.8 Tasks
+- [ ] 2.9 Validation gate
+
+### Build Checklist
+(populated after planning completes)
+
+### E2E Validation
+(populated after build completes)
+
 ## Feature 5: Product Catalog & Line Cards
 
 ### PRD References
