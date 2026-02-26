@@ -176,7 +176,20 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
 
       try {
         const account = await getAccountById(app.prisma, tenantId, id);
-        return reply.status(200).send({ data: account });
+
+        // Fetch latest health score breakdown
+        const latestHealthScore = await app.prisma.accountHealthScore.findFirst({
+          where: { accountId: id, tenantId },
+          orderBy: { calculatedAt: 'desc' },
+          select: { factorBreakdown: true },
+        });
+
+        return reply.status(200).send({
+          data: {
+            ...account,
+            healthScoreBreakdown: latestHealthScore?.factorBreakdown ?? null,
+          },
+        });
       } catch (error: unknown) {
         return handleAccountError(error, request.requestId, reply);
       }

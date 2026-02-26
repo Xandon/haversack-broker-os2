@@ -39,6 +39,10 @@ export interface MockPrismaClient {
     update: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
   };
+  accountHealthScore: {
+    findFirst: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
   $executeRawUnsafe: ReturnType<typeof vi.fn>;
   $disconnect: ReturnType<typeof vi.fn>;
@@ -84,6 +88,10 @@ export function createMockPrisma(): MockPrismaClient {
       create: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
+    },
+    accountHealthScore: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
     },
     $queryRawUnsafe: vi.fn(),
     $executeRawUnsafe: vi.fn(),
