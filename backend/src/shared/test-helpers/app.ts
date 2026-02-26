@@ -6,6 +6,8 @@ import { errorHandler } from '../middleware/error-handler';
 import { authRoutes } from '../../auth/auth.routes';
 import { accountRoutes } from '../../domains/accounts/account.routes';
 import { activityRoutes } from '../../domains/activities/activity.routes';
+import { emailRecordRoutes } from '../../domains/activities/email-record.routes';
+import { taskRoutes } from '../../domains/tasks/task.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -31,6 +33,8 @@ export async function buildTestApp(
   await app.register(authRoutes);
   await app.register(accountRoutes);
   await app.register(activityRoutes);
+  await app.register(emailRecordRoutes);
+  await app.register(taskRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {
