@@ -27,24 +27,70 @@ enum AccountType {
   distributor
 }
 
-model User {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String    @map("tenant_id") @db.Uuid
-  email         String    @db.VarChar(255)
-  passwordHash  String    @map("password_hash") @db.VarChar(255)
-  firstName     String    @map("first_name") @db.VarChar(100)
-  lastName      String    @map("last_name") @db.VarChar(100)
-  role          UserRole
-  isActive      Boolean   @default(true) @map("is_active")
-  avatarUrl     String?   @map("avatar_url") @db.VarChar(500)
-  lastLoginAt   DateTime? @map("last_login_at") @db.Timestamptz()
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz()
+enum ActivityType {
+  visit
+  call
+  email
+  demo
+  sampling
+}
 
-  territories   UserTerritory[]
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
+enum TaskPriority {
+  high
+  medium
+  low
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum EmailDirection {
+  inbound
+  outbound
+}
+
+enum EmailStatus {
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  failed
+}
+
+enum NotificationType {
+  task_reminder
+  task_assigned
+  task_overdue
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  email        String    @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  firstName    String    @map("first_name") @db.VarChar(100)
+  lastName     String    @map("last_name") @db.VarChar(100)
+  role         UserRole
+  isActive     Boolean   @default(true) @map("is_active")
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz()
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz()
+
+  territories      UserTerritory[]
+  refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
+  loggedActivities Activity[]
+  createdTasks     Task[]          @relation("TaskCreator")
+  assignedTasks    Task[]          @relation("TaskAssignee")
+  notifications    Notification[]
+  emailRecords     EmailRecord[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -53,19 +99,19 @@ model User {
 }
 
 model Territory {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String    @map("tenant_id") @db.Uuid
-  name                String    @db.VarChar(255)
-  region              String    @db.VarChar(100)
-  zipCodes            String[]  @default([]) @map("zip_codes")
-  boundary            Json?
-  commissionModifier  Decimal   @default(1.00) @map("commission_modifier") @db.Decimal(4, 2)
-  isActive            Boolean   @default(true) @map("is_active")
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  name               String   @db.VarChar(255)
+  region             String   @db.VarChar(100)
+  zipCodes           String[] @default([]) @map("zip_codes")
+  boundary           Json?
+  commissionModifier Decimal  @default(1.00) @map("commission_modifier") @db.Decimal(4, 2)
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  users               UserTerritory[]
-  accounts            Account[]
+  users    UserTerritory[]
+  accounts Account[]
 
   @@unique([tenantId, name])
   @@index([tenantId, region])
@@ -85,23 +131,23 @@ model UserTerritory {
 }
 
 model AuditLog {
-  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String      @map("tenant_id") @db.Uuid
-  actorId        String      @map("actor_id") @db.Uuid
-  actorEmail     String      @map("actor_email") @db.VarChar(255)
-  entityType     String      @map("entity_type") @db.VarChar(50)
-  entityId       String      @map("entity_id") @db.Uuid
-  action         AuditAction
-  fieldName      String?     @map("field_name") @db.VarChar(100)
-  oldValue       String?     @map("old_value") @db.Text
-  newValue       String?     @map("new_value") @db.Text
-  changeSummary  Json?       @map("change_summary")
-  ipAddress      String?     @map("ip_address") @db.VarChar(45)
-  userAgent      String?     @map("user_agent") @db.VarChar(500)
-  requestId      String?     @map("request_id") @db.Uuid
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  actorId       String      @map("actor_id") @db.Uuid
+  actorEmail    String      @map("actor_email") @db.VarChar(255)
+  entityType    String      @map("entity_type") @db.VarChar(50)
+  entityId      String      @map("entity_id") @db.Uuid
+  action        AuditAction
+  fieldName     String?     @map("field_name") @db.VarChar(100)
+  oldValue      String?     @map("old_value") @db.Text
+  newValue      String?     @map("new_value") @db.Text
+  changeSummary Json?       @map("change_summary")
+  ipAddress     String?     @map("ip_address") @db.VarChar(45)
+  userAgent     String?     @map("user_agent") @db.VarChar(500)
+  requestId     String?     @map("request_id") @db.Uuid
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz()
 
-  actor          User        @relation(fields: [actorId], references: [id])
+  actor User @relation(fields: [actorId], references: [id])
 
   @@index([entityType, entityId, createdAt(sort: Desc)])
   @@index([actorId, createdAt(sort: Desc)])
@@ -118,7 +164,7 @@ model RefreshToken {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   revokedAt DateTime? @map("revoked_at") @db.Timestamptz()
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -126,28 +172,31 @@ model RefreshToken {
 }
 
 model Account {
-  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId               String      @map("tenant_id") @db.Uuid
-  name                   String      @db.VarChar(255)
-  accountType            AccountType @map("account_type")
-  streetAddress          String      @map("street_address") @db.VarChar(500)
-  city                   String      @db.VarChar(100)
-  state                  String      @db.VarChar(50)
-  zipCode                String      @map("zip_code") @db.VarChar(20)
-  territoryId            String      @map("territory_id") @db.Uuid
-  parentAccountId        String?     @map("parent_account_id") @db.Uuid
-  healthScore            Int?        @map("health_score")
-  healthScoreCalculatedAt DateTime?  @map("health_score_calculated_at") @db.Timestamptz()
-  isActive               Boolean     @default(true) @map("is_active")
-  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt              DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
-  deletedAt              DateTime?   @map("deleted_at") @db.Timestamptz()
+  id                      String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                String      @map("tenant_id") @db.Uuid
+  name                    String      @db.VarChar(255)
+  accountType             AccountType @map("account_type")
+  streetAddress           String      @map("street_address") @db.VarChar(500)
+  city                    String      @db.VarChar(100)
+  state                   String      @db.VarChar(50)
+  zipCode                 String      @map("zip_code") @db.VarChar(20)
+  territoryId             String      @map("territory_id") @db.Uuid
+  parentAccountId         String?     @map("parent_account_id") @db.Uuid
+  healthScore             Int?        @map("health_score")
+  healthScoreCalculatedAt DateTime?   @map("health_score_calculated_at") @db.Timestamptz()
+  isActive                Boolean     @default(true) @map("is_active")
+  createdAt               DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt               DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt               DateTime?   @map("deleted_at") @db.Timestamptz()
 
-  territory     Territory  @relation(fields: [territoryId], references: [id])
-  parentAccount Account?   @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
-  childAccounts Account[]  @relation("AccountHierarchy")
+  territory     Territory            @relation(fields: [territoryId], references: [id])
+  parentAccount Account?             @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  childAccounts Account[]            @relation("AccountHierarchy")
   contacts      Contact[]
   healthScores  AccountHealthScore[]
+  activities    Activity[]
+  tasks         Task[]
+  emailRecords  EmailRecord[]
 
   @@unique([tenantId, name])
   @@index([tenantId, territoryId])
@@ -159,20 +208,22 @@ model Account {
 }
 
 model Contact {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String    @map("tenant_id") @db.Uuid
-  accountId  String    @map("account_id") @db.Uuid
-  firstName  String    @map("first_name") @db.VarChar(100)
-  lastName   String    @map("last_name") @db.VarChar(100)
-  email      String?   @db.VarChar(255)
-  phone      String?   @db.VarChar(50)
-  title      String?   @db.VarChar(100)
-  isPrimary  Boolean   @default(false) @map("is_primary")
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz()
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  accountId String    @map("account_id") @db.Uuid
+  firstName String    @map("first_name") @db.VarChar(100)
+  lastName  String    @map("last_name") @db.VarChar(100)
+  email     String?   @db.VarChar(255)
+  phone     String?   @db.VarChar(50)
+  title     String?   @db.VarChar(100)
+  isPrimary Boolean   @default(false) @map("is_primary")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz()
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  emailRecords EmailRecord[]
+  tasks        Task[]
 
   @@index([tenantId, accountId])
   @@index([tenantId, email])
@@ -192,4 +243,142 @@ model AccountHealthScore {
   @@index([accountId, calculatedAt(sort: Desc)])
   @@index([tenantId, calculatedAt(sort: Desc)])
   @@map("account_health_scores")
+}
+
+model Activity {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String       @map("tenant_id") @db.Uuid
+  accountId       String       @map("account_id") @db.Uuid
+  userId          String       @map("user_id") @db.Uuid
+  type            ActivityType
+  notes           String?      @db.Text
+  occurredAt      DateTime     @map("occurred_at") @db.Timestamptz()
+  durationMinutes Int?         @map("duration_minutes")
+  version         Int          @default(1)
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt       DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  account Account @relation(fields: [accountId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  demos   Demo[]
+
+  @@index([tenantId, accountId, occurredAt(sort: Desc)])
+  @@index([tenantId, userId, occurredAt(sort: Desc)])
+  @@index([tenantId, type, occurredAt(sort: Desc)])
+  @@index([tenantId, deletedAt])
+  @@map("activities")
+}
+
+model Demo {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  activityId      String   @map("activity_id") @db.Uuid
+  productId       String   @map("product_id") @db.Uuid
+  quantitySampled Int?     @map("quantity_sampled")
+  buyerFeedback   String?  @map("buyer_feedback") @db.Text
+  outcome         String?  @db.VarChar(20)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@index([tenantId, productId])
+  @@map("demos")
+}
+
+model Task {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  title       String       @db.VarChar(255)
+  description String?      @db.Text
+  dueDate     DateTime     @map("due_date") @db.Timestamptz()
+  priority    TaskPriority
+  status      TaskStatus   @default(pending)
+  assigneeId  String       @map("assignee_id") @db.Uuid
+  creatorId   String       @map("creator_id") @db.Uuid
+  accountId   String?      @map("account_id") @db.Uuid
+  contactId   String?      @map("contact_id") @db.Uuid
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz()
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz()
+
+  assignee  User           @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator   User           @relation("TaskCreator", fields: [creatorId], references: [id])
+  account   Account?       @relation(fields: [accountId], references: [id])
+  contact   Contact?       @relation(fields: [contactId], references: [id])
+  reminders TaskReminder[]
+
+  @@index([tenantId, assigneeId, status, dueDate])
+  @@index([tenantId, accountId, createdAt(sort: Desc)])
+  @@index([tenantId, status, dueDate])
+  @@index([tenantId, deletedAt])
+  @@map("tasks")
+}
+
+model TaskReminder {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  taskId       String    @map("task_id") @db.Uuid
+  remindAt     DateTime  @map("remind_at") @db.Timestamptz()
+  reminderType String    @map("reminder_type") @db.VarChar(10)
+  isSent       Boolean   @default(false) @map("is_sent")
+  sentAt       DateTime? @map("sent_at") @db.Timestamptz()
+  bullmqJobId  String?   @map("bullmq_job_id") @db.VarChar(100)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([tenantId, isSent, remindAt])
+  @@map("task_reminders")
+}
+
+model EmailRecord {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  contactId      String?        @map("contact_id") @db.Uuid
+  accountId      String?        @map("account_id") @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  subject        String         @db.VarChar(500)
+  bodyPreview    String?        @map("body_preview") @db.VarChar(500)
+  direction      EmailDirection
+  status         EmailStatus    @default(sent)
+  recipientEmail String         @map("recipient_email") @db.VarChar(255)
+  openedAt       DateTime?      @map("opened_at") @db.Timestamptz()
+  clickedAt      DateTime?      @map("clicked_at") @db.Timestamptz()
+  bouncedAt      DateTime?      @map("bounced_at") @db.Timestamptz()
+  sentAt         DateTime       @map("sent_at") @db.Timestamptz()
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+
+  contact Contact? @relation(fields: [contactId], references: [id])
+  account Account? @relation(fields: [accountId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, accountId, sentAt(sort: Desc)])
+  @@index([tenantId, contactId, sentAt(sort: Desc)])
+  @@index([tenantId, status])
+  @@index([tenantId, recipientEmail])
+  @@map("email_records")
+}
+
+model Notification {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String           @map("tenant_id") @db.Uuid
+  userId        String           @map("user_id") @db.Uuid
+  type          NotificationType
+  title         String           @db.VarChar(255)
+  body          String?          @db.Text
+  referenceId   String?          @map("reference_id") @db.Uuid
+  referenceType String?          @map("reference_type") @db.VarChar(50)
+  isRead        Boolean          @default(false) @map("is_read")
+  readAt        DateTime?        @map("read_at") @db.Timestamptz()
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, userId, isRead, createdAt(sort: Desc)])
+  @@index([tenantId, userId, createdAt(sort: Desc)])
+  @@map("notifications")
 }
