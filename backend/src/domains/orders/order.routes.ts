@@ -18,6 +18,7 @@ import {
 } from './order.service';
 import type { AuditContext } from './order.service';
 import { approveOrder, rejectOrder, listApprovalQueue } from './order-approval.service';
+import { getReorderSuggestions, ReorderError } from './reorder-suggestion.service';
 
 function getAuditContext(request: FastifyRequest): AuditContext {
   return {
@@ -373,6 +374,43 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
           .status(200)
           .send({ data: formatOrderResponse(order as unknown as Record<string, unknown>) });
       } catch (error) {
+        return handleOrderError(error, request.requestId, reply);
+      }
+    },
+  );
+
+  // GET /api/accounts/:id/reorder-suggestion — AI reorder suggestions
+  app.get(
+    '/api/accounts/:id/reorder-suggestion',
+    { preHandler: [authenticate, authorize('rep', 'manager')] },
+    async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply,
+    ) => {
+      try {
+        const tenantId = request.user!.tenantId;
+
+        const result = await getReorderSuggestions(
+          app.prisma,
+          tenantId,
+          request.params.id,
+        );
+
+        return reply.status(200).send({ data: result });
+      } catch (error) {
+        if (error instanceof ReorderError) {
+          const statusMap: Record<string, number> = {
+            INSUFFICIENT_HISTORY: 400,
+            AI_UNAVAILABLE: 503,
+          };
+          const status = statusMap[error.code] ?? 400;
+          return reply.status(status).send({
+            error: error.code,
+            message: error.message,
+            code: error.code,
+            requestId: request.requestId,
+          });
+        }
         return handleOrderError(error, request.requestId, reply);
       }
     },

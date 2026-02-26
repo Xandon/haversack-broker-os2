@@ -79,6 +79,39 @@ export interface MockPrismaClient {
     update: ReturnType<typeof vi.fn>;
     count: ReturnType<typeof vi.fn>;
   };
+  order: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
+  };
+  orderLineItem: {
+    deleteMany: ReturnType<typeof vi.fn>;
+    createMany: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
+  };
+  vendorSubOrder: {
+    create: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+  };
+  orderApproval: {
+    create: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
+  };
+  quickBooksExport: {
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    findFirst: ReturnType<typeof vi.fn>;
+  };
+  product: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+  };
+  brand: {
+    findMany: ReturnType<typeof vi.fn>;
+  };
+  $transaction: ReturnType<typeof vi.fn>;
   $queryRawUnsafe: ReturnType<typeof vi.fn>;
   $executeRawUnsafe: ReturnType<typeof vi.fn>;
   $disconnect: ReturnType<typeof vi.fn>;
@@ -165,6 +198,39 @@ export function createMockPrisma(): MockPrismaClient {
       update: vi.fn(),
       count: vi.fn(),
     },
+    order: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    orderLineItem: {
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    vendorSubOrder: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    orderApproval: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    quickBooksExport: {
+      create: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(),
+    },
+    product: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+    },
+    brand: {
+      findMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
     $queryRawUnsafe: vi.fn(),
     $executeRawUnsafe: vi.fn(),
     $disconnect: vi.fn(),
