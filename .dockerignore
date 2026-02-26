@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build output
+.next
+dist
+coverage
+.turbo
+
+# Git
+.git
+
+# IDE / tooling
+.claude
+.specify
+.vscode
+.idea
+
+# Documentation & research
+docs
+research
+
+# Tests (E2E)
+e2e
+e2e-screenshots
+
+# Environment files
+.env
+.env.local

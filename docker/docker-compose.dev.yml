@@ -1,0 +1,132 @@
+name: haversack
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: haversack-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: haversack_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - haversack_postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - haversack-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: haversack-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - haversack_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - haversack-net
+
+  prisma-migrate:
+    container_name: haversack-prisma-migrate
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    env_file: ../.env.docker
+    restart: "no"
+    command: sh -c "npx prisma generate && npx prisma migrate deploy"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - haversack-net
+
+  backend:
+    container_name: haversack-backend
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    env_file: ../.env.docker
+    command: npx tsx watch backend/src/server.ts
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../backend/src:/app/backend/src
+      - ../packages/shared/src:/app/packages/shared/src
+      - ../prisma:/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - haversack-net
+
+  frontend:
+    container_name: haversack-frontend
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    env_file: ../.env.docker
+    working_dir: /app/frontend
+    command: npx next dev --hostname 0.0.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      WATCHPACK_POLLING: "true"
+      PORT: "3000"
+    volumes:
+      - ../frontend/src:/app/frontend/src
+      - ../frontend/public:/app/frontend/public
+      - ../packages/shared/src:/app/packages/shared/src
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - haversack-net
+
+  worker:
+    container_name: haversack-worker
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    env_file: ../.env.docker
+    command: npx tsx watch worker/src/index.ts
+    volumes:
+      - ../worker/src:/app/worker/src
+      - ../packages/shared/src:/app/packages/shared/src
+      - ../prisma:/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    networks:
+      - haversack-net
+
+volumes:
+  haversack_postgres_data:
+  haversack_redis_data:
+
+networks:
+  haversack-net:
+    driver: bridge

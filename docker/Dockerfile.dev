@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+# Native build dependencies for bcrypt + OpenSSL for Prisma engine
+RUN apk add --no-cache python3 make g++ openssl
+
+WORKDIR /app
+
+# Copy all workspace package.json files + lockfile for layer caching
+COPY package.json package-lock.json ./
+COPY backend/package.json backend/
+COPY frontend/package.json frontend/
+COPY worker/package.json worker/
+COPY packages/shared/package.json packages/shared/
+
+RUN npm ci
+
+# Generate Prisma client
+COPY prisma/ prisma/
+RUN npx prisma generate
+
+# Copy full source (overridden by volume mounts in compose)
+COPY . .
