@@ -19,7 +19,7 @@
 | # | Feature | Status | Batches | Tests Added |
 |---|---------|--------|---------|-------------|
 | 1 | Foundation (Auth, RLS, Audit) | COMPLETE | 3 | 75 |
-| 2 | Account Management | PENDING | -- | -- |
+| 2 | Account Management | COMPLETE | 3 | 128 |
 
 ## Completed Batches
 
@@ -28,6 +28,9 @@
 | 1 | Foundation | feature/batch-1-foundation-schema | 36 | Merged to dev |
 | 2 | Foundation | feature/batch-2-foundation-middleware | 0 (code only) | Merged to dev |
 | 3 | Foundation | feature/batch-3-foundation-tests | 38 | Merged to dev |
+| 4 | Account Mgmt | feature/batch-4-account-schema | 60 | Merged to dev |
+| 5 | Account Mgmt | feature/batch-5-account-routes | 42 | Merged to dev |
+| 6 | Account Mgmt | feature/batch-6-account-health | 28 | Merged to dev |
 
 ## Regression History
 
@@ -37,9 +40,12 @@
 | 2026-02-26 | dev (post-batch-1) | 37 | +36 | PASS |
 | 2026-02-26 | dev (post-batch-2) | 37 | +0 | PASS |
 | 2026-02-26 | dev (post-batch-3) | 75 | +38 | PASS |
+| 2026-02-26 | dev (post-batch-4) | 135 | +60 | PASS |
+| 2026-02-26 | dev (post-batch-5) | 177 | +42 | PASS |
+| 2026-02-26 | dev (post-batch-6) | 204 | +28 | PASS |
 
 ## Task Completion
 
-- **Completed:** 22 / 177 (T001-T022)
-- **Last completed task:** T022
-- **Global batch counter:** 3
+- **Completed:** 42 / 177 (T001-T042)
+- **Last completed task:** T042
+- **Global batch counter:** 6
