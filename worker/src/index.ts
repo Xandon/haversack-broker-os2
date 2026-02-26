@@ -16,6 +16,10 @@ import { createEmailTrackingQueue } from './queues/email-tracking.queue.js';
 import { createEmailTrackingWorker } from './jobs/email-tracking.job.js';
 import { createTaskReminderQueue } from './queues/task-reminder.queue.js';
 import { createTaskReminderWorker } from './jobs/task-reminder.job.js';
+import { createImportProcessorQueue } from './queues/import-processor.queue.js';
+import { createImportProcessorWorker } from './jobs/import-processor.job.js';
+import { createDataQualityQueue } from './queues/data-quality.queue.js';
+import { createDataQualityWorker } from './jobs/data-quality-scorecard.job.js';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -78,6 +82,30 @@ export async function startWorkers(config: WorkerConfig): Promise<void> {
 
   logger.info('Task reminder worker registered and periodic schedule configured');
 
+  // Create import processor queue and worker
+  const importProcessorQueue = createImportProcessorQueue(redis);
+  const importProcessorWorker = createImportProcessorWorker(redis, prisma);
+
+  logger.info('Import processor worker registered');
+
+  // Create data quality scorecard queue and worker
+  const dataQualityQueue = createDataQualityQueue(redis);
+  const dataQualityWorker = createDataQualityWorker(redis, prisma);
+
+  // Schedule nightly data quality scorecard at 03:00 UTC (after health scores at 02:00)
+  await dataQualityQueue.upsertJobScheduler(
+    'nightly-data-quality',
+    {
+      pattern: '0 3 * * *', // Every day at 03:00 UTC
+    },
+    {
+      name: 'nightly-data-quality-scorecard',
+      data: { tenantId: '' }, // Will need to be populated per-tenant
+    },
+  );
+
+  logger.info('Data quality scorecard worker registered and nightly schedule configured');
+
   // Graceful shutdown
   const shutdown = async (): Promise<void> => {
     logger.info('Shutting down workers...');
@@ -87,6 +115,10 @@ export async function startWorkers(config: WorkerConfig): Promise<void> {
     await emailTrackingQueue.close();
     await taskReminderWorker.close();
     await taskReminderQueue.close();
+    await importProcessorWorker.close();
+    await importProcessorQueue.close();
+    await dataQualityWorker.close();
+    await dataQualityQueue.close();
     logger.info('Workers shut down gracefully');
   };
 
