@@ -15,6 +15,7 @@
 | 2 | feature/batch-2-account-detail-search | ✅ Complete | Yes |
 | 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
 | 4 | feature/batch-4-order-entry | ✅ Complete | Yes |
+| 5 | feature/batch-5-data-import-user-mgmt | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -24,16 +25,7 @@
 | 2 | US-002/003 Account Detail + Search (T049-T060) | ✅ Complete | 232/232 | — |
 | 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
 | 4 | US-006 Order Entry (T081-T095) | ✅ Complete | 389/389 | — |
-| 5 | US-005 Pipeline (T086-T094) | ⬜ Not Started | — | — |
-| 6 | US-006 Email (T095-T104) | ⬜ Not Started | — | — |
-| 7 | US-007 AI (T105-T115) | ⬜ Not Started | — | — |
-| 8 | US-008 Reports (T116-T124) | ⬜ Not Started | — | — |
-| 9 | US-009 Search (T125-T131) | ⬜ Not Started | — | — |
-| 10 | US-010 Mobile (T132-T138) | ⬜ Not Started | — | — |
-| 11 | US-011 Import (T139-T146) | ⬜ Not Started | — | — |
-| 12 | US-012 Rules (T147-T155) | ⬜ Not Started | — | — |
-| 13 | US-013/014 Admin+Notify (T156-T170) | ⬜ Not Started | — | — |
-| 14 | Polish, E2E, Performance (T171-T177) | ⬜ Not Started | — | — |
+| 5 | US-012 Data Import & User Mgmt (T096-T108) | ✅ Complete | 435/435 | — |
 
 ## Task Detail
 
@@ -136,6 +128,23 @@
 | T094 | New order page (account selection + OrderForm) | ✅ |
 | T095 | Order + Product service tests (48 new, 255 total passing) | ✅ |
 
+### Batch 5: Data Import & User Management (US-012)
+| Task | Description | Status |
+|------|-------------|--------|
+| T096 | User + Import Zod schemas (shared package) | ✅ |
+| T097 | User management service (CRUD, role assignment, bcrypt) | ✅ |
+| T098 | User routes (Admin-only RBAC, POST/GET/PATCH) | ✅ |
+| T099 | Session invalidation (clear refresh_token_hash on deactivate) | ✅ |
+| T100 | CSV/XLSX import service (validation, preview, execution) | ✅ |
+| T101 | 50 MB file size limit enforcement (FR-032) | ✅ |
+| T102 | Import processor BullMQ worker (rate-limited) | ✅ |
+| T103 | Data quality scorecard service (5 metrics) | ✅ |
+| T104 | Nightly data quality BullMQ job (03:00 UTC) | ✅ |
+| T105 | User management admin page (filters, create, deactivate) | ✅ |
+| T106 | CSV/XLSX import page (upload, preview, execute) | ✅ |
+| T107 | Data quality scorecard dashboard (7-day trend) | ✅ |
+| T108 | Comprehensive tests (46 new tests, 435 total) | ✅ |
+
 ## Regression History
 | After Batch | Total Tests | Passing | Failing | Coverage | Branch |
 |-------------|-------------|---------|---------|----------|--------|
@@ -144,3 +153,4 @@
 | 2 | 232 | 232 | 0 | — | dev |
 | 3 | 340 | 340 | 0 | — | dev |
 | 4 | 389 | 389 | 0 | — | dev |
+| 5 | 435 | 435 | 0 | — | dev |
