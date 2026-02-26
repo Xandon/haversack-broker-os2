@@ -3,7 +3,7 @@
  * Provides CSV/XLSX file validation, preview, and import execution.
  * Implements FR-031 (CSV/XLSX import), FR-032 (50MB limit), FR-033 (data quality).
  */
-import type { PrismaClient, ImportJob } from '@prisma/client';
+import type { PrismaClient, ImportJob, Prisma } from '@prisma/client';
 
 import { logger } from '../../shared/utils/logger.js';
 
@@ -308,7 +308,7 @@ export async function updateImportPreview(
       total_rows: totalRows,
       valid_rows: validRows,
       error_rows: errorRows,
-      preview_data: previewData as Record<string, unknown>,
+      preview_data: previewData as unknown as Prisma.InputJsonValue,
     },
   });
 }
@@ -494,12 +494,12 @@ export async function calculateDataQuality(
 
   // Product image coverage: % of products with image_url populated
   const totalProducts = await prisma.product.count({
-    where: { tenant_id: tenantId, deleted_at: null },
+    where: { tenant_id: tenantId, is_active: true },
   });
   const productsWithImage = await prisma.product.count({
     where: {
       tenant_id: tenantId,
-      deleted_at: null,
+      is_active: true,
       image_url: { not: null },
     },
   });
@@ -510,17 +510,14 @@ export async function calculateDataQuality(
   // Duplicate account count (same name, different IDs)
   const duplicateAccountCount = 0; // Simplified — real impl would use SQL grouping
 
-  // Stale account count: accounts with no activity in 90+ days
+  // Stale account count: accounts with no updates in 90+ days
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const staleAccountCount = await prisma.account.count({
     where: {
       tenant_id: tenantId,
       deleted_at: null,
-      OR: [
-        { last_activity_date: { lt: ninetyDaysAgo } },
-        { last_activity_date: null },
-      ],
+      updated_at: { lt: ninetyDaysAgo },
     },
   });
 
