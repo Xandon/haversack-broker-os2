@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-26 08:07 UTC
+**Last Updated:** 2026-02-26 12:20 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 6
+**Global Batch Counter:** 9
 
 ## Feature Queue
 
@@ -13,7 +13,7 @@
 |---|---------|----------|---------------|--------|---------|-------------|-----|
 | 1 | Foundation (Auth, RLS, Audit) | 002-foundation | NFR-007, NFR-008, NFR-013, NFR-014 | COMPLETE | 3/3 | 75 | SKIP (backend-only) |
 | 2 | Account Management | 003-account-management | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006 | COMPLETE | 3/3 | 128 | SKIP (backend-only) |
-| 3 | Activity & Task Management | 004-activity-tasks | FR-007, FR-008, FR-009, FR-010 | PENDING | -- | -- | -- |
+| 3 | Activity & Task Management | 004-activity-tasks | FR-007, FR-008, FR-009, FR-010 | COMPLETE | 3/3 | 175 | SKIP (backend-only) |
 | 4 | Order Entry & Approval | 005-order-entry | FR-011, FR-012, FR-013, FR-014, FR-015 | PENDING | -- | -- | -- |
 | 5 | Product Catalog & Line Cards | 006-product-catalog | FR-018, FR-019 | PENDING | -- | -- | -- |
 | 6 | Pipeline & Opportunities | 007-pipeline-opportunities | FR-016, FR-017 | PENDING | -- | -- | -- |
@@ -40,9 +40,9 @@ Feature 12 (Polish) depends on ALL above
 
 ## Current State
 
-- **Active Feature:** 3 (Activity & Task Management)
+- **Active Feature:** 4 (Order Entry & Approval)
 - **Active Stage:** PLANNING
-- **Active Step:** 2.1
+- **Active Step:** 2.1 (Create feature directory)
 - **Resume Point:** STAGE 2, Step 2.1
 
 ## Feature 1: Foundation (Auth, RLS, Audit)
@@ -128,3 +128,47 @@ Feature 12 (Polish) depends on ALL above
   - Health score job: weighted factor calculation, batch processing, history tracking
   - Health score queue: BullMQ config with daily 02:00 UTC cron
   - Health score filtering and breakdown in account detail API
+
+## Feature 3: Activity & Task Management
+
+### PRD References
+- FR-007: Call/visit logging with structured notes
+- FR-008: Task scheduling and follow-up management
+- FR-009: Activity timeline (chronological history per account)
+- FR-010: Activity metrics and reporting
+
+### Planning Checklist
+- [x] 2.1 Create feature directory — .specify/specs/004-activity-tasks
+- [x] 2.2 Generate spec.md — 6 user stories, 4 FRs
+- [x] 2.3 Clarify — 7 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 22/22 items passing
+- [x] 2.5 Conflict analysis — 35 safe, 10 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: accounts
+- [x] 2.7 Plan — 37 files planned (31 new, 6 modified)
+- [x] 2.8 Tasks — 25 tasks in 3 batches, starting at batch 7
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [x] Batch 7: Schema, shared types & core activity service (T043-T051) — 112 tests, merged to dev
+- [x] Batch 8: Timeline, tasks & email records (T052-T060) — 50 tests, merged to dev
+- [x] Batch 9: Reminders, notifications & worker jobs (T061-T067) — 13 tests, merged to dev
+
+### E2E Validation
+- E2E: SKIP — Feature 3 is backend-only API + worker jobs (no UI pages yet). E2E testing will be performed on features with user-facing pages.
+
+### Completion Summary
+- **Tests added:** 175 (112 batch 7 + 50 batch 8 + 13 batch 9)
+- **Batches:** 3 (batches 7-9, all merged to dev)
+- **Files created/modified:** 37 files (31 new, 6 modified)
+- **Key deliverables:**
+  - Prisma models: Activity, Demo, Task, TaskReminder, EmailRecord, Notification with indexes
+  - Shared Zod schemas for activity, task, email-record, notification CRUD + list queries
+  - Activity service: CRUD with 15-min edit window, demo handling, optimistic concurrency
+  - Activity metrics: per-rep/account/type aggregation with raw SQL
+  - Timeline service: multi-source merge (activities + emails + tasks), cursor pagination
+  - Task service: CRUD with status transitions, overdue detection, assignee validation
+  - EmailRecord service: auto-linking by email match, unmatched list, engagement tracking
+  - 11 Fastify routes with auth/RBAC middleware across activities, tasks, email-records
+  - Task reminder queue + job processor with notification creation
+  - Email notification queue + job with retry/backoff
+  - Worker registration with graceful shutdown

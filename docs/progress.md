@@ -20,6 +20,7 @@
 |---|---------|--------|---------|-------------|
 | 1 | Foundation (Auth, RLS, Audit) | COMPLETE | 3 | 75 |
 | 2 | Account Management | COMPLETE | 3 | 128 |
+| 3 | Activity & Task Management | COMPLETE | 3 | 175 |
 
 ## Completed Batches
 
@@ -31,6 +32,9 @@
 | 4 | Account Mgmt | feature/batch-4-account-schema | 60 | Merged to dev |
 | 5 | Account Mgmt | feature/batch-5-account-routes | 42 | Merged to dev |
 | 6 | Account Mgmt | feature/batch-6-account-health | 28 | Merged to dev |
+| 7 | Activity & Tasks | feature/batch-batch-7-activity-schema | 112 | Merged to dev |
+| 8 | Activity & Tasks | feature/batch-batch-8-tasks-timeline | 50 | Merged to dev |
+| 9 | Activity & Tasks | feature/batch-batch-9-reminders-notifications | 13 | Merged to dev |
 
 ## Regression History
 
@@ -43,9 +47,12 @@
 | 2026-02-26 | dev (post-batch-4) | 135 | +60 | PASS |
 | 2026-02-26 | dev (post-batch-5) | 177 | +42 | PASS |
 | 2026-02-26 | dev (post-batch-6) | 204 | +28 | PASS |
+| 2026-02-26 | dev (post-batch-7) | 316 | +112 | PASS |
+| 2026-02-26 | dev (post-batch-8) | 366 | +50 | PASS |
+| 2026-02-26 | dev (post-batch-9) | 379 | +13 | PASS |
 
 ## Task Completion
 
-- **Completed:** 42 / 177 (T001-T042)
-- **Last completed task:** T042
-- **Global batch counter:** 6
+- **Completed:** 67 / 177 (T001-T067)
+- **Last completed task:** T067
+- **Global batch counter:** 9
