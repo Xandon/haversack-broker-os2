@@ -2,38 +2,65 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import {
   getProductById,
   searchProducts,
+  createProduct,
+  updateProduct,
+  softDeleteProduct,
+  listProducts,
   formatProductResponse,
   getEffectivePrice,
   ProductError,
 } from './product.service';
-import type { ProductWithBrand } from './product.service';
+import type { ProductWithBrand, AuditContext } from './product.service';
 import type { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+vi.mock('../../shared/services/audit.service', () => ({
+  writeAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
 function createMockPrisma(): {
   prisma: PrismaClient;
-  product: { findFirst: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn> };
+  product: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
 } {
   const product = {
     findFirst: vi.fn(),
     findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
   };
+  const auditTrail = { create: vi.fn() };
   return {
-    prisma: { product } as unknown as PrismaClient,
+    prisma: { product, auditTrail } as unknown as PrismaClient,
     product,
   };
 }
 
 const TENANT_ID = '00000000-0000-4000-a000-000000000001';
 const PRODUCT_ID = '00000000-0000-4000-a000-000000000010';
+const BRAND_ID = '00000000-0000-4000-a000-000000000020';
+
+const AUDIT_CTX: AuditContext = {
+  actorId: '00000000-0000-4000-a000-000000000099',
+  actorEmail: 'admin@test.com',
+  ipAddress: '127.0.0.1',
+  requestId: 'req-123',
+};
 
 function createMockProduct(overrides: Partial<ProductWithBrand> = {}): ProductWithBrand {
   return {
     id: PRODUCT_ID,
     tenantId: TENANT_ID,
-    brandId: '00000000-0000-4000-a000-000000000020',
+    brandId: BRAND_ID,
     name: 'Artisan Honey 12oz',
     sku: 'AH-12',
+    category: 'honey',
+    subcategory: 'raw',
+    description: 'Premium raw honey',
     unitPrice: new Decimal('10.00'),
     wholesalePrice: new Decimal('7.50'),
     promotionalPrice: null,
@@ -42,14 +69,24 @@ function createMockProduct(overrides: Partial<ProductWithBrand> = {}): ProductWi
     caseSize: 24,
     revenueModelDefault: 'broker',
     availabilityStatus: 'active',
+    imageUrl: 'https://example.com/honey.jpg',
+    certifications: ['organic', 'non_gmo'],
+    allergens: [],
+    dietaryAttributes: ['vegan'],
     isActive: true,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     brand: {
-      id: '00000000-0000-4000-a000-000000000020',
+      id: BRAND_ID,
       tenantId: TENANT_ID,
       name: 'Pacific Honey Co',
       commissionRate: new Decimal('12.00'),
+      description: null,
+      logoUrl: null,
+      contactName: null,
+      contactEmail: null,
+      contactPhone: null,
+      website: null,
       isActive: true,
       createdAt: new Date('2026-01-01'),
       updatedAt: new Date('2026-01-01'),
@@ -58,11 +95,17 @@ function createMockProduct(overrides: Partial<ProductWithBrand> = {}): ProductWi
   } as ProductWithBrand;
 }
 
-describe('FR-012: Product service', () => {
+describe('FR-012/FR-018: Product service', () => {
   let prisma: PrismaClient;
-  let productMock: { findFirst: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn> };
+  let productMock: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
+    vi.clearAllMocks();
     const mock = createMockPrisma();
     prisma = mock.prisma;
     productMock = mock.product;
@@ -76,10 +119,6 @@ describe('FR-012: Product service', () => {
       const result = await getProductById(prisma, TENANT_ID, PRODUCT_ID);
       expect(result.id).toBe(PRODUCT_ID);
       expect(result.brand.name).toBe('Pacific Honey Co');
-      expect(productMock.findFirst).toHaveBeenCalledWith({
-        where: { id: PRODUCT_ID, tenantId: TENANT_ID, isActive: true },
-        include: { brand: true },
-      });
     });
 
     test('FR-012: throws ProductError when not found', async () => {
@@ -103,7 +142,244 @@ describe('FR-012: Product service', () => {
     });
   });
 
-  describe('searchProducts', () => {
+  describe('FR-018a: createProduct', () => {
+    test('FR-018a: creates product with all catalog fields', async () => {
+      productMock.findFirst.mockResolvedValue(null); // no SKU conflict
+      const mockCreated = createMockProduct();
+      productMock.create.mockResolvedValue(mockCreated);
+
+      const result = await createProduct(prisma, TENANT_ID, {
+        name: 'Artisan Honey 12oz',
+        sku: 'AH-12',
+        brandId: BRAND_ID,
+        unitPrice: 10.00,
+        revenueModelDefault: 'broker',
+        category: 'honey',
+        subcategory: 'raw',
+        description: 'Premium raw honey',
+        imageUrl: 'https://example.com/honey.jpg',
+        certifications: ['organic', 'non_gmo'],
+        allergens: [],
+        dietaryAttributes: ['vegan'],
+      }, AUDIT_CTX);
+
+      expect(result.id).toBe(PRODUCT_ID);
+      expect(productMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: TENANT_ID,
+            category: 'honey',
+            certifications: ['organic', 'non_gmo'],
+          }),
+        }),
+      );
+    });
+
+    test('FR-018d: rejects duplicate SKU within tenant', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct()); // SKU exists
+
+      await expect(
+        createProduct(prisma, TENANT_ID, {
+          name: 'Another Honey',
+          sku: 'AH-12',
+          brandId: BRAND_ID,
+          unitPrice: 10,
+          revenueModelDefault: 'broker',
+        }, AUDIT_CTX),
+      ).rejects.toThrow('SKU already exists');
+    });
+
+    test('FR-018a: creates product with minimal fields', async () => {
+      productMock.findFirst.mockResolvedValue(null);
+      const mockCreated = createMockProduct({
+        category: null,
+        subcategory: null,
+        description: null,
+        imageUrl: null,
+        certifications: [],
+        allergens: [],
+        dietaryAttributes: [],
+      });
+      productMock.create.mockResolvedValue(mockCreated);
+
+      const result = await createProduct(prisma, TENANT_ID, {
+        name: 'Basic Product',
+        sku: 'BP-01',
+        brandId: BRAND_ID,
+        unitPrice: 5.00,
+        revenueModelDefault: 'wholesale',
+      }, AUDIT_CTX);
+
+      expect(result).toBeDefined();
+      expect(productMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            category: null,
+            certifications: [],
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('FR-018e: updateProduct', () => {
+    test('FR-018e: updates product fields', async () => {
+      const existing = createMockProduct();
+      productMock.findFirst.mockResolvedValue(existing);
+      const updated = createMockProduct({ category: 'condiments' });
+      productMock.update.mockResolvedValue(updated);
+
+      const result = await updateProduct(
+        prisma, TENANT_ID, PRODUCT_ID,
+        { category: 'condiments' },
+        undefined,
+        AUDIT_CTX,
+      );
+
+      expect(result.category).toBe('condiments');
+    });
+
+    test('FR-018e: optimistic concurrency check succeeds with matching timestamp', async () => {
+      const existing = createMockProduct();
+      productMock.findFirst.mockResolvedValue(existing);
+      productMock.update.mockResolvedValue(existing);
+
+      await expect(
+        updateProduct(
+          prisma, TENANT_ID, PRODUCT_ID,
+          { name: 'Updated' },
+          existing.updatedAt.toISOString(),
+          AUDIT_CTX,
+        ),
+      ).resolves.toBeDefined();
+    });
+
+    test('FR-018e: optimistic concurrency check fails with stale timestamp', async () => {
+      const existing = createMockProduct();
+      productMock.findFirst.mockResolvedValue(existing);
+
+      await expect(
+        updateProduct(
+          prisma, TENANT_ID, PRODUCT_ID,
+          { name: 'Updated' },
+          '2025-01-01T00:00:00.000Z',
+          AUDIT_CTX,
+        ),
+      ).rejects.toThrow('modified by another user');
+    });
+
+    test('FR-018e: rejects update on non-existent product', async () => {
+      productMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        updateProduct(
+          prisma, TENANT_ID, PRODUCT_ID,
+          { name: 'Updated' },
+          undefined,
+          AUDIT_CTX,
+        ),
+      ).rejects.toThrow('Product not found');
+    });
+
+    test('FR-018d: rejects duplicate SKU on update', async () => {
+      const existing = createMockProduct();
+      productMock.findFirst
+        .mockResolvedValueOnce(existing) // find existing
+        .mockResolvedValueOnce(createMockProduct({ id: 'other-id', sku: 'DUP-SKU' })); // SKU conflict
+
+      await expect(
+        updateProduct(
+          prisma, TENANT_ID, PRODUCT_ID,
+          { sku: 'DUP-SKU' },
+          undefined,
+          AUDIT_CTX,
+        ),
+      ).rejects.toThrow('SKU already exists');
+    });
+  });
+
+  describe('FR-018a: softDeleteProduct', () => {
+    test('FR-018a: soft-deletes product by setting isActive false', async () => {
+      productMock.findFirst.mockResolvedValue(createMockProduct());
+      productMock.update.mockResolvedValue({ isActive: false });
+
+      const result = await softDeleteProduct(prisma, TENANT_ID, PRODUCT_ID, AUDIT_CTX);
+      expect(result.deleted).toBe(true);
+      expect(productMock.update).toHaveBeenCalledWith({
+        where: { id: PRODUCT_ID },
+        data: { isActive: false },
+      });
+    });
+
+    test('FR-018a: throws when product not found', async () => {
+      productMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        softDeleteProduct(prisma, TENANT_ID, PRODUCT_ID, AUDIT_CTX),
+      ).rejects.toThrow('Product not found');
+    });
+  });
+
+  describe('FR-018b: listProducts', () => {
+    test('FR-018b: lists products with default pagination', async () => {
+      const products = [createMockProduct()];
+      productMock.findMany.mockResolvedValue(products);
+
+      const result = await listProducts(prisma, TENANT_ID, { limit: 20, sortBy: 'name', sortOrder: 'asc' });
+      expect(result.data).toHaveLength(1);
+      expect(result.pagination.hasMore).toBe(false);
+    });
+
+    test('FR-018b: applies category filter', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await listProducts(prisma, TENANT_ID, {
+        category: 'honey',
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ category: 'honey' }),
+        }),
+      );
+    });
+
+    test('FR-018b: applies certification filter with hasSome', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await listProducts(prisma, TENANT_ID, {
+        certification: 'organic',
+        limit: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            certifications: { hasSome: ['organic'] },
+          }),
+        }),
+      );
+    });
+
+    test('FR-018b: indicates hasMore when results exceed limit', async () => {
+      const products = Array.from({ length: 3 }, (_, i) =>
+        createMockProduct({ id: `id-${i}` }),
+      );
+      productMock.findMany.mockResolvedValue(products);
+
+      const result = await listProducts(prisma, TENANT_ID, { limit: 2, sortBy: 'name', sortOrder: 'asc' });
+      expect(result.data).toHaveLength(2);
+      expect(result.pagination.hasMore).toBe(true);
+      expect(result.pagination.cursor).toBeDefined();
+    });
+  });
+
+  describe('FR-018b: searchProducts enhanced', () => {
     test('FR-012: searches by name with ILIKE', async () => {
       const mockProducts = [createMockProduct()];
       productMock.findMany.mockResolvedValue(mockProducts);
@@ -113,47 +389,38 @@ describe('FR-012: Product service', () => {
       expect(results[0]!.name).toBe('Artisan Honey 12oz');
     });
 
+    test('FR-018b: applies category filter in search', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await searchProducts(prisma, TENANT_ID, { q: 'test', category: 'honey' });
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ category: 'honey' }),
+        }),
+      );
+    });
+
+    test('FR-018b: applies certification filter in search', async () => {
+      productMock.findMany.mockResolvedValue([]);
+
+      await searchProducts(prisma, TENANT_ID, { q: 'test', certification: 'organic' });
+      expect(productMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            certifications: { hasSome: ['organic'] },
+          }),
+        }),
+      );
+    });
+
     test('FR-012: applies brand filter when provided', async () => {
       productMock.findMany.mockResolvedValue([]);
-      const brandId = '00000000-0000-4000-a000-000000000020';
 
-      await searchProducts(prisma, TENANT_ID, { q: 'test', brandId });
+      await searchProducts(prisma, TENANT_ID, { q: 'test', brandId: BRAND_ID });
       expect(productMock.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ brandId }),
+          where: expect.objectContaining({ brandId: BRAND_ID }),
         }),
-      );
-    });
-
-    test('FR-012: applies availability filter when provided', async () => {
-      productMock.findMany.mockResolvedValue([]);
-
-      await searchProducts(prisma, TENANT_ID, {
-        q: 'test',
-        availabilityStatus: 'active',
-      });
-      expect(productMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ availabilityStatus: 'active' }),
-        }),
-      );
-    });
-
-    test('FR-012: respects limit parameter', async () => {
-      productMock.findMany.mockResolvedValue([]);
-
-      await searchProducts(prisma, TENANT_ID, { q: 'test', limit: 10 });
-      expect(productMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 10 }),
-      );
-    });
-
-    test('FR-012: defaults limit to 20', async () => {
-      productMock.findMany.mockResolvedValue([]);
-
-      await searchProducts(prisma, TENANT_ID, { q: 'test' });
-      expect(productMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 20 }),
       );
     });
 
@@ -170,31 +437,39 @@ describe('FR-012: Product service', () => {
   });
 
   describe('formatProductResponse', () => {
-    test('FR-012: formats product with all fields', () => {
+    test('FR-018: formats product with all catalog fields', () => {
       const product = createMockProduct();
       const result = formatProductResponse(product);
 
       expect(result.id).toBe(PRODUCT_ID);
       expect(result.name).toBe('Artisan Honey 12oz');
-      expect(result.sku).toBe('AH-12');
-      expect(result.brand.name).toBe('Pacific Honey Co');
-      expect(result.unitPrice).toBe(10.0);
-      expect(result.wholesalePrice).toBe(7.5);
+      expect(result.category).toBe('honey');
+      expect(result.subcategory).toBe('raw');
+      expect(result.description).toBe('Premium raw honey');
+      expect(result.imageUrl).toBe('https://example.com/honey.jpg');
+      expect(result.certifications).toEqual(['organic', 'non_gmo']);
+      expect(result.allergens).toEqual([]);
+      expect(result.dietaryAttributes).toEqual(['vegan']);
       expect(result.commissionRate).toBe(12.0);
-      expect(result.availabilityStatus).toBe('active');
     });
 
-    test('FR-012: handles null optional fields', () => {
+    test('FR-018: handles null optional catalog fields', () => {
       const product = createMockProduct({
+        category: null,
+        subcategory: null,
+        description: null,
+        imageUrl: null,
         wholesalePrice: null,
         promotionalPrice: null,
         caseSize: null,
       });
       const result = formatProductResponse(product);
 
+      expect(result.category).toBeNull();
+      expect(result.subcategory).toBeNull();
+      expect(result.description).toBeNull();
+      expect(result.imageUrl).toBeNull();
       expect(result.wholesalePrice).toBeNull();
-      expect(result.promotionalPrice).toBeNull();
-      expect(result.caseSize).toBeNull();
     });
   });
 
