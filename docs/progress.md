@@ -16,7 +16,7 @@
 | 3 | feature/batch-3-activity-logging | ✅ Complete | Yes |
 | 4 | feature/batch-4-order-entry | ✅ Complete | Yes |
 | 5 | feature/batch-5-data-import-user-mgmt | ✅ Complete | Yes |
-| 6 | feature/batch-6-ai-reorder-suggestions | 🔨 In Progress | No |
+| 6 | feature/batch-6-ai-reorder-suggestions | ✅ Complete | Yes |
 
 ## Batch Overview
 | Batch | User Stories | Status | Tests Passing | Acceptance Verified |
@@ -27,7 +27,7 @@
 | 3 | US-004/005 Activity Logging + Tasks (T063-T080) | ✅ Complete | 340/340 | — |
 | 4 | US-006 Order Entry (T081-T095) | ✅ Complete | 389/389 | — |
 | 5 | US-012 Data Import & User Mgmt (T096-T108) | ✅ Complete | 435/435 | — |
-| 6 | US-007 AI Reorder Suggestions (T109-T114) | 🔨 In Progress | 474/474 | — |
+| 6 | US-007 AI Reorder Suggestions (T109-T114) | ✅ Complete | 474/474 | — |
 
 ## Task Detail
 
@@ -166,3 +166,4 @@
 | 3 | 340 | 340 | 0 | — | dev |
 | 4 | 389 | 389 | 0 | — | dev |
 | 5 | 435 | 435 | 0 | — | dev |
+| 6 | 474 | 474 | 0 | — | dev |
