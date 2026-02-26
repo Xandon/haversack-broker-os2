@@ -4,6 +4,7 @@ import { requestIdPluginRegistration } from '../plugins/request-id.plugin';
 import { rateLimitPluginRegistration } from '../plugins/rate-limit.plugin';
 import { errorHandler } from '../middleware/error-handler';
 import { authRoutes } from '../../auth/auth.routes';
+import { accountRoutes } from '../../domains/accounts/account.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -27,6 +28,7 @@ export async function buildTestApp(
 
   // Routes
   await app.register(authRoutes);
+  await app.register(accountRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {
