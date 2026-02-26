@@ -63,3 +63,61 @@ export {
   type UpdateContactInput,
   type ContactResponse,
 } from './schemas/contact.schema';
+
+export {
+  activityTypeSchema,
+  createDemoSchema,
+  createActivitySchema,
+  updateActivitySchema,
+  activityResponseSchema,
+  activityListQuerySchema,
+  activityMetricsQuerySchema,
+  timelineQuerySchema,
+  demoOutcomeSchema,
+  type ActivityType,
+  type DemoOutcome,
+  type CreateDemoInput,
+  type CreateActivityInput,
+  type UpdateActivityInput,
+  type ActivityResponse,
+  type ActivityListQuery,
+  type ActivityMetricsQuery,
+  type TimelineQuery,
+} from './schemas/activity.schema';
+
+export {
+  taskPrioritySchema,
+  taskStatusSchema,
+  createTaskSchema,
+  updateTaskSchema,
+  taskResponseSchema,
+  taskListQuerySchema,
+  type TaskPriority,
+  type TaskStatus,
+  type CreateTaskInput,
+  type UpdateTaskInput,
+  type TaskResponse,
+  type TaskListQuery,
+} from './schemas/task.schema';
+
+export {
+  emailDirectionSchema,
+  emailStatusSchema,
+  createEmailRecordSchema,
+  emailRecordResponseSchema,
+  emailEngagementSchema,
+  unmatchedEmailQuerySchema,
+  type EmailDirection,
+  type EmailStatus,
+  type CreateEmailRecordInput,
+  type EmailRecordResponse,
+  type EmailEngagementInput,
+  type UnmatchedEmailQuery,
+} from './schemas/email-record.schema';
+
+export {
+  notificationTypeSchema,
+  notificationResponseSchema,
+  type NotificationType,
+  type NotificationResponse,
+} from './schemas/notification.schema';
