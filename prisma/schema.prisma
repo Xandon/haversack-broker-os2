@@ -425,6 +425,12 @@ model Brand {
   tenantId       String   @map("tenant_id") @db.Uuid
   name           String   @db.VarChar(255)
   commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  description    String?  @db.VarChar(2000)
+  logoUrl        String?  @map("logo_url") @db.VarChar(500)
+  contactName    String?  @map("contact_name") @db.VarChar(255)
+  contactEmail   String?  @map("contact_email") @db.VarChar(255)
+  contactPhone   String?  @map("contact_phone") @db.VarChar(50)
+  website        String?  @db.VarChar(255)
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
@@ -443,6 +449,9 @@ model Product {
   brandId               String             @map("brand_id") @db.Uuid
   name                  String             @db.VarChar(255)
   sku                   String             @db.VarChar(100)
+  category              String?            @db.VarChar(50)
+  subcategory           String?            @db.VarChar(100)
+  description           String?            @db.VarChar(2000)
   unitPrice             Decimal            @map("unit_price") @db.Decimal(10, 2)
   wholesalePrice        Decimal?           @map("wholesale_price") @db.Decimal(10, 2)
   promotionalPrice      Decimal?           @map("promotional_price") @db.Decimal(10, 2)
@@ -451,6 +460,10 @@ model Product {
   caseSize              Int?               @map("case_size")
   revenueModelDefault   RevenueModel       @map("revenue_model_default")
   availabilityStatus    AvailabilityStatus @map("availability_status") @default(active)
+  imageUrl              String?            @map("image_url") @db.VarChar(500)
+  certifications        String[]           @default([])
+  allergens             String[]           @default([])
+  dietaryAttributes     String[]           @default([]) @map("dietary_attributes")
   isActive              Boolean            @default(true) @map("is_active")
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz()
@@ -462,6 +475,7 @@ model Product {
   @@index([tenantId, brandId])
   @@index([tenantId, availabilityStatus])
   @@index([tenantId, isActive])
+  @@index([tenantId, category])
   @@map("products")
 }
 
