@@ -41,9 +41,9 @@ Feature 12 (Polish) depends on ALL above
 ## Current State
 
 - **Active Feature:** 6 (Pipeline & Opportunities)
-- **Active Stage:** PLANNING
-- **Active Step:** 2.1
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 16
+- **Resume Point:** STAGE 3, Batch 16
 
 ## Feature 6: Pipeline & Opportunities
 
@@ -52,21 +52,23 @@ Feature 12 (Polish) depends on ALL above
 - FR-017: Opportunity tracking and forecasting
 
 ### Planning Checklist
-- [ ] 2.1 Create feature directory
-- [ ] 2.2 Generate spec.md
-- [ ] 2.3 Clarify
-- [ ] 2.4 Requirements checklist
-- [ ] 2.5 Conflict analysis
-- [ ] 2.6 Research
-- [ ] 2.7 Plan
-- [ ] 2.8 Tasks
-- [ ] 2.9 Validation gate
+- [x] 2.1 Create feature directory — .specify/specs/007-pipeline-opportunities
+- [x] 2.2 Generate spec.md — 5 user stories, 2 FRs (FR-016, FR-017)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 26/26 items passing
+- [x] 2.5 Conflict analysis — 10 safe, 4 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: accounts + activities
+- [x] 2.7 Plan — 19 files planned (14 new, 5 modified)
+- [x] 2.8 Tasks — 22 tasks in 3 batches, starting at batch 16
+- [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-(populated after planning completes)
+- [ ] Batch 16: Schema, shared schemas, opportunity CRUD & transitions (T116-T123)
+- [ ] Batch 17: Routes, pipeline summary, brand association (T124-T131)
+- [ ] Batch 18: Analytics, RBAC, audit, edge cases (T132-T137)
 
 ### E2E Validation
-(populated after build completes)
+- E2E: SKIP — Feature 6 is backend-only API (no UI pages yet)
 
 ## Feature 5: Product Catalog & Line Cards
 

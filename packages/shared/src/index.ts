@@ -192,3 +192,22 @@ export {
   type BrandWithCountsResponse,
   type LineCardShareInput,
 } from './schemas/brand.schema';
+
+export {
+  pipelineStageSchema,
+  createOpportunitySchema,
+  updateOpportunitySchema,
+  transitionOpportunitySchema,
+  opportunityListQuerySchema,
+  pipelineSummaryQuerySchema,
+  winLossQuerySchema,
+  opportunityResponseSchema,
+  type PipelineStage,
+  type CreateOpportunityInput,
+  type UpdateOpportunityInput,
+  type TransitionOpportunityInput,
+  type OpportunityListQuery,
+  type PipelineSummaryQuery,
+  type WinLossQuery,
+  type OpportunityResponse,
+} from './schemas/opportunity.schema';

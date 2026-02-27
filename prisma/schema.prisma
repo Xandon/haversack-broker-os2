@@ -102,6 +102,15 @@ enum ExportStatus {
   failed
 }
 
+enum PipelineStage {
+  prospect
+  qualified
+  proposal
+  negotiation
+  closed_won
+  closed_lost
+}
+
 model User {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId     String    @map("tenant_id") @db.Uuid
@@ -127,6 +136,7 @@ model User {
   emailRecords     EmailRecord[]
   createdOrders    Order[]          @relation("OrderCreator")
   approvals        OrderApproval[]
+  opportunities    Opportunity[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -234,6 +244,7 @@ model Account {
   tasks         Task[]
   emailRecords  EmailRecord[]
   orders        Order[]
+  opportunities Opportunity[]
 
   @@unique([tenantId, name])
   @@index([tenantId, territoryId])
@@ -435,8 +446,9 @@ model Brand {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  products       Product[]
-  vendorSubOrders VendorSubOrder[]
+  products         Product[]
+  vendorSubOrders  VendorSubOrder[]
+  opportunityBrands OpportunityBrand[]
 
   @@unique([tenantId, name])
   @@index([tenantId, isActive])
@@ -591,4 +603,43 @@ model QuickBooksExport {
 
   @@index([tenantId, status])
   @@map("quickbooks_exports")
+}
+
+model Opportunity {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String        @map("tenant_id") @db.Uuid
+  accountId         String        @map("account_id") @db.Uuid
+  repId             String        @map("rep_id") @db.Uuid
+  name              String        @db.VarChar(255)
+  estimatedValue    Decimal       @map("estimated_value") @db.Decimal(12, 2)
+  probability       Decimal       @db.Decimal(5, 2)
+  expectedCloseDate DateTime      @map("expected_close_date") @db.Date
+  stage             PipelineStage
+  closeReason       String?       @map("close_reason") @db.Text
+  closedAt          DateTime?     @map("closed_at") @db.Timestamptz()
+  isActive          Boolean       @default(true) @map("is_active")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  account Account           @relation(fields: [accountId], references: [id])
+  rep     User              @relation(fields: [repId], references: [id])
+  brands  OpportunityBrand[]
+
+  @@index([tenantId, stage])
+  @@index([tenantId, repId])
+  @@index([tenantId, accountId])
+  @@index([tenantId, expectedCloseDate])
+  @@map("opportunities")
+}
+
+model OpportunityBrand {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  opportunityId String @map("opportunity_id") @db.Uuid
+  brandId       String @map("brand_id") @db.Uuid
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  brand       Brand       @relation(fields: [brandId], references: [id])
+
+  @@unique([opportunityId, brandId])
+  @@map("opportunity_brands")
 }
