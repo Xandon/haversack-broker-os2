@@ -1,7 +1,7 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-27 20:05 UTC
+**Last Updated:** 2026-02-26 21:00 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
@@ -20,7 +20,7 @@
 | 7 | Commissions | 008-commissions | FR-020, FR-021, FR-022 | COMPLETE | 3/3 | 107 | SKIP (backend-only) |
 | 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027, FR-029 | COMPLETE | 3/3 | 146 | SKIP (backend-only) |
 | 9 | AI Features | 010-ai-features | FR-014, FR-030 | COMPLETE | 3/3 | 83 | SKIP (backend-only) |
-| 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | PENDING | -- | -- | -- |
+| 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | BUILDING | -- | -- | -- |
 | 11 | Business Rules Engine | 012-business-rules | FR-028 | PENDING | -- | -- | -- |
 | 12 | Polish & NFRs | 013-polish-nfrs | NFR-001 through NFR-014 | PENDING | -- | -- | -- |
 
@@ -41,9 +41,9 @@ Feature 12 (Polish) depends on ALL above
 ## Current State
 
 - **Active Feature:** 10 (Dashboards & Reports)
-- **Active Stage:** PLANNING
-- **Active Step:** 2.1 (Create feature directory)
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 29
+- **Resume Point:** STAGE 3, batch 29
 
 ## Feature 9: AI Features
 
@@ -97,15 +97,23 @@ Feature 12 (Polish) depends on ALL above
 - FR-025: Pipeline analytics
 
 ### Planning Checklist
-- [ ] 2.1 Create feature directory
-- [ ] 2.2 Generate spec.md
-- [ ] 2.3 Clarify
-- [ ] 2.4 Requirements checklist
-- [ ] 2.5 Conflict analysis
-- [ ] 2.6 Research
-- [ ] 2.7 Plan
-- [ ] 2.8 Tasks
-- [ ] 2.9 Validation gate
+- [x] 2.1 Create feature directory — .specify/specs/011-dashboards-reports
+- [x] 2.2 Generate spec.md — 5 user stories, 3 FRs (FR-023, FR-024, FR-025)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 28/28 items passing
+- [x] 2.5 Conflict analysis — 5 safe, 3 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: commissions + pipeline
+- [x] 2.7 Plan — 23 files planned (20 new, 3 modified)
+- [x] 2.8 Tasks — 20 tasks in 3 batches (28-30), starting at batch 28
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [x] Batch 28: Schema, shared schemas & dashboard services (T200-T207) — 44 tests, merged to dev
+- [ ] Batch 29: Report CRUD, executor & export (T208-T214)
+- [ ] Batch 30: Route integration, RBAC, audit & polish (T215-T219)
+
+### E2E Validation
+(populated after build completes)
 
 ## Feature 8: Admin & Data Import
 
