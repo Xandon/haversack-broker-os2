@@ -13,6 +13,7 @@ import { productRoutes } from '../../domains/products/product.routes';
 import { brandRoutes } from '../../domains/brands/brand.routes';
 import { opportunityRoutes } from '../../domains/opportunities/opportunity.routes';
 import { commissionRoutes } from '../../domains/commissions/commission.routes';
+import { adminUserRoutes } from '../../domains/admin/user.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -45,6 +46,7 @@ export async function buildTestApp(
   await app.register(brandRoutes);
   await app.register(opportunityRoutes);
   await app.register(commissionRoutes);
+  await app.register(adminUserRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {

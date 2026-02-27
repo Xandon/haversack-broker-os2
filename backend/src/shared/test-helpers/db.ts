@@ -9,6 +9,7 @@ export interface MockPrismaClient {
     update: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
   };
   refreshToken: {
     findUnique: ReturnType<typeof vi.fn>;
@@ -16,6 +17,23 @@ export interface MockPrismaClient {
     update: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    deleteMany: ReturnType<typeof vi.fn>;
+  };
+  userTerritory: {
+    deleteMany: ReturnType<typeof vi.fn>;
+    createMany: ReturnType<typeof vi.fn>;
+  };
+  dataImport: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
+  };
+  dataQualityScore: {
+    findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
   };
   auditLog: {
     create: ReturnType<typeof vi.fn>;
@@ -180,6 +198,7 @@ export function createMockPrisma(): MockPrismaClient {
       update: vi.fn(),
       updateMany: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
     refreshToken: {
       findUnique: vi.fn(),
@@ -187,6 +206,23 @@ export function createMockPrisma(): MockPrismaClient {
       update: vi.fn(),
       updateMany: vi.fn(),
       delete: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    userTerritory: {
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+    dataImport: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    dataQualityScore: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
     },
     auditLog: {
       create: vi.fn(),
