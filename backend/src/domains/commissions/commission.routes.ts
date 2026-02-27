@@ -30,6 +30,11 @@ import {
   formatDisputeResponse,
   CommissionDisputeError,
 } from './commission-dispute.service';
+import {
+  exportStatements,
+  formatExportResponse,
+  CommissionExportError,
+} from './commission-export.service';
 
 const statementListQuerySchema = z.object({
   repId: z.string().uuid().optional(),
@@ -59,6 +64,12 @@ const resolveDisputeSchema = z.object({
   resolutionNotes: z.string().min(1).max(1000),
 });
 
+const exportSchema = z.object({
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+  forceReExport: z.boolean().default(false),
+});
+
 function getAuditContext(request: { user?: { userId: string; email: string }; requestId: string; ip: string; headers: Record<string, string | string[] | undefined> }): {
   actorId: string;
   actorEmail: string;
@@ -83,7 +94,8 @@ function handleCommissionError(
   if (
     error instanceof CommissionRuleError ||
     error instanceof CommissionStatementError ||
-    error instanceof CommissionDisputeError
+    error instanceof CommissionDisputeError ||
+    error instanceof CommissionExportError
   ) {
     const statusMap: Record<string, number> = {
       COMMISSION_RULE_NOT_FOUND: 404,
@@ -390,6 +402,40 @@ export async function commissionRoutes(app: FastifyInstance): Promise<void> {
         );
 
         return reply.status(200).send({ data: formatDisputeResponse(dispute) });
+      } catch (error) {
+        return handleCommissionError(error, request.requestId, reply);
+      }
+    },
+  );
+
+  // ─── COMMISSION EXPORTS ───────────────────────────────────
+
+  // POST /api/commissions/export — Export approved statements to QuickBooks (admin only)
+  app.post(
+    '/api/commissions/export',
+    { preHandler: [authenticate, authorize('admin')] },
+    async (request, reply) => {
+      try {
+        const body = exportSchema.parse(request.body);
+        const tenantId = request.user!.tenantId;
+        const audit = getAuditContext(request);
+
+        const result = await exportStatements(
+          request.server.prisma,
+          tenantId,
+          body.month,
+          body.year,
+          body.forceReExport,
+          audit,
+        );
+
+        return reply.status(201).send({
+          data: formatExportResponse(result.export),
+          csv: result.csv,
+          statementsIncluded: result.statementsIncluded,
+          statementsSkipped: result.statementsSkipped,
+          totalAmount: result.totalAmount,
+        });
       } catch (error) {
         return handleCommissionError(error, request.requestId, reply);
       }
