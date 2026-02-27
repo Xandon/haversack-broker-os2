@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildTestApp } from '../../shared/test-helpers/app';
 import { generateTestToken, authHeader } from '../../shared/test-helpers/auth';
+import { resetRateLimitCounters } from './ai.routes';
 
 // Mock AI SDK modules at the top level
 vi.mock('@anthropic-ai/sdk', () => ({
@@ -175,6 +176,10 @@ describe('FR-030: AI routes integration', () => {
     await app.close();
     delete process.env['ANTHROPIC_API_KEY'];
     delete process.env['OPENAI_API_KEY'];
+  });
+
+  beforeEach(() => {
+    resetRateLimitCounters();
   });
 
   describe('POST /api/ai/meeting-brief', () => {
@@ -384,6 +389,340 @@ describe('FR-030: AI routes integration', () => {
       });
 
       expect(response.statusCode).toBe(200);
+    });
+  });
+
+  describe('POST /api/ai/activity-summary', () => {
+    it('FR-AI-005: returns 200 for rep role with activity summary', async () => {
+      const token = generateTestToken('rep');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      expect(data['ai_generated']).toBe(true);
+      expect(data['ai_label']).toBe('AI-Generated');
+      expect(data['editable']).toBe(true);
+      expect(data['account_id']).toBe(ACCOUNT_ID);
+    });
+
+    it('FR-AI-005: returns 200 with custom period_months', async () => {
+      const token = generateTestToken('rep');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID, period_months: 12 },
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('FR-AI-010: returns 403 for viewer role', async () => {
+      const token = generateTestToken('viewer');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('FR-AI-010: returns 403 for logistics role', async () => {
+      const token = generateTestToken('logistics');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it('FR-AI-005: returns 404 for non-existent account', async () => {
+      const token = generateTestToken('rep');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: '00000000-0000-4000-a000-000000000999' },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('FR-AI-005: returns 400 for invalid account_id', async () => {
+      const token = generateTestToken('rep');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: 'not-a-uuid' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('FR-AI-005: returns 401 without auth', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+  });
+
+  describe('Rate limiting', () => {
+    it('FR-AI-008: returns 429 after exceeding meeting-brief rate limit (10/min)', async () => {
+      const token = generateTestToken('rep');
+
+      // Send 10 requests (should all succeed)
+      for (let i = 0; i < 10; i++) {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/ai/meeting-brief',
+          headers: authHeader(token),
+          payload: { account_id: ACCOUNT_ID },
+        });
+        expect(response.statusCode).toBe(200);
+      }
+
+      // 11th request should be rate limited
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/meeting-brief',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(429);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      expect(body['error']).toBe('RATE_LIMIT_EXCEEDED');
+      expect(body['retryAfterSeconds']).toBeGreaterThan(0);
+    });
+
+    it('FR-AI-008: returns 429 after exceeding activity-summary rate limit (10/min)', async () => {
+      const token = generateTestToken('rep');
+
+      for (let i = 0; i < 10; i++) {
+        await app.inject({
+          method: 'POST',
+          url: '/api/ai/activity-summary',
+          headers: authHeader(token),
+          payload: { account_id: ACCOUNT_ID },
+        });
+      }
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(response.statusCode).toBe(429);
+    });
+
+    it('FR-AI-008: email-draft has higher rate limit (15/min)', async () => {
+      const token = generateTestToken('rep');
+
+      // Send 14 requests (should all succeed under 15/min limit)
+      for (let i = 0; i < 14; i++) {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/ai/email-draft',
+          headers: authHeader(token),
+          payload: {
+            account_id: ACCOUNT_ID,
+            contact_id: CONTACT_ID,
+            purpose: 'follow_up',
+          },
+        });
+        expect(response.statusCode).toBe(200);
+      }
+
+      // 15th request should still succeed
+      const fifteenthResponse = await app.inject({
+        method: 'POST',
+        url: '/api/ai/email-draft',
+        headers: authHeader(token),
+        payload: {
+          account_id: ACCOUNT_ID,
+          contact_id: CONTACT_ID,
+          purpose: 'follow_up',
+        },
+      });
+      expect(fifteenthResponse.statusCode).toBe(200);
+
+      // 16th should be rate limited
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/email-draft',
+        headers: authHeader(token),
+        payload: {
+          account_id: ACCOUNT_ID,
+          contact_id: CONTACT_ID,
+          purpose: 'follow_up',
+        },
+      });
+      expect(response.statusCode).toBe(429);
+    });
+
+    it('FR-AI-008: rate limits are per-user (different users have separate limits)', async () => {
+      const repToken = generateTestToken('rep', { userId: '00000000-0000-4000-a000-000000000011' });
+      const managerToken = generateTestToken('manager', { userId: '00000000-0000-4000-a000-000000000012' });
+
+      // Exhaust rep's rate limit
+      for (let i = 0; i < 10; i++) {
+        await app.inject({
+          method: 'POST',
+          url: '/api/ai/meeting-brief',
+          headers: authHeader(repToken),
+          payload: { account_id: ACCOUNT_ID },
+        });
+      }
+
+      // Rep should be rate limited
+      const repResponse = await app.inject({
+        method: 'POST',
+        url: '/api/ai/meeting-brief',
+        headers: authHeader(repToken),
+        payload: { account_id: ACCOUNT_ID },
+      });
+      expect(repResponse.statusCode).toBe(429);
+
+      // Manager should still be allowed (different userId)
+      const managerResponse = await app.inject({
+        method: 'POST',
+        url: '/api/ai/meeting-brief',
+        headers: authHeader(managerToken),
+        payload: { account_id: ACCOUNT_ID },
+      });
+      expect(managerResponse.statusCode).toBe(200);
+    });
+  });
+
+  describe('RBAC enforcement matrix', () => {
+    const endpoints = [
+      { url: '/api/ai/meeting-brief', payload: { account_id: ACCOUNT_ID } },
+      { url: '/api/ai/email-draft', payload: { account_id: ACCOUNT_ID, contact_id: CONTACT_ID, purpose: 'follow_up' } },
+      { url: '/api/ai/activity-summary', payload: { account_id: ACCOUNT_ID } },
+    ] as const;
+
+    const allowedRoles = ['rep', 'manager', 'admin'] as const;
+    const deniedRoles = ['viewer', 'logistics'] as const;
+
+    for (const ep of endpoints) {
+      for (const role of allowedRoles) {
+        it(`FR-AI-010: ${role} can access ${ep.url}`, async () => {
+          const token = generateTestToken(role);
+          const response = await app.inject({
+            method: 'POST',
+            url: ep.url,
+            headers: authHeader(token),
+            payload: ep.payload,
+          });
+          expect(response.statusCode).not.toBe(403);
+        });
+      }
+
+      for (const role of deniedRoles) {
+        it(`FR-AI-010: ${role} denied access to ${ep.url}`, async () => {
+          const token = generateTestToken(role);
+          const response = await app.inject({
+            method: 'POST',
+            url: ep.url,
+            headers: authHeader(token),
+            payload: ep.payload,
+          });
+          expect(response.statusCode).toBe(403);
+        });
+      }
+    }
+  });
+
+  describe('Edge cases', () => {
+    it('FR-AI-009: audit log is written on successful AI request', async () => {
+      const token = generateTestToken('rep');
+      const auditCreate = prisma['auditLog'] as Record<string, ReturnType<typeof vi.fn>>;
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/ai/meeting-brief',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID },
+      });
+
+      expect(auditCreate['create']).toHaveBeenCalled();
+    });
+
+    it('FR-030: returns 400 for missing required fields', async () => {
+      const token = generateTestToken('rep');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/meeting-brief',
+        headers: authHeader(token),
+        payload: {},
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('FR-030: returns 400 for malformed request body', async () => {
+      const token = generateTestToken('rep');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID, period_months: 0 },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('FR-030: returns 400 for period_months exceeding max', async () => {
+      const token = generateTestToken('rep');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/ai/activity-summary',
+        headers: authHeader(token),
+        payload: { account_id: ACCOUNT_ID, period_months: 25 },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('FR-030: consistent error response format across all endpoints', async () => {
+      const token = generateTestToken('rep');
+      const invalidAccountId = '00000000-0000-4000-a000-000000000999';
+
+      for (const url of ['/api/ai/meeting-brief', '/api/ai/activity-summary']) {
+        const response = await app.inject({
+          method: 'POST',
+          url,
+          headers: authHeader(token),
+          payload: { account_id: invalidAccountId },
+        });
+
+        const body = JSON.parse(response.body) as Record<string, unknown>;
+        expect(body).toHaveProperty('error');
+        expect(body).toHaveProperty('message');
+        expect(body).toHaveProperty('code');
+        expect(body).toHaveProperty('requestId');
+      }
     });
   });
 });
