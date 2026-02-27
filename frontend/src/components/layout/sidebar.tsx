@@ -43,7 +43,7 @@ export function Sidebar(): React.ReactElement {
   });
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r bg-card">
+    <aside className="hidden h-full w-64 flex-col border-r bg-card md:flex" role="navigation" aria-label="Main navigation">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/dashboard" className="text-lg font-semibold">
           Haversack
@@ -57,6 +57,7 @@ export function Sidebar(): React.ReactElement {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive

@@ -6,6 +6,7 @@ import { helmetPluginRegistration } from './shared/plugins/helmet.plugin';
 import { redisPluginRegistration } from './shared/plugins/redis.plugin';
 import { rateLimitPluginRegistration } from './shared/plugins/rate-limit.plugin';
 import { prismaPluginRegistration } from './shared/plugins/prisma.plugin';
+import { sentryPluginRegistration } from './shared/plugins/sentry.plugin';
 import { errorHandler } from './shared/middleware/error-handler';
 import { authRoutes } from './auth/auth.routes';
 import { accountRoutes } from './domains/accounts/account.routes';
@@ -45,6 +46,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(redisPluginRegistration);
   await app.register(rateLimitPluginRegistration);
   await app.register(prismaPluginRegistration);
+  await app.register(sentryPluginRegistration);
 
   // Error handler
   app.setErrorHandler(errorHandler);
