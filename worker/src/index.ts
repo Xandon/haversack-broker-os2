@@ -24,6 +24,15 @@ import {
   QUICKBOOKS_EXPORT_CRON,
   type QuickBooksExportJobData,
 } from './queues/quickbooks-export.queue';
+import {
+  COMMISSION_CALCULATION_QUEUE_NAME,
+  type CommissionCalculationJobData,
+} from './queues/commission-calculation.queue';
+import {
+  COMMISSION_STATEMENT_QUEUE_NAME,
+  COMMISSION_STATEMENT_CRON,
+  type CommissionStatementJobData,
+} from './queues/commission-statement.queue';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -170,6 +179,67 @@ async function start(): Promise<void> {
     logger.error({ jobId: job?.id, err: err.message }, 'QuickBooks export job failed');
   });
 
+  // Commission calculation queue — triggered per confirmed order
+  const commissionCalculationQueue = new Queue<CommissionCalculationJobData>(COMMISSION_CALCULATION_QUEUE_NAME, {
+    connection: createRedisConnection(),
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+    },
+  });
+
+  logger.info('Commission calculation queue initialized');
+
+  const commissionCalculationWorker = new Worker<CommissionCalculationJobData>(
+    COMMISSION_CALCULATION_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, orderId: job.data.orderId }, 'Processing commission calculation');
+      // TODO: wire up processCommissionCalculation with real Prisma client
+      logger.info({ jobId: job.id }, 'Commission calculation completed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  commissionCalculationWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'Commission calculation job failed');
+  });
+
+  // Commission statement queue — monthly cron job
+  const commissionStatementQueue = new Queue<CommissionStatementJobData>(COMMISSION_STATEMENT_QUEUE_NAME, {
+    connection: createRedisConnection(),
+  });
+
+  await commissionStatementQueue.upsertJobScheduler(
+    'commission-statement-monthly',
+    { pattern: COMMISSION_STATEMENT_CRON },
+    {
+      name: 'commission-statement-generation',
+      data: {
+        tenantId: 'default',
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
+        triggeredBy: 'cron',
+        triggeredAt: new Date().toISOString(),
+      },
+    },
+  );
+
+  logger.info({ cron: COMMISSION_STATEMENT_CRON }, 'Commission statement cron job scheduled');
+
+  const commissionStatementWorker = new Worker<CommissionStatementJobData>(
+    COMMISSION_STATEMENT_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, month: job.data.month, year: job.data.year }, 'Processing commission statement generation');
+      // TODO: wire up processCommissionStatements with real Prisma client
+      logger.info({ jobId: job.id }, 'Commission statement generation completed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  commissionStatementWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'Commission statement job failed');
+  });
+
   logger.info('Worker started successfully');
 
   // Graceful shutdown
@@ -180,11 +250,15 @@ async function start(): Promise<void> {
     await emailNotificationWorker.close();
     await orderApprovalWorker.close();
     await quickBooksExportWorker.close();
+    await commissionCalculationWorker.close();
+    await commissionStatementWorker.close();
     await healthScoreQueue.close();
     await taskReminderQueue.close();
     await emailNotificationQueue.close();
     await orderApprovalQueue.close();
     await quickBooksExportQueue.close();
+    await commissionCalculationQueue.close();
+    await commissionStatementQueue.close();
     await connection.quit();
     process.exit(0);
   };
