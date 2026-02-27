@@ -26,7 +26,7 @@ export function KpiCard({ title, value, subtitle, isLoading }: KpiCardProps): Re
   }
 
   return (
-    <Card>
+    <Card role="region" aria-label={title}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
       </CardHeader>

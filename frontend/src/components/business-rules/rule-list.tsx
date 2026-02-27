@@ -66,23 +66,25 @@ export function RuleList({
                 {rule.status}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-[44px] min-w-[44px]"
                 onClick={() =>
                   onToggleStatus(
                     rule.id,
                     rule.status === 'active' ? 'inactive' : 'active',
                   )
                 }
+                aria-label={`${rule.status === 'active' ? 'Deactivate' : 'Activate'} rule ${rule.name}`}
               >
                 {rule.status === 'active' ? 'Deactivate' : 'Activate'}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => onEdit(rule.id)}>
+              <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]" onClick={() => onEdit(rule.id)} aria-label={`Edit rule ${rule.name}`}>
                 Edit
               </Button>
-              <Button variant="outline" size="sm" onClick={() => onDelete(rule.id)}>
+              <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]" onClick={() => onDelete(rule.id)} aria-label={`Delete rule ${rule.name}`}>
                 Delete
               </Button>
             </div>

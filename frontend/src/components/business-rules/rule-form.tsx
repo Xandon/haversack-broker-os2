@@ -80,7 +80,7 @@ export function RuleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert" aria-live="polite">{error}</div>
       )}
 
       <Card>
@@ -88,7 +88,7 @@ export function RuleForm({
           <CardTitle className="text-base">Rule Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="name">Name</Label>
               <Input
@@ -158,11 +158,11 @@ export function RuleForm({
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Button type="button" variant="outline" className="min-h-[44px]" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" className="min-h-[44px]" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : submitLabel}
         </Button>
       </div>

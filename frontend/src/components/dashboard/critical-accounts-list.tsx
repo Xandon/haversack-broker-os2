@@ -31,19 +31,30 @@ export function CriticalAccountsList(): React.ReactElement {
         {!accounts || accounts.length === 0 ? (
           <p className="text-sm text-muted-foreground">No critical accounts</p>
         ) : (
-          <ul className="space-y-2">
-            {accounts.map((account) => (
-              <li key={account.id} className="flex items-center justify-between rounded-md border p-3">
-                <div>
-                  <p className="text-sm font-medium">{account.name}</p>
-                  <p className="text-xs text-muted-foreground">{account.territory}</p>
-                </div>
-                <span className="rounded bg-destructive/10 px-2 py-0.5 text-sm font-medium text-destructive">
-                  {account.healthScore}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th scope="col" className="pb-2 pr-4 font-medium">Account</th>
+                  <th scope="col" className="pb-2 pr-4 font-medium">Territory</th>
+                  <th scope="col" className="pb-2 text-right font-medium">Health Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accounts.map((account) => (
+                  <tr key={account.id} className="border-b last:border-0">
+                    <td className="py-2 pr-4 font-medium">{account.name}</td>
+                    <td className="py-2 pr-4 text-muted-foreground">{account.territory}</td>
+                    <td className="py-2 text-right">
+                      <span className="rounded bg-destructive/10 px-2 py-0.5 text-sm font-medium text-destructive">
+                        {account.healthScore}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </CardContent>
     </Card>

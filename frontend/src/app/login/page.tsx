@@ -62,10 +62,12 @@ export default function LoginPage(): React.ReactElement {
                 type="email"
                 placeholder="you@haversack.com"
                 autoComplete="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -74,13 +76,15 @@ export default function LoginPage(): React.ReactElement {
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
                 {...register('password')}
               />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" className="text-sm text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="min-h-[44px] w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>

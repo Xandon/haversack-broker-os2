@@ -60,10 +60,16 @@ function RepDashboard({ period }: { period: DashboardPeriod }): React.ReactEleme
             {isLoading ? (
               <Skeleton className="h-8 w-full" />
             ) : data ? (
-              <div className="flex gap-4 text-sm">
-                <span className="text-green-600">{data.accountHealth.healthy} healthy</span>
-                <span className="text-yellow-600">{data.accountHealth.atRisk} at risk</span>
-                <span className="text-red-600">{data.accountHealth.critical} critical</span>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="text-green-600" aria-label={`${data.accountHealth.healthy} healthy accounts`}>
+                  <span aria-hidden="true">&#9679;</span> {data.accountHealth.healthy} healthy
+                </span>
+                <span className="text-yellow-600" aria-label={`${data.accountHealth.atRisk} at risk accounts`}>
+                  <span aria-hidden="true">&#9650;</span> {data.accountHealth.atRisk} at risk
+                </span>
+                <span className="text-red-600" aria-label={`${data.accountHealth.critical} critical accounts`}>
+                  <span aria-hidden="true">&#9632;</span> {data.accountHealth.critical} critical
+                </span>
               </div>
             ) : null}
           </CardContent>
@@ -120,12 +126,12 @@ function TeamDashboard({ period }: { period: DashboardPeriod }): React.ReactElem
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">#</th>
-                    <th className="pb-2 pr-4">Rep</th>
-                    <th className="pb-2 pr-4 text-right">Revenue</th>
-                    <th className="pb-2 pr-4 text-right">Orders</th>
-                    <th className="pb-2 pr-4 text-right">Activities</th>
-                    <th className="pb-2 text-right">Pipeline</th>
+                    <th scope="col" className="pb-2 pr-4">#</th>
+                    <th scope="col" className="pb-2 pr-4">Rep</th>
+                    <th scope="col" className="pb-2 pr-4 text-right">Revenue</th>
+                    <th scope="col" className="pb-2 pr-4 text-right">Orders</th>
+                    <th scope="col" className="pb-2 pr-4 text-right">Activities</th>
+                    <th scope="col" className="pb-2 text-right">Pipeline</th>
                   </tr>
                 </thead>
                 <tbody>

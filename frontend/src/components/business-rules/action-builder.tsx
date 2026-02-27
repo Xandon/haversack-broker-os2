@@ -53,7 +53,7 @@ export function ActionBuilder({
         />
       ))}
 
-      <Button variant="outline" size="sm" onClick={addAction}>
+      <Button variant="outline" size="sm" className="min-h-[44px]" onClick={addAction} aria-label="Add action">
         + Action
       </Button>
     </div>
@@ -98,8 +98,9 @@ function ActionRow({
           <Button
             variant="outline"
             size="sm"
-            className="ml-auto h-8 w-8 p-0"
+            className="ml-auto h-11 w-11 p-0"
             onClick={onRemove}
+            aria-label="Remove action"
           >
             x
           </Button>
