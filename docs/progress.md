@@ -25,6 +25,7 @@
 | 5 | Product Catalog & Line Cards | COMPLETE | 3 | 148 |
 | 6 | Pipeline & Opportunities | COMPLETE | 3 | 89 |
 | 7 | Commissions | COMPLETE | 3 | 107 |
+| 8 | Admin & Data Import | COMPLETE | 3 | 146 |
 
 ## Completed Batches
 
@@ -51,6 +52,9 @@
 | 19 | Commissions | feature/batch-batch-19-commission-schema | 27 | Merged to dev |
 | 20 | Commissions | feature/batch-batch-20-commission-statements | 25 | Merged to dev |
 | 21 | Commissions | feature/batch-batch-21-commission-export-polish | 55 | Merged to dev |
+| 22 | Admin & Data Import | feature/batch-batch-22-admin-schema-users | 54 | Merged to dev |
+| 23 | Admin & Data Import | feature/batch-batch-23-admin-import | 43 | Merged to dev |
+| 24 | Admin & Data Import | feature/batch-batch-24-admin-quality-polish | 49 | Merged to dev |
 
 ## Regression History
 
@@ -78,9 +82,12 @@
 | 2026-02-27 | dev (post-batch-19) | 761 | +27 | PASS |
 | 2026-02-27 | dev (post-batch-20) | 786 | +25 | PASS |
 | 2026-02-27 | dev (post-batch-21) | 841 | +55 | PASS |
+| 2026-02-27 | dev (post-batch-22) | 895 | +54 | PASS |
+| 2026-02-27 | dev (post-batch-23) | 938 | +43 | PASS |
+| 2026-02-27 | dev (post-batch-24) | 987 | +49 | PASS |
 
 ## Task Completion
 
-- **Completed:** 159 / 177 (T001-T159)
-- **Last completed task:** T159
-- **Global batch counter:** 21
+- **Completed:** 181 / 181 (T001-T181)
+- **Last completed task:** T181
+- **Global batch counter:** 24
