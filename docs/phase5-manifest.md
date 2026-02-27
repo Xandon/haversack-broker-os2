@@ -41,9 +41,9 @@ Feature 12 (Polish) depends on ALL above
 ## Current State
 
 - **Active Feature:** 7 (Commissions)
-- **Active Stage:** PLANNING
-- **Active Step:** 2.1 (Create feature directory)
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 19
+- **Resume Point:** STAGE 3, batch 19 (start)
 
 ## Feature 6: Pipeline & Opportunities
 
@@ -92,18 +92,20 @@ Feature 12 (Polish) depends on ALL above
 - FR-022: Monthly statement generation
 
 ### Planning Checklist
-- [ ] 2.1 Create feature directory
-- [ ] 2.2 Generate spec.md
-- [ ] 2.3 Clarify
-- [ ] 2.4 Requirements checklist
-- [ ] 2.5 Conflict analysis
-- [ ] 2.6 Research
-- [ ] 2.7 Plan
-- [ ] 2.8 Tasks
-- [ ] 2.9 Validation gate
+- [x] 2.1 Create feature directory — .specify/specs/008-commissions
+- [x] 2.2 Generate spec.md — 6 user stories, 3 FRs (FR-020, FR-021, FR-022)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 24/24 items passing
+- [x] 2.5 Conflict analysis — 9 safe, 4 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: orders + opportunities
+- [x] 2.7 Plan — 22 files planned (17 new, 5 modified)
+- [x] 2.8 Tasks — 22 tasks in 3 batches, starting at batch 19
+- [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-(populated after planning completes)
+- [ ] Batch 19: Schema, shared schemas & commission rule CRUD (T138-T145)
+- [ ] Batch 20: Statement generation, approval & disputes (T146-T153)
+- [ ] Batch 21: QuickBooks export, RBAC, audit & edge cases (T154-T159)
 
 ## Feature 5: Product Catalog & Line Cards
 

@@ -137,6 +137,13 @@ model User {
   createdOrders    Order[]          @relation("OrderCreator")
   approvals        OrderApproval[]
   opportunities    Opportunity[]
+  commissionRulesCreated  CommissionRule[]      @relation("CommissionRuleCreator")
+  commissionEntries       CommissionEntry[]     @relation("CommissionEntryRep")
+  commissionStatements    CommissionStatement[] @relation("CommissionStatementRep")
+  commissionApprovals     CommissionStatement[] @relation("CommissionStatementApprover")
+  disputesFiled           CommissionDispute[]   @relation("CommissionDisputeFiler")
+  disputesResolved        CommissionDispute[]   @relation("CommissionDisputeResolver")
+  commissionExports       CommissionExport[]    @relation("CommissionExportCreator")
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -156,8 +163,9 @@ model Territory {
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  users    UserTerritory[]
-  accounts Account[]
+  users           UserTerritory[]
+  accounts        Account[]
+  commissionRules CommissionRule[]
 
   @@unique([tenantId, name])
   @@index([tenantId, region])
@@ -446,9 +454,10 @@ model Brand {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  products         Product[]
-  vendorSubOrders  VendorSubOrder[]
+  products          Product[]
+  vendorSubOrders   VendorSubOrder[]
   opportunityBrands OpportunityBrand[]
+  commissionRules   CommissionRule[]
 
   @@unique([tenantId, name])
   @@index([tenantId, isActive])
@@ -510,12 +519,13 @@ model Order {
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
 
-  account         Account          @relation(fields: [accountId], references: [id])
-  rep             User             @relation("OrderCreator", fields: [repId], references: [id])
-  lineItems       OrderLineItem[]
-  vendorSubOrders VendorSubOrder[]
-  approvals       OrderApproval[]
+  account          Account           @relation(fields: [accountId], references: [id])
+  rep              User              @relation("OrderCreator", fields: [repId], references: [id])
+  lineItems        OrderLineItem[]
+  vendorSubOrders  VendorSubOrder[]
+  approvals        OrderApproval[]
   quickBooksExport QuickBooksExport?
+  commissionEntries CommissionEntry[]
 
   @@unique([tenantId, orderNumber])
   @@index([tenantId, accountId, createdAt(sort: Desc)])
@@ -541,9 +551,10 @@ model OrderLineItem {
   createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
 
-  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product         @relation(fields: [productId], references: [id])
-  vendorSubOrder VendorSubOrder? @relation(fields: [vendorSubOrderId], references: [id])
+  order             Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product           @relation(fields: [productId], references: [id])
+  vendorSubOrder    VendorSubOrder?   @relation(fields: [vendorSubOrderId], references: [id])
+  commissionEntries CommissionEntry[]
 
   @@index([orderId])
   @@index([tenantId, productId])
@@ -642,4 +653,155 @@ model OpportunityBrand {
 
   @@unique([opportunityId, brandId])
   @@map("opportunity_brands")
+}
+
+// ──────────────────────────────────────────────────────────────
+// Commission entities (Feature 7 — FR-020, FR-021, FR-022)
+// ──────────────────────────────────────────────────────────────
+
+enum CommissionStatementStatus {
+  pending
+  approved
+  exported
+  paid
+}
+
+enum CommissionDisputeStatus {
+  open
+  resolved
+}
+
+enum CommissionEntryType {
+  calculation
+  reversal
+  credit
+}
+
+model CommissionRule {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  brandId           String    @map("brand_id") @db.Uuid
+  territoryId       String?   @map("territory_id") @db.Uuid
+  baseRate          Decimal   @map("base_rate") @db.Decimal(5, 4)
+  territoryModifier Decimal   @default(1.00) @map("territory_modifier") @db.Decimal(4, 2)
+  volumeTiers       Json      @map("volume_tiers") @db.JsonB
+  effectiveDate     DateTime  @map("effective_date") @db.Date
+  expiresAt         DateTime? @map("expires_at") @db.Date
+  isActive          Boolean   @default(true) @map("is_active")
+  version           Int       @default(1)
+  createdBy         String    @map("created_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  brand     Brand      @relation(fields: [brandId], references: [id])
+  territory Territory? @relation(fields: [territoryId], references: [id])
+  creator   User       @relation("CommissionRuleCreator", fields: [createdBy], references: [id])
+  entries   CommissionEntry[]
+
+  @@index([tenantId, brandId, effectiveDate])
+  @@index([tenantId, brandId, territoryId, effectiveDate])
+  @@index([tenantId, isActive])
+  @@map("commission_rules")
+}
+
+model CommissionEntry {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  orderId           String              @map("order_id") @db.Uuid
+  orderLineItemId   String              @map("order_line_item_id") @db.Uuid
+  repId             String              @map("rep_id") @db.Uuid
+  commissionRuleId  String              @map("commission_rule_id") @db.Uuid
+  statementId       String?             @map("statement_id") @db.Uuid
+  entryType         CommissionEntryType @default(calculation) @map("entry_type")
+  baseRate          Decimal             @map("base_rate") @db.Decimal(5, 4)
+  territoryModifier Decimal             @map("territory_modifier") @db.Decimal(4, 2)
+  volumeTierApplied String              @map("volume_tier_applied") @db.VarChar(100)
+  effectiveRate     Decimal             @map("effective_rate") @db.Decimal(5, 4)
+  lineItemTotal     Decimal             @map("line_item_total") @db.Decimal(12, 2)
+  commissionAmount  Decimal             @map("commission_amount") @db.Decimal(12, 2)
+  calculatedAt      DateTime            @map("calculated_at") @db.Timestamptz()
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz()
+
+  order         Order         @relation(fields: [orderId], references: [id])
+  orderLineItem OrderLineItem @relation(fields: [orderLineItemId], references: [id])
+  rep            User                 @relation("CommissionEntryRep", fields: [repId], references: [id])
+  commissionRule CommissionRule       @relation(fields: [commissionRuleId], references: [id])
+  statement      CommissionStatement? @relation(fields: [statementId], references: [id])
+  dispute        CommissionDispute?
+
+  @@index([tenantId, repId, calculatedAt(sort: Desc)])
+  @@index([tenantId, orderId])
+  @@index([tenantId, statementId])
+  @@map("commission_entries")
+}
+
+model CommissionStatement {
+  id          String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String                    @map("tenant_id") @db.Uuid
+  repId       String                    @map("rep_id") @db.Uuid
+  month       Int
+  year        Int
+  status      CommissionStatementStatus @default(pending)
+  totalEarned Decimal                   @default(0) @map("total_earned") @db.Decimal(12, 2)
+  ytdTotal    Decimal                   @default(0) @map("ytd_total") @db.Decimal(12, 2)
+  approvedBy  String?                   @map("approved_by") @db.Uuid
+  approvedAt  DateTime?                 @map("approved_at") @db.Timestamptz()
+  exportedAt  DateTime?                 @map("exported_at") @db.Timestamptz()
+  version     Int                       @default(1)
+  createdAt   DateTime                  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime                  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  rep      User                @relation("CommissionStatementRep", fields: [repId], references: [id])
+  approver User?               @relation("CommissionStatementApprover", fields: [approvedBy], references: [id])
+  entries  CommissionEntry[]
+  disputes CommissionDispute[]
+  exports  CommissionExport[]  @relation("CommissionExportStatements")
+
+  @@unique([tenantId, repId, year, month])
+  @@index([tenantId, status])
+  @@map("commission_statements")
+}
+
+model CommissionDispute {
+  id                String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String                  @map("tenant_id") @db.Uuid
+  statementId       String                  @map("statement_id") @db.Uuid
+  commissionEntryId String                  @unique @map("commission_entry_id") @db.Uuid
+  filedBy           String                  @map("filed_by") @db.Uuid
+  reason            String                  @db.VarChar(1000)
+  status            CommissionDisputeStatus @default(open)
+  originalAmount    Decimal                 @map("original_amount") @db.Decimal(12, 2)
+  adjustedAmount    Decimal?                @map("adjusted_amount") @db.Decimal(12, 2)
+  resolvedBy        String?                 @map("resolved_by") @db.Uuid
+  resolvedAt        DateTime?               @map("resolved_at") @db.Timestamptz()
+  resolutionNotes   String?                 @map("resolution_notes") @db.VarChar(1000)
+  createdAt         DateTime                @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime                @updatedAt @map("updated_at") @db.Timestamptz()
+
+  statement       CommissionStatement @relation(fields: [statementId], references: [id])
+  commissionEntry CommissionEntry     @relation(fields: [commissionEntryId], references: [id])
+  filer           User                @relation("CommissionDisputeFiler", fields: [filedBy], references: [id])
+  resolver        User?               @relation("CommissionDisputeResolver", fields: [resolvedBy], references: [id])
+
+  @@index([tenantId, statementId, status])
+  @@map("commission_disputes")
+}
+
+model CommissionExport {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  month        Int
+  year         Int
+  format       String   @default("quickbooks_csv") @db.VarChar(50)
+  fileContent  String   @map("file_content") @db.Text
+  referenceId  String   @unique @map("reference_id") @db.VarChar(50)
+  status       String   @default("completed") @db.VarChar(20)
+  createdBy    String   @map("created_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  creator    User                  @relation("CommissionExportCreator", fields: [createdBy], references: [id])
+  statements CommissionStatement[] @relation("CommissionExportStatements")
+
+  @@index([tenantId, year, month])
+  @@map("commission_exports")
 }
