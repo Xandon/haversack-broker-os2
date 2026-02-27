@@ -18,6 +18,7 @@ import { brandRoutes } from './domains/brands/brand.routes';
 import { opportunityRoutes } from './domains/opportunities/opportunity.routes';
 import { commissionRoutes } from './domains/commissions/commission.routes';
 import { adminUserRoutes } from './domains/admin/user.routes';
+import { adminImportRoutes } from './domains/admin/import.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -55,6 +56,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(opportunityRoutes);
   await app.register(commissionRoutes);
   await app.register(adminUserRoutes);
+  await app.register(adminImportRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {
