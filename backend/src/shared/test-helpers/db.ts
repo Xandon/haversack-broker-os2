@@ -53,6 +53,7 @@ export interface MockPrismaClient {
   };
   contact: {
     findFirst: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
@@ -127,6 +128,7 @@ export interface MockPrismaClient {
     findMany: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
     groupBy: ReturnType<typeof vi.fn>;
   };
   brand: {
@@ -242,6 +244,7 @@ export function createMockPrisma(): MockPrismaClient {
     },
     contact: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
@@ -316,6 +319,7 @@ export function createMockPrisma(): MockPrismaClient {
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
       groupBy: vi.fn(),
     },
     brand: {

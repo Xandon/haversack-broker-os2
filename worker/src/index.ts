@@ -38,6 +38,11 @@ import {
   MAX_RETRIES as DATA_IMPORT_MAX_RETRIES,
   type DataImportJobData,
 } from './queues/data-import.queue';
+import {
+  DATA_QUALITY_SCORE_QUEUE_NAME,
+  DATA_QUALITY_SCORE_CRON,
+  type DataQualityScoreJobData,
+} from './queues/data-quality-score.queue';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -270,6 +275,36 @@ async function start(): Promise<void> {
     logger.error({ jobId: job?.id, err: err.message }, 'Data import job failed');
   });
 
+  // Data quality score queue — daily cron job at 03:00 UTC
+  const dataQualityScoreQueue = new Queue<DataQualityScoreJobData>(DATA_QUALITY_SCORE_QUEUE_NAME, {
+    connection: createRedisConnection(),
+  });
+
+  await dataQualityScoreQueue.upsertJobScheduler(
+    'data-quality-score-nightly',
+    { pattern: DATA_QUALITY_SCORE_CRON },
+    {
+      name: 'data-quality-score-calculation',
+      data: { tenantId: 'default', triggeredBy: 'cron', triggeredAt: new Date().toISOString() },
+    },
+  );
+
+  logger.info({ cron: DATA_QUALITY_SCORE_CRON }, 'Data quality score cron job scheduled');
+
+  const dataQualityScoreWorker = new Worker<DataQualityScoreJobData>(
+    DATA_QUALITY_SCORE_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, tenantId: job.data.tenantId }, 'Processing data quality score job');
+      // TODO: wire up processDataQualityScore with real Prisma client
+      logger.info({ jobId: job.id }, 'Data quality score job completed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  dataQualityScoreWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'Data quality score job failed');
+  });
+
   logger.info('Worker started successfully');
 
   // Graceful shutdown
@@ -283,6 +318,7 @@ async function start(): Promise<void> {
     await commissionCalculationWorker.close();
     await commissionStatementWorker.close();
     await dataImportWorker.close();
+    await dataQualityScoreWorker.close();
     await healthScoreQueue.close();
     await taskReminderQueue.close();
     await emailNotificationQueue.close();
@@ -291,6 +327,7 @@ async function start(): Promise<void> {
     await commissionCalculationQueue.close();
     await commissionStatementQueue.close();
     await dataImportQueue.close();
+    await dataQualityScoreQueue.close();
     await connection.quit();
     process.exit(0);
   };
