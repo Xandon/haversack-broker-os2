@@ -1,7 +1,7 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-27 07:10 UTC
+**Last Updated:** 2026-02-27 08:00 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
@@ -19,7 +19,7 @@
 | 6 | Pipeline & Opportunities | 007-pipeline-opportunities | FR-016, FR-017 | COMPLETE | 3/3 | 89 | SKIP (backend-only) |
 | 7 | Commissions | 008-commissions | FR-020, FR-021, FR-022 | COMPLETE | 3/3 | 107 | SKIP (backend-only) |
 | 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027, FR-029 | COMPLETE | 3/3 | 146 | SKIP (backend-only) |
-| 9 | AI Features | 010-ai-features | FR-014, FR-030 | PENDING | -- | -- | -- |
+| 9 | AI Features | 010-ai-features | FR-014, FR-030 | PLANNING | -- | -- | -- |
 | 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | PENDING | -- | -- | -- |
 | 11 | Business Rules Engine | 012-business-rules | FR-028 | PENDING | -- | -- | -- |
 | 12 | Polish & NFRs | 013-polish-nfrs | NFR-001 through NFR-014 | PENDING | -- | -- | -- |
@@ -42,8 +42,34 @@ Feature 12 (Polish) depends on ALL above
 
 - **Active Feature:** 9 (AI Features)
 - **Active Stage:** PLANNING
-- **Active Step:** 2.1 (Create feature directory)
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 25
+- **Resume Point:** STAGE 3, Batch 25
+
+## Feature 9: AI Features
+
+### PRD References
+- FR-014: AI-powered reorder suggestions
+- FR-030: AI meeting briefs
+
+### Planning Checklist
+- [x] 2.1 Create feature directory — .specify/specs/010-ai-features
+- [x] 2.2 Generate spec.md — 5 user stories, 2 FRs (FR-014, FR-030)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 36/36 items passing
+- [x] 2.5 Conflict analysis — 5 safe, 3 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: activities + orders
+- [x] 2.7 Plan — 18 files planned (15 new, 3 modified)
+- [x] 2.8 Tasks — 18 tasks in 3 batches (25-27), starting at batch 25
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [ ] Batch 25: AI provider layer & shared schemas (T182-T187)
+- [ ] Batch 26: Meeting brief & email draft services (T188-T193)
+- [ ] Batch 27: Activity summary, rate limiting, audit & polish (T194-T199)
+
+### E2E Validation
+(populated after build completes)
 
 ## Feature 8: Admin & Data Import
 
