@@ -26,7 +26,7 @@
 | 6 | Pipeline & Opportunities | COMPLETE | 3 | 89 |
 | 7 | Commissions | COMPLETE | 3 | 107 |
 | 8 | Admin & Data Import | COMPLETE | 3 | 146 |
-| 9 | AI Features | IN PROGRESS | 1/3 | 14 |
+| 9 | AI Features | COMPLETE | 3 | 83 |
 
 ## Completed Batches
 
@@ -57,6 +57,8 @@
 | 23 | Admin & Data Import | feature/batch-batch-23-admin-import | 43 | Merged to dev |
 | 24 | Admin & Data Import | feature/batch-batch-24-admin-quality-polish | 49 | Merged to dev |
 | 25 | AI Features | feature/batch-batch-25-ai-provider | 14 | Merged to dev |
+| 26 | AI Features | feature/batch-batch-26-ai-meeting-email | 30 | Merged to dev |
+| 27 | AI Features | feature/batch-batch-27-ai-summary-polish | 39 | Merged to dev |
 
 ## Regression History
 
@@ -88,9 +90,11 @@
 | 2026-02-27 | dev (post-batch-23) | 938 | +43 | PASS |
 | 2026-02-27 | dev (post-batch-24) | 987 | +49 | PASS |
 | 2026-02-27 | dev (post-batch-25) | 1001 | +14 | PASS |
+| 2026-02-27 | dev (post-batch-26) | 1031 | +30 | PASS |
+| 2026-02-27 | dev (post-batch-27) | 1070 | +39 | PASS |
 
 ## Task Completion
 
-- **Completed:** 187 / 199 (T001-T187)
-- **Last completed task:** T187
-- **Global batch counter:** 25
+- **Completed:** 199 / 199 (T001-T199)
+- **Last completed task:** T199
+- **Global batch counter:** 27
