@@ -27,6 +27,7 @@
 | 7 | Commissions | COMPLETE | 3 | 107 |
 | 8 | Admin & Data Import | COMPLETE | 3 | 146 |
 | 9 | AI Features | COMPLETE | 3 | 83 |
+| 10 | Dashboards & Reports | COMPLETE | 3 | 132 |
 
 ## Completed Batches
 
@@ -61,6 +62,7 @@
 | 27 | AI Features | feature/batch-batch-27-ai-summary-polish | 39 | Merged to dev |
 | 28 | Dashboards & Reports | feature/batch-batch-28-dashboard-schema | 44 | Merged to dev |
 | 29 | Dashboards & Reports | feature/batch-batch-29-report-builder | 36 | Merged to dev |
+| 30 | Dashboards & Reports | feature/batch-batch-30-reports-rbac-polish | 52 | Merged to dev |
 
 ## Regression History
 
@@ -96,9 +98,10 @@
 | 2026-02-27 | dev (post-batch-27) | 1070 | +39 | PASS |
 | 2026-02-26 | dev (post-batch-28) | 1114 | +44 | PASS |
 | 2026-02-26 | dev (post-batch-29) | 1150 | +36 | PASS |
+| 2026-02-26 | dev (post-batch-30) | 1202 | +52 | PASS |
 
 ## Task Completion
 
-- **Completed:** 214 / 219 (T001-T214)
-- **Last completed task:** T214
-- **Global batch counter:** 29
+- **Completed:** 219 / 219 (T001-T219)
+- **Last completed task:** T219
+- **Global batch counter:** 30

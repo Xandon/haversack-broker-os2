@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-26 21:00 UTC
+**Last Updated:** 2026-02-26 22:25 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 27
+**Global Batch Counter:** 30
 
 ## Feature Queue
 
@@ -20,7 +20,7 @@
 | 7 | Commissions | 008-commissions | FR-020, FR-021, FR-022 | COMPLETE | 3/3 | 107 | SKIP (backend-only) |
 | 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027, FR-029 | COMPLETE | 3/3 | 146 | SKIP (backend-only) |
 | 9 | AI Features | 010-ai-features | FR-014, FR-030 | COMPLETE | 3/3 | 83 | SKIP (backend-only) |
-| 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | BUILDING | -- | -- | -- |
+| 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | COMPLETE | 3/3 | 132 | SKIP (backend-only) |
 | 11 | Business Rules Engine | 012-business-rules | FR-028 | PENDING | -- | -- | -- |
 | 12 | Polish & NFRs | 013-polish-nfrs | NFR-001 through NFR-014 | PENDING | -- | -- | -- |
 
@@ -40,10 +40,10 @@ Feature 12 (Polish) depends on ALL above
 
 ## Current State
 
-- **Active Feature:** 10 (Dashboards & Reports)
-- **Active Stage:** BUILDING
-- **Active Step:** batch 30
-- **Resume Point:** STAGE 3, batch 30
+- **Active Feature:** 11 (Business Rules Engine)
+- **Active Stage:** PLANNING
+- **Active Step:** 2.1 (Create feature directory)
+- **Resume Point:** STAGE 2, Step 2.1
 
 ## Feature 9: AI Features
 
@@ -110,10 +110,45 @@ Feature 12 (Polish) depends on ALL above
 ### Build Checklist
 - [x] Batch 28: Schema, shared schemas & dashboard services (T200-T207) — 44 tests, merged to dev
 - [x] Batch 29: Report CRUD, executor & export (T208-T214) — 36 tests, merged to dev
-- [ ] Batch 30: Route integration, RBAC, audit & polish (T215-T219)
+- [x] Batch 30: Route integration, RBAC, audit & polish (T215-T219) — 52 tests, merged to dev
 
 ### E2E Validation
-(populated after build completes)
+- E2E: SKIP — Feature 10 is backend-only API (no UI pages yet)
+
+### Completion Summary
+- **Tests added:** 132 (44 batch 28 + 36 batch 29 + 52 batch 30)
+- **Batches:** 3 (batches 28-30, all merged to dev)
+- **Files created/modified:** 23 files (20 new, 3 modified)
+- **Key deliverables:**
+  - Prisma schema: SavedReport model + ReportEntityType enum with indexes
+  - Shared Zod schemas: dashboard period/query/response, report CRUD/execute/export
+  - Dashboard date utility: 7 period types, half-open UTC intervals, trailing 12 months
+  - Rep dashboard service: 7 KPIs in parallel (revenue, activities, opportunities, commissions, health)
+  - Team dashboard service: rep rankings, revenue by month, pipeline forecast, territory revenue
+  - 6 dashboard routes: rep + critical accounts + 4 team endpoints with RBAC
+  - Column registry: 5 entity types (ACCOUNT, ORDER, PRODUCT, COMMISSION, ACTIVITY)
+  - Report CRUD service: create, get, list, delete with owner/shared/admin access control
+  - Report executor: dynamic Prisma queries, Redis concurrency limit (max 3/tenant), cursor pagination
+  - Report export: CSV (UTF-8 BOM) + XLSX (ExcelJS), filename generation
+  - 6 report routes: CRUD + execute + export with manager+ RBAC
+  - Comprehensive RBAC enforcement tests across all 5 roles for 12 endpoints
+  - Tenant isolation, audit logging, and edge case tests
+
+## Feature 11: Business Rules Engine
+
+### PRD References
+- FR-028: Business rules engine
+
+### Planning Checklist
+- [ ] 2.1 Create feature directory
+- [ ] 2.2 Generate spec.md
+- [ ] 2.3 Clarify
+- [ ] 2.4 Requirements checklist
+- [ ] 2.5 Conflict analysis
+- [ ] 2.6 Research
+- [ ] 2.7 Plan
+- [ ] 2.8 Tasks
+- [ ] 2.9 Validation gate
 
 ## Feature 8: Admin & Data Import
 
