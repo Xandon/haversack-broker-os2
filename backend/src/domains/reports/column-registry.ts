@@ -22,7 +22,7 @@ const ACCOUNT_COLUMNS: ColumnDefinition[] = [
 const ORDER_COLUMNS: ColumnDefinition[] = [
   { key: 'orderNumber', label: 'Order Number', type: 'string', prismaField: 'orderNumber' },
   { key: 'accountName', label: 'Account Name', type: 'string', prismaField: 'name', prismaRelation: 'account' },
-  { key: 'totalAmount', label: 'Total Amount', type: 'currency', prismaField: 'totalAmount' },
+  { key: 'total', label: 'Total', type: 'currency', prismaField: 'total' },
   { key: 'status', label: 'Status', type: 'string', prismaField: 'status' },
   { key: 'revenueModel', label: 'Revenue Model', type: 'string', prismaField: 'revenueModel' },
   { key: 'notes', label: 'Notes', type: 'string', prismaField: 'notes' },
@@ -35,7 +35,7 @@ const PRODUCT_COLUMNS: ColumnDefinition[] = [
   { key: 'sku', label: 'SKU', type: 'string', prismaField: 'sku' },
   { key: 'brandName', label: 'Brand', type: 'string', prismaField: 'name', prismaRelation: 'brand' },
   { key: 'unitPrice', label: 'Unit Price', type: 'currency', prismaField: 'unitPrice' },
-  { key: 'casePrice', label: 'Case Price', type: 'currency', prismaField: 'casePrice' },
+  { key: 'wholesalePrice', label: 'Wholesale Price', type: 'currency', prismaField: 'wholesalePrice' },
   { key: 'availabilityStatus', label: 'Availability', type: 'string', prismaField: 'availabilityStatus' },
   { key: 'isActive', label: 'Active', type: 'boolean', prismaField: 'isActive' },
   { key: 'createdAt', label: 'Created Date', type: 'date', prismaField: 'createdAt' },
@@ -46,8 +46,8 @@ const COMMISSION_COLUMNS: ColumnDefinition[] = [
   { key: 'orderNumber', label: 'Order Number', type: 'string', prismaField: 'orderNumber', prismaRelation: 'order' },
   { key: 'commissionAmount', label: 'Commission Amount', type: 'currency', prismaField: 'commissionAmount' },
   { key: 'entryType', label: 'Entry Type', type: 'string', prismaField: 'entryType' },
-  { key: 'ruleRate', label: 'Rule Rate', type: 'number', prismaField: 'ruleRate' },
-  { key: 'orderAmount', label: 'Order Amount', type: 'currency', prismaField: 'orderAmount' },
+  { key: 'effectiveRate', label: 'Effective Rate', type: 'number', prismaField: 'effectiveRate' },
+  { key: 'lineItemTotal', label: 'Line Item Total', type: 'currency', prismaField: 'lineItemTotal' },
   { key: 'calculatedAt', label: 'Calculated Date', type: 'date', prismaField: 'calculatedAt' },
 ];
 

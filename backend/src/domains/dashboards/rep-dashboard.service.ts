@@ -33,22 +33,22 @@ export async function getRepDashboard(
     prisma.order.aggregate({
       where: {
         tenantId,
-        createdById: userId,
-        status: { in: ['confirmed', 'fulfilled'] },
+        repId: userId,
+        status: 'confirmed',
         createdAt: { gte: range.start, lt: range.end },
       },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
     }),
 
     // 2. Trailing 12-month revenue
     prisma.order.aggregate({
       where: {
         tenantId,
-        createdById: userId,
-        status: { in: ['confirmed', 'fulfilled'] },
+        repId: userId,
+        status: 'confirmed',
         createdAt: { gte: trailing12.start, lt: trailing12.end },
       },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
     }),
 
     // 3. Current month activity count
@@ -109,15 +109,15 @@ export async function getRepDashboard(
     weightedPipelineValue += (value * prob) / 100;
   }
 
-  const hasData = Number(currentMonthRevenue._sum.totalAmount ?? 0) > 0
-    || Number(trailing12Revenue._sum.totalAmount ?? 0) > 0
+  const hasData = Number(currentMonthRevenue._sum.total ?? 0) > 0
+    || Number(trailing12Revenue._sum.total ?? 0) > 0
     || activityCount > 0
     || openOpportunities.length > 0;
 
   return {
     revenue: {
-      currentMonth: Math.round(Number(currentMonthRevenue._sum.totalAmount ?? 0) * 100) / 100,
-      trailing12Months: Math.round(Number(trailing12Revenue._sum.totalAmount ?? 0) * 100) / 100,
+      currentMonth: Math.round(Number(currentMonthRevenue._sum.total ?? 0) * 100) / 100,
+      trailing12Months: Math.round(Number(trailing12Revenue._sum.total ?? 0) * 100) / 100,
     },
     activities: {
       currentMonthCount: activityCount,

@@ -23,7 +23,7 @@ const MOCK_REPORT = {
   description: 'A test report',
   entityType: 'ORDER',
   filters: {},
-  columns: ['orderNumber', 'totalAmount'],
+  columns: ['orderNumber', 'total'],
   isShared: false,
   lastRunAt: null,
   deletedAt: null,
@@ -68,7 +68,7 @@ describe('FR-025: Report CRUD service', () => {
         name: 'Test Report',
         entityType: 'ORDER',
         filters: {},
-        columns: ['orderNumber', 'totalAmount'],
+        columns: ['orderNumber', 'total'],
         isShared: false,
       }, AUDIT);
 

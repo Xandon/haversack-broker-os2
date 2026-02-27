@@ -35,7 +35,7 @@ describe('FR-025: Report export service', () => {
       const prisma = {
         order: {
           findMany: vi.fn().mockResolvedValue([
-            { id: 'o1', orderNumber: 'ORD-001', totalAmount: new Decimal('2500'), createdAt: new Date() },
+            { id: 'o1', orderNumber: 'ORD-001', total: new Decimal('2500'), createdAt: new Date() },
           ]),
           count: vi.fn().mockResolvedValue(1),
         },
@@ -45,7 +45,7 @@ describe('FR-025: Report export service', () => {
       const result = await exportReport(prisma, redis, TENANT_ID, {
         entityType: 'ORDER',
         filters: {},
-        columns: ['orderNumber', 'totalAmount'],
+        columns: ['orderNumber', 'total'],
       }, 'csv');
 
       expect(result.contentType).toBe('text/csv; charset=utf-8');
@@ -55,7 +55,7 @@ describe('FR-025: Report export service', () => {
       expect(csvContent.charCodeAt(0)).toBe(0xFEFF);
       // Check headers
       expect(csvContent).toContain('Order Number');
-      expect(csvContent).toContain('Total Amount');
+      expect(csvContent).toContain('Total');
     });
 
     test('FR-025: CSV escapes fields with commas', async () => {

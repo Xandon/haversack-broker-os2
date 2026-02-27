@@ -13,7 +13,7 @@ function createMockPrisma(): Record<string, unknown> {
       findMany: vi.fn().mockResolvedValue([{ territoryId: TERRITORY_ID }]),
     },
     order: {
-      aggregate: vi.fn().mockResolvedValue({ _sum: { totalAmount: new Decimal('1000') } }),
+      aggregate: vi.fn().mockResolvedValue({ _sum: { total: new Decimal('1000') } }),
       findMany: vi.fn().mockResolvedValue([]),
     },
     activity: {
@@ -73,7 +73,7 @@ describe('FR-023/024: Dashboard routes', () => {
     vi.clearAllMocks();
     // Re-setup default mocks
     (mockPrisma['userTerritory'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([{ territoryId: TERRITORY_ID }]);
-    (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { totalAmount: new Decimal('1000') } });
+    (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { total: new Decimal('1000') } });
     (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([]);
     (mockPrisma['activity'] as Record<string, ReturnType<typeof vi.fn>>)['count']!.mockResolvedValue(5);
     (mockPrisma['activity'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([]);
@@ -436,7 +436,7 @@ describe('FR-023/024: Dashboard routes', () => {
 
   describe('Edge cases', () => {
     it('FR-023: rep dashboard with no data returns zero values', async () => {
-      (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { totalAmount: null } });
+      (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { total: null } });
       (mockPrisma['activity'] as Record<string, ReturnType<typeof vi.fn>>)['count']!.mockResolvedValue(0);
       (mockPrisma['commissionEntry'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { commissionAmount: null } });
 

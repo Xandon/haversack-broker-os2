@@ -24,7 +24,7 @@ function createMockRedis(): {
 function createMockPrisma(): PrismaClient {
   const order = {
     findMany: vi.fn().mockResolvedValue([
-      { id: 'order-1', orderNumber: 'ORD-001', totalAmount: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
+      { id: 'order-1', orderNumber: 'ORD-001', total: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
     ]),
     count: vi.fn().mockResolvedValue(1),
   };
@@ -81,7 +81,7 @@ describe('FR-025: Report executor service', () => {
       const where = buildWhereClause(TENANT_ID, 'ORDER', {
         repId: 'rep-1',
       });
-      expect(where['createdById']).toBe('rep-1');
+      expect(where['repId']).toBe('rep-1');
     });
 
     test('FR-025: applies status filter', () => {
@@ -91,12 +91,12 @@ describe('FR-025: Report executor service', () => {
       expect(where['status']).toBe('confirmed');
     });
 
-    test('FR-025: adds soft-delete filter for ACCOUNT and ORDER', () => {
+    test('FR-025: adds soft-delete filter for ACCOUNT only', () => {
       const accountWhere = buildWhereClause(TENANT_ID, 'ACCOUNT', {});
       expect(accountWhere['deletedAt']).toBeNull();
 
       const orderWhere = buildWhereClause(TENANT_ID, 'ORDER', {});
-      expect(orderWhere['deletedAt']).toBeNull();
+      expect(orderWhere['deletedAt']).toBeUndefined();
     });
 
     test('FR-025: uses calculatedAt for COMMISSION date filter', () => {
@@ -114,7 +114,7 @@ describe('FR-025: Report executor service', () => {
       const result = await executeReport(prisma, redis, TENANT_ID, {
         entityType: 'ORDER',
         filters: {},
-        columns: ['orderNumber', 'totalAmount'],
+        columns: ['orderNumber', 'total'],
       }, { limit: 50 });
 
       expect(result.data).toHaveLength(1);

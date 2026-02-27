@@ -23,6 +23,7 @@ import { adminQualityRoutes } from './domains/admin/quality.routes';
 import { aiRoutes } from './domains/ai/ai.routes';
 import { dashboardRoutes } from './domains/dashboards/dashboard.routes';
 import { reportRoutes } from './domains/reports/report.routes';
+import { businessRuleRoutes } from './domains/business-rules/business-rule.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -65,6 +66,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(aiRoutes);
   await app.register(dashboardRoutes);
   await app.register(reportRoutes);
+  await app.register(businessRuleRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {

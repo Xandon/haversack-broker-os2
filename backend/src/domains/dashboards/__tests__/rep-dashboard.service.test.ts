@@ -48,8 +48,8 @@ describe('FR-023: Rep dashboard service', () => {
   describe('getRepDashboard', () => {
     test('AC-023a: returns all 7 KPI sections with correct data', async () => {
       mocks['order']!['aggregate']!
-        .mockResolvedValueOnce({ _sum: { totalAmount: new Decimal('45200.50') } }) // current month
-        .mockResolvedValueOnce({ _sum: { totalAmount: new Decimal('523000.00') } }); // trailing 12
+        .mockResolvedValueOnce({ _sum: { total: new Decimal('45200.50') } }) // current month
+        .mockResolvedValueOnce({ _sum: { total: new Decimal('523000.00') } }); // trailing 12
       mocks['activity']!['count']!.mockResolvedValue(47);
       mocks['opportunity']!['findMany']!.mockResolvedValue([
         { estimatedValue: new Decimal('50000'), probability: new Decimal('40') },
@@ -83,8 +83,8 @@ describe('FR-023: Rep dashboard service', () => {
 
     test('FR-023: returns zeros when no data exists for the period', async () => {
       mocks['order']!['aggregate']!
-        .mockResolvedValueOnce({ _sum: { totalAmount: null } })
-        .mockResolvedValueOnce({ _sum: { totalAmount: null } });
+        .mockResolvedValueOnce({ _sum: { total: null } })
+        .mockResolvedValueOnce({ _sum: { total: null } });
       mocks['activity']!['count']!.mockResolvedValue(0);
       mocks['opportunity']!['findMany']!.mockResolvedValue([]);
       mocks['commissionEntry']!['aggregate']!
@@ -108,7 +108,7 @@ describe('FR-023: Rep dashboard service', () => {
     });
 
     test('FR-023: correctly scopes queries to authenticated user', async () => {
-      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { totalAmount: null } });
+      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { total: null } });
       mocks['activity']!['count']!.mockResolvedValue(0);
       mocks['opportunity']!['findMany']!.mockResolvedValue([]);
       mocks['commissionEntry']!['aggregate']!.mockResolvedValue({ _sum: { commissionAmount: null } });
@@ -119,7 +119,7 @@ describe('FR-023: Rep dashboard service', () => {
       // Verify order queries include userId
       expect(mocks['order']!['aggregate']!).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ tenantId: TENANT_ID, createdById: USER_ID }),
+          where: expect.objectContaining({ tenantId: TENANT_ID, repId: USER_ID }),
         }),
       );
       // Verify activity count includes userId
@@ -132,7 +132,7 @@ describe('FR-023: Rep dashboard service', () => {
 
     test('FR-023: handles user with no territory assignments', async () => {
       mocks['userTerritory']!['findMany']!.mockResolvedValue([]);
-      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { totalAmount: null } });
+      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { total: null } });
       mocks['activity']!['count']!.mockResolvedValue(0);
       mocks['opportunity']!['findMany']!.mockResolvedValue([]);
       mocks['commissionEntry']!['aggregate']!.mockResolvedValue({ _sum: { commissionAmount: null } });

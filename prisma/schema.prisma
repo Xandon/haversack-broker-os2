@@ -162,6 +162,7 @@ model User {
   commissionExports       CommissionExport[]    @relation("CommissionExportCreator")
   dataImports             DataImport[]          @relation("DataImportCreator")
   savedReports            SavedReport[]         @relation("SavedReportCreator")
+  businessRules           BusinessRule[]        @relation("BusinessRuleCreator")
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -895,4 +896,42 @@ model DataQualityScore {
 
   @@index([tenantId, calculatedAt(sort: Desc)])
   @@map("data_quality_scores")
+}
+
+// ── Business Rules (FR-028) ───────────────────────────────────
+
+enum BusinessRuleStatus {
+  active
+  inactive
+  error
+}
+
+enum BusinessRuleActionType {
+  send_notification
+  update_field
+  create_task
+  send_email
+}
+
+model BusinessRule {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String             @map("tenant_id") @db.Uuid
+  name        String             @db.VarChar(255)
+  description String?            @db.Text
+  entityType  String             @map("entity_type") @db.VarChar(50)
+  conditions  Json               @db.JsonB
+  actions     Json               @db.JsonB
+  priority    Int                @default(100)
+  status      BusinessRuleStatus @default(active)
+  createdBy   String             @map("created_by") @db.Uuid
+  lastFiredAt DateTime?          @map("last_fired_at") @db.Timestamptz()
+  errorMessage String?           @map("error_message") @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz()
+
+  creator User @relation("BusinessRuleCreator", fields: [createdBy], references: [id])
+
+  @@index([tenantId, status])
+  @@index([tenantId, entityType, status])
+  @@map("business_rules")
 }

@@ -18,7 +18,7 @@ const MOCK_REPORT = {
   description: 'Monthly order summary',
   entityType: 'ORDER',
   filters: {},
-  columns: ['orderNumber', 'totalAmount'],
+  columns: ['orderNumber', 'total'],
   isShared: false,
   lastRunAt: null,
   deletedAt: null,
@@ -38,7 +38,7 @@ function createMockPrisma(): Record<string, unknown> {
     },
     order: {
       findMany: vi.fn().mockResolvedValue([
-        { id: 'order-1', orderNumber: 'ORD-001', totalAmount: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
+        { id: 'order-1', orderNumber: 'ORD-001', total: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
       ]),
       count: vi.fn().mockResolvedValue(1),
     },
@@ -91,7 +91,7 @@ describe('FR-025: Report routes integration', () => {
 
     const order = mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>;
     order['findMany']!.mockResolvedValue([
-      { id: 'order-1', orderNumber: 'ORD-001', totalAmount: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
+      { id: 'order-1', orderNumber: 'ORD-001', total: new Decimal('2500'), status: 'confirmed', createdAt: new Date() },
     ]);
     order['count']!.mockResolvedValue(1);
   });
@@ -108,7 +108,7 @@ describe('FR-025: Report routes integration', () => {
           name: 'Order Summary',
           entityType: 'ORDER',
           filters: {},
-          columns: ['orderNumber', 'totalAmount'],
+          columns: ['orderNumber', 'total'],
           isShared: false,
         },
       });
@@ -254,7 +254,7 @@ describe('FR-025: Report routes integration', () => {
         headers: authHeader(managerToken),
         payload: {
           entityType: 'ORDER',
-          columns: ['orderNumber', 'totalAmount'],
+          columns: ['orderNumber', 'total'],
           filters: {},
         },
       });
@@ -291,7 +291,7 @@ describe('FR-025: Report routes integration', () => {
       const manyOrders = Array.from({ length: 51 }, (_, i) => ({
         id: `order-${i}`,
         orderNumber: `ORD-${String(i).padStart(3, '0')}`,
-        totalAmount: new Decimal('100'),
+        total: new Decimal('100'),
         status: 'confirmed',
         createdAt: new Date(),
       }));
@@ -325,7 +325,7 @@ describe('FR-025: Report routes integration', () => {
         headers: authHeader(managerToken),
         payload: {
           entityType: 'ORDER',
-          columns: ['orderNumber', 'totalAmount'],
+          columns: ['orderNumber', 'total'],
           filters: {},
           format: 'csv',
         },
@@ -344,7 +344,7 @@ describe('FR-025: Report routes integration', () => {
         headers: authHeader(managerToken),
         payload: {
           entityType: 'ORDER',
-          columns: ['orderNumber', 'totalAmount'],
+          columns: ['orderNumber', 'total'],
           filters: {},
           format: 'csv',
         },
@@ -557,7 +557,7 @@ describe('FR-025: Report routes integration', () => {
         headers: authHeader(managerToken),
         payload: {
           entityType: 'ORDER',
-          columns: ['orderNumber', 'totalAmount'],
+          columns: ['orderNumber', 'total'],
           filters: {},
           format: 'csv',
         },
@@ -567,7 +567,7 @@ describe('FR-025: Report routes integration', () => {
       // CSV should have BOM + header row
       const body = response.body;
       expect(body).toContain('Order Number');
-      expect(body).toContain('Total Amount');
+      expect(body).toContain('Total');
     });
 
     it('FR-025: shared report is accessible by non-owner manager', async () => {

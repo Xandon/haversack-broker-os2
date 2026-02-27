@@ -47,9 +47,9 @@ describe('FR-024: Team dashboard service', () => {
         { id: REP2_ID, firstName: 'Bob', lastName: 'Jones', isActive: true },
       ]);
       mocks['order']!['findMany']!.mockResolvedValue([
-        { createdById: REP1_ID, totalAmount: new Decimal('10000') },
-        { createdById: REP2_ID, totalAmount: new Decimal('25000') },
-        { createdById: REP1_ID, totalAmount: new Decimal('5000') },
+        { repId: REP1_ID, total: new Decimal('10000') },
+        { repId: REP2_ID, total: new Decimal('25000') },
+        { repId: REP1_ID, total: new Decimal('5000') },
       ]);
       mocks['activity']!['findMany']!.mockResolvedValue([
         { userId: REP1_ID },
@@ -81,7 +81,7 @@ describe('FR-024: Team dashboard service', () => {
         { id: REP2_ID, firstName: 'Bob', lastName: 'Jones', isActive: false },
       ]);
       mocks['order']!['findMany']!.mockResolvedValue([
-        { createdById: REP2_ID, totalAmount: new Decimal('10000') },
+        { repId: REP2_ID, total: new Decimal('10000') },
       ]);
       mocks['activity']!['findMany']!.mockResolvedValue([]);
       mocks['opportunity']!['findMany']!.mockResolvedValue([]);
@@ -110,9 +110,9 @@ describe('FR-024: Team dashboard service', () => {
   describe('getRevenueByMonth', () => {
     test('FR-024: returns monthly revenue for trailing N months', async () => {
       mocks['order']!['aggregate']!
-        .mockResolvedValueOnce({ _sum: { totalAmount: new Decimal('10000') } })
-        .mockResolvedValueOnce({ _sum: { totalAmount: new Decimal('15000') } })
-        .mockResolvedValueOnce({ _sum: { totalAmount: new Decimal('20000') } });
+        .mockResolvedValueOnce({ _sum: { total: new Decimal('10000') } })
+        .mockResolvedValueOnce({ _sum: { total: new Decimal('15000') } })
+        .mockResolvedValueOnce({ _sum: { total: new Decimal('20000') } });
 
       const result = await getRevenueByMonth(prisma, TENANT_ID, 3);
 
@@ -125,7 +125,7 @@ describe('FR-024: Team dashboard service', () => {
     });
 
     test('FR-024: returns zero revenue for months with no orders', async () => {
-      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { totalAmount: null } });
+      mocks['order']!['aggregate']!.mockResolvedValue({ _sum: { total: null } });
 
       const result = await getRevenueByMonth(prisma, TENANT_ID, 1);
 
@@ -183,8 +183,8 @@ describe('FR-024: Team dashboard service', () => {
         { id: TERRITORY_ID, name: 'Portland Metro', _count: { accounts: 10 } },
       ]);
       mocks['order']!['findMany']!.mockResolvedValue([
-        { totalAmount: new Decimal('15000'), account: { territoryId: TERRITORY_ID } },
-        { totalAmount: new Decimal('10000'), account: { territoryId: TERRITORY_ID } },
+        { total: new Decimal('15000'), account: { territoryId: TERRITORY_ID } },
+        { total: new Decimal('10000'), account: { territoryId: TERRITORY_ID } },
       ]);
 
       const result = await getTerritoryRevenue(prisma, TENANT_ID, { period: 'current_month' });

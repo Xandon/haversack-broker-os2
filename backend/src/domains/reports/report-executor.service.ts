@@ -74,8 +74,8 @@ export function buildWhereClause(
 ): Record<string, unknown> {
   const where: Record<string, unknown> = { tenantId };
 
-  // Soft delete filtering
-  if (entityType === 'ACCOUNT' || entityType === 'ORDER') {
+  // Soft delete filtering (only Account has deletedAt)
+  if (entityType === 'ACCOUNT') {
     where['deletedAt'] = null;
   }
 
@@ -100,7 +100,7 @@ export function buildWhereClause(
   // Rep filter
   if (filters.repId) {
     if (entityType === 'ORDER') {
-      where['createdById'] = filters.repId;
+      where['repId'] = filters.repId;
     } else if (entityType === 'ACTIVITY') {
       where['userId'] = filters.repId;
     } else if (entityType === 'COMMISSION') {

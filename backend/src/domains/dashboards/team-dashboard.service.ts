@@ -38,12 +38,12 @@ export async function getTeamDashboard(
     prisma.order.findMany({
       where: {
         tenantId,
-        status: { in: ['confirmed', 'fulfilled'] },
+        status: 'confirmed',
         createdAt: { gte: range.start, lt: range.end },
       },
       select: {
-        createdById: true,
-        totalAmount: true,
+        repId: true,
+        total: true,
       },
     }),
     prisma.activity.findMany({
@@ -77,9 +77,9 @@ export async function getTeamDashboard(
   }
 
   for (const order of orders) {
-    const entry = repData.get(order.createdById);
+    const entry = repData.get(order.repId);
     if (entry) {
-      entry.revenue += Number(order.totalAmount);
+      entry.revenue += Number(order.total);
       entry.orderCount += 1;
     }
   }
@@ -163,16 +163,16 @@ export async function getRevenueByMonth(
     const revenue = await prisma.order.aggregate({
       where: {
         tenantId,
-        status: { in: ['confirmed', 'fulfilled'] },
+        status: 'confirmed',
         createdAt: { gte: targetDate, lt: nextMonth },
       },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
     });
 
     const monthStr = `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}`;
     result.push({
       month: monthStr,
-      revenue: Math.round(Number(revenue._sum.totalAmount ?? 0) * 100) / 100,
+      revenue: Math.round(Number(revenue._sum.total ?? 0) * 100) / 100,
     });
   }
 
@@ -258,11 +258,11 @@ export async function getTerritoryRevenue(
   const orders = await prisma.order.findMany({
     where: {
       tenantId,
-      status: { in: ['confirmed', 'fulfilled'] },
+      status: 'confirmed',
       createdAt: { gte: range.start, lt: range.end },
     },
     select: {
-      totalAmount: true,
+      total: true,
       account: { select: { territoryId: true } },
     },
   });
@@ -277,7 +277,7 @@ export async function getTerritoryRevenue(
     const tid = order.account?.territoryId;
     if (tid && territoryData.has(tid)) {
       const entry = territoryData.get(tid)!;
-      entry.revenue += Number(order.totalAmount);
+      entry.revenue += Number(order.total);
       entry.orderCount += 1;
     }
   }

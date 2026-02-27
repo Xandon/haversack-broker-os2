@@ -18,7 +18,7 @@ describe('FR-025: Column registry', () => {
     test('FR-025: returns columns for ORDER entity', () => {
       const columns = getColumnsForEntity('ORDER');
       expect(columns.some((c) => c.key === 'orderNumber')).toBe(true);
-      expect(columns.some((c) => c.key === 'totalAmount')).toBe(true);
+      expect(columns.some((c) => c.key === 'total')).toBe(true);
       expect(columns.some((c) => c.key === 'status')).toBe(true);
     });
 
@@ -56,7 +56,7 @@ describe('FR-025: Column registry', () => {
 
   describe('validateColumns', () => {
     test('FR-025: returns empty array for valid columns', () => {
-      const invalid = validateColumns('ORDER', ['orderNumber', 'totalAmount']);
+      const invalid = validateColumns('ORDER', ['orderNumber', 'total']);
       expect(invalid).toEqual([]);
     });
 
@@ -68,12 +68,12 @@ describe('FR-025: Column registry', () => {
 
   describe('getColumnMetadata', () => {
     test('FR-025: returns metadata for requested columns only', () => {
-      const metadata = getColumnMetadata('ORDER', ['orderNumber', 'totalAmount']);
+      const metadata = getColumnMetadata('ORDER', ['orderNumber', 'total']);
       expect(metadata).toHaveLength(2);
       expect(metadata[0]!.key).toBe('orderNumber');
       expect(metadata[0]!.label).toBe('Order Number');
       expect(metadata[0]!.type).toBe('string');
-      expect(metadata[1]!.key).toBe('totalAmount');
+      expect(metadata[1]!.key).toBe('total');
       expect(metadata[1]!.type).toBe('currency');
     });
 
@@ -85,10 +85,10 @@ describe('FR-025: Column registry', () => {
 
   describe('buildPrismaSelect', () => {
     test('FR-025: builds select for direct fields', () => {
-      const { select } = buildPrismaSelect('ORDER', ['orderNumber', 'totalAmount']);
+      const { select } = buildPrismaSelect('ORDER', ['orderNumber', 'total']);
       expect(select['id']).toBe(true);
       expect(select['orderNumber']).toBe(true);
-      expect(select['totalAmount']).toBe(true);
+      expect(select['total']).toBe(true);
     });
 
     test('FR-025: builds include for relation fields', () => {
