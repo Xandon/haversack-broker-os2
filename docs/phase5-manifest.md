@@ -18,7 +18,7 @@
 | 5 | Product Catalog & Line Cards | 006-product-catalog | FR-018, FR-019 | COMPLETE | 3/3 | 148 | SKIP (backend-only) |
 | 6 | Pipeline & Opportunities | 007-pipeline-opportunities | FR-016, FR-017 | COMPLETE | 3/3 | 89 | SKIP (backend-only) |
 | 7 | Commissions | 008-commissions | FR-020, FR-021, FR-022 | COMPLETE | 3/3 | 107 | SKIP (backend-only) |
-| 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027 | PENDING | -- | -- | -- |
+| 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027, FR-029 | BUILDING | -- | -- | -- |
 | 9 | AI Features | 010-ai-features | FR-014, FR-030 | PENDING | -- | -- | -- |
 | 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | PENDING | -- | -- | -- |
 | 11 | Business Rules Engine | 012-business-rules | FR-028 | PENDING | -- | -- | -- |
@@ -41,9 +41,35 @@ Feature 12 (Polish) depends on ALL above
 ## Current State
 
 - **Active Feature:** 8 (Admin & Data Import)
-- **Active Stage:** PLANNING
-- **Active Step:** 2.1 (Create feature directory)
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 22 (admin-schema-users)
+- **Resume Point:** STAGE 3, Batch 22
+
+## Feature 8: Admin & Data Import
+
+### PRD References
+- FR-026: Admin-only user management (create, edit, deactivate, role assignment)
+- FR-027: CSV/Excel data import with Layout of Truth validation
+- FR-029: Data quality scorecard (nightly recalculation)
+
+### Planning Checklist
+- [x] 2.1 Create feature directory — .specify/specs/009-admin-import
+- [x] 2.2 Generate spec.md — 5 user stories, 3 FRs (FR-026, FR-027, FR-029)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 26/26 items passing
+- [x] 2.5 Conflict analysis — 5 safe, 4 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: accounts + health-score
+- [x] 2.7 Plan — 24 files planned (19 new, 5 modified)
+- [x] 2.8 Tasks — 22 tasks in 3 batches (22-24), starting at batch 22
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [ ] Batch 22: Schema, shared schemas & user management (T160-T167)
+- [ ] Batch 23: Data import (T168-T175)
+- [ ] Batch 24: Data quality, RBAC & polish (T176-T181)
+
+### E2E Validation
+(populated after build completes)
 
 ## Feature 6: Pipeline & Opportunities
 

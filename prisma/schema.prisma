@@ -21,6 +21,22 @@ enum AuditAction {
   delete
 }
 
+enum DataImportStatus {
+  pending
+  validating
+  previewed
+  processing
+  completed
+  failed
+}
+
+enum DataImportEntityType {
+  account
+  contact
+  product
+  order
+}
+
 enum AccountType {
   retail
   restaurant
@@ -144,6 +160,7 @@ model User {
   disputesFiled           CommissionDispute[]   @relation("CommissionDisputeFiler")
   disputesResolved        CommissionDispute[]   @relation("CommissionDisputeResolver")
   commissionExports       CommissionExport[]    @relation("CommissionExportCreator")
+  dataImports             DataImport[]          @relation("DataImportCreator")
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -804,4 +821,47 @@ model CommissionExport {
 
   @@index([tenantId, year, month])
   @@map("commission_exports")
+}
+
+model DataImport {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String               @map("tenant_id") @db.Uuid
+  createdBy    String               @map("created_by") @db.Uuid
+  entityType   DataImportEntityType @map("entity_type")
+  filename     String               @db.VarChar(255)
+  fileSize     Int                  @map("file_size")
+  totalRows    Int                  @default(0) @map("total_rows")
+  validRows    Int                  @default(0) @map("valid_rows")
+  errorRows    Int                  @default(0) @map("error_rows")
+  createdRows  Int                  @default(0) @map("created_rows")
+  updatedRows  Int                  @default(0) @map("updated_rows")
+  skippedRows  Int                  @default(0) @map("skipped_rows")
+  status       DataImportStatus     @default(pending)
+  errorLog     Json?                @map("error_log")
+  parsedData   Json?                @map("parsed_data")
+  warnings     String[]             @default([])
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime             @updatedAt @map("updated_at") @db.Timestamptz()
+
+  creator User @relation("DataImportCreator", fields: [createdBy], references: [id])
+
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  @@index([tenantId, entityType])
+  @@map("data_imports")
+}
+
+model DataQualityScore {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String   @map("tenant_id") @db.Uuid
+  accountCompleteness   Float    @map("account_completeness")
+  contactEmailValidity  Float    @map("contact_email_validity")
+  productImages         Float    @map("product_images")
+  duplicateAccountCount Int      @map("duplicate_account_count")
+  staleAccountCount     Int      @map("stale_account_count")
+  compositeScore        Float    @map("composite_score")
+  calculatedAt          DateTime @map("calculated_at") @db.Timestamptz()
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([tenantId, calculatedAt(sort: Desc)])
+  @@map("data_quality_scores")
 }
