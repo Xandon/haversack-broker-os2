@@ -59,6 +59,7 @@
 | 25 | AI Features | feature/batch-batch-25-ai-provider | 14 | Merged to dev |
 | 26 | AI Features | feature/batch-batch-26-ai-meeting-email | 30 | Merged to dev |
 | 27 | AI Features | feature/batch-batch-27-ai-summary-polish | 39 | Merged to dev |
+| 28 | Dashboards & Reports | feature/batch-batch-28-dashboard-schema | 44 | Merged to dev |
 
 ## Regression History
 
@@ -92,9 +93,10 @@
 | 2026-02-27 | dev (post-batch-25) | 1001 | +14 | PASS |
 | 2026-02-27 | dev (post-batch-26) | 1031 | +30 | PASS |
 | 2026-02-27 | dev (post-batch-27) | 1070 | +39 | PASS |
+| 2026-02-26 | dev (post-batch-28) | 1114 | +44 | PASS |
 
 ## Task Completion
 
-- **Completed:** 199 / 199 (T001-T199)
-- **Last completed task:** T199
-- **Global batch counter:** 27
+- **Completed:** 207 / 219 (T001-T207)
+- **Last completed task:** T207
+- **Global batch counter:** 28
