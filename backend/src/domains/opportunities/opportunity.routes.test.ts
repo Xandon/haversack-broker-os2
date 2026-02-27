@@ -411,4 +411,109 @@ describe('FR-016/FR-017: Opportunity routes', () => {
       expect(response.statusCode).toBe(403);
     });
   });
+
+  describe('Edge cases (T136)', () => {
+    test('FR-016a: successful update with matching If-Match', async () => {
+      const updatedAt = new Date('2026-01-01');
+      mockPrisma.opportunity.findFirst.mockResolvedValue({
+        ...MOCK_OPPORTUNITY,
+        updatedAt,
+      });
+      mockPrisma.opportunity.update.mockResolvedValue({
+        ...MOCK_OPPORTUNITY,
+        name: 'Concurrent OK',
+      });
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/opportunities/opp-1',
+        headers: {
+          ...authHeader(adminToken),
+          'if-match': updatedAt.toISOString(),
+        },
+        payload: { name: 'Concurrent OK' },
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('FR-016b: transition with close reason succeeds for closed_won', async () => {
+      mockPrisma.opportunity.findFirst.mockResolvedValue({
+        ...MOCK_OPPORTUNITY,
+        stage: 'negotiation',
+      });
+      mockPrisma.opportunity.update.mockResolvedValue({
+        ...MOCK_OPPORTUNITY,
+        stage: 'closed_won',
+        probability: new Decimal('100'),
+        closedAt: new Date(),
+        closeReason: 'Won on price',
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/opportunities/opp-1/transition',
+        headers: authHeader(repToken),
+        payload: { stage: 'closed_won', closeReason: 'Won on price' },
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    test('FR-016a: delete returns 404 for non-existent opportunity', async () => {
+      mockPrisma.opportunity.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/opportunities/nonexistent',
+        headers: authHeader(adminToken),
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('FR-016a: update returns 404 for non-existent opportunity', async () => {
+      mockPrisma.opportunity.findFirst.mockResolvedValue(null);
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/opportunities/nonexistent',
+        headers: authHeader(adminToken),
+        payload: { name: 'Ghost' },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    test('FR-017e: analytics returns valid structure with empty data', async () => {
+      mockPrisma.opportunity.findMany.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/pipeline/analytics?dateFrom=2026-01-01&dateTo=2026-12-31',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data.totalWon).toBe(0);
+      expect(body.data.totalLost).toBe(0);
+      expect(body.data.winRate).toBe(0);
+    });
+
+    test('FR-016a: list with stage filter returns filtered results', async () => {
+      mockPrisma.opportunity.findMany.mockResolvedValue([MOCK_OPPORTUNITY]);
+      mockPrisma.opportunity.count.mockResolvedValue(1);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/opportunities?stage=prospect',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(1);
+    });
+  });
 });
