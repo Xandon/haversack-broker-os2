@@ -16,6 +16,7 @@ import { commissionRoutes } from '../../domains/commissions/commission.routes';
 import { adminUserRoutes } from '../../domains/admin/user.routes';
 import { adminImportRoutes } from '../../domains/admin/import.routes';
 import { adminQualityRoutes } from '../../domains/admin/quality.routes';
+import { aiRoutes } from '../../domains/ai/ai.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -51,6 +52,7 @@ export async function buildTestApp(
   await app.register(adminUserRoutes);
   await app.register(adminImportRoutes);
   await app.register(adminQualityRoutes);
+  await app.register(aiRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {

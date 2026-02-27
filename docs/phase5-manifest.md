@@ -43,8 +43,8 @@ Feature 12 (Polish) depends on ALL above
 - **Active Feature:** 9 (AI Features)
 - **Active Stage:** PLANNING
 - **Active Stage:** BUILDING
-- **Active Step:** batch 25
-- **Resume Point:** STAGE 3, Batch 25
+- **Active Step:** batch 26
+- **Resume Point:** STAGE 3, Batch 26
 
 ## Feature 9: AI Features
 
@@ -64,7 +64,7 @@ Feature 12 (Polish) depends on ALL above
 - [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-- [ ] Batch 25: AI provider layer & shared schemas (T182-T187)
+- [x] Batch 25: AI provider layer & shared schemas (T182-T187) — 14 tests, merged to dev
 - [ ] Batch 26: Meeting brief & email draft services (T188-T193)
 - [ ] Batch 27: Activity summary, rate limiting, audit & polish (T194-T199)
 
