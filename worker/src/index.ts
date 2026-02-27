@@ -33,6 +33,11 @@ import {
   COMMISSION_STATEMENT_CRON,
   type CommissionStatementJobData,
 } from './queues/commission-statement.queue';
+import {
+  DATA_IMPORT_QUEUE_NAME,
+  MAX_RETRIES as DATA_IMPORT_MAX_RETRIES,
+  type DataImportJobData,
+} from './queues/data-import.queue';
 
 const logger = pino({ name: 'haversack-worker' });
 
@@ -240,6 +245,31 @@ async function start(): Promise<void> {
     logger.error({ jobId: job?.id, err: err.message }, 'Commission statement job failed');
   });
 
+  // Data import queue — triggered per import confirmation
+  const dataImportQueue = new Queue<DataImportJobData>(DATA_IMPORT_QUEUE_NAME, {
+    connection: createRedisConnection(),
+    defaultJobOptions: {
+      attempts: DATA_IMPORT_MAX_RETRIES,
+      backoff: { type: 'exponential', delay: 5000 },
+    },
+  });
+
+  logger.info('Data import queue initialized');
+
+  const dataImportWorker = new Worker<DataImportJobData>(
+    DATA_IMPORT_QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, importId: job.data.importId }, 'Processing data import');
+      // TODO: wire up processDataImport with real Prisma client
+      logger.info({ jobId: job.id }, 'Data import completed');
+    },
+    { connection: createRedisConnection() },
+  );
+
+  dataImportWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err: err.message }, 'Data import job failed');
+  });
+
   logger.info('Worker started successfully');
 
   // Graceful shutdown
@@ -252,6 +282,7 @@ async function start(): Promise<void> {
     await quickBooksExportWorker.close();
     await commissionCalculationWorker.close();
     await commissionStatementWorker.close();
+    await dataImportWorker.close();
     await healthScoreQueue.close();
     await taskReminderQueue.close();
     await emailNotificationQueue.close();
@@ -259,6 +290,7 @@ async function start(): Promise<void> {
     await quickBooksExportQueue.close();
     await commissionCalculationQueue.close();
     await commissionStatementQueue.close();
+    await dataImportQueue.close();
     await connection.quit();
     process.exit(0);
   };
