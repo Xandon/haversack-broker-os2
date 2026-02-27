@@ -23,6 +23,7 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps): React.
       value={value}
       onChange={(e) => onChange(e.target.value as DashboardPeriod)}
       className="w-48"
+      aria-label="Select dashboard period"
     >
       {PERIOD_OPTIONS.map((opt) => (
         <option key={opt.value} value={opt.value}>

@@ -127,12 +127,12 @@ export function ConditionBuilder({
         );
       })}
 
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={addCondition}>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" className="min-h-[44px]" onClick={addCondition} aria-label="Add condition">
           + Condition
         </Button>
         {depth < 2 && (
-          <Button variant="outline" size="sm" onClick={addGroup}>
+          <Button variant="outline" size="sm" className="min-h-[44px]" onClick={addGroup} aria-label="Add condition group">
             + Group
           </Button>
         )}
@@ -157,11 +157,12 @@ function ConditionRow({
   canRemove,
 }: ConditionRowProps): React.ReactElement {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select
         className="w-40"
         value={condition.field}
         onChange={(e) => onChange({ ...condition, field: e.target.value })}
+        aria-label="Condition field"
       >
         {fields.map((f) => (
           <option key={f} value={f}>
@@ -174,6 +175,7 @@ function ConditionRow({
         className="w-32"
         value={condition.operator}
         onChange={(e) => onChange({ ...condition, operator: e.target.value })}
+        aria-label="Condition operator"
       >
         {OPERATORS.map((op) => (
           <option key={op.value} value={op.value}>
@@ -200,8 +202,9 @@ function ConditionRow({
         <Button
           variant="outline"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-11 w-11 p-0"
           onClick={onRemove}
+          aria-label="Remove condition"
         >
           x
         </Button>
