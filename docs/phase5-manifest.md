@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-26 22:25 UTC
+**Last Updated:** 2026-02-27 08:10 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 30
+**Global Batch Counter:** 31
 
 ## Feature Queue
 
@@ -21,8 +21,8 @@
 | 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027, FR-029 | COMPLETE | 3/3 | 146 | SKIP (backend-only) |
 | 9 | AI Features | 010-ai-features | FR-014, FR-030 | COMPLETE | 3/3 | 83 | SKIP (backend-only) |
 | 10 | Dashboards & Reports | 011-dashboards-reports | FR-023, FR-024, FR-025 | COMPLETE | 3/3 | 132 | SKIP (backend-only) |
-| 11 | Business Rules Engine | 012-business-rules | FR-028 | BUILDING | 31 | 50 | -- |
-| 12 | Polish & NFRs | 013-polish-nfrs | NFR-001 through NFR-014 | PENDING | -- | -- | -- |
+| 11 | Business Rules Engine | 012-business-rules | FR-028 | COMPLETE | 1 (31) | 46 | SKIP (backend-only) |
+| 12 | Polish & NFRs | 013-polish-nfrs | NFR-001 through NFR-014 | PLANNING | -- | -- | -- |
 
 ## Dependency Map
 
@@ -40,10 +40,10 @@ Feature 12 (Polish) depends on ALL above
 
 ## Current State
 
-- **Active Feature:** 11 (Business Rules Engine)
+- **Active Feature:** 12 (Polish & NFRs)
 - **Active Stage:** BUILDING
-- **Active Step:** batch 31 (complete, needs commit + merge)
-- **Resume Point:** STAGE 3, Step 3F (finish & verify)
+- **Active Step:** batch 32 (Error Handling, Loading States & Monitoring)
+- **Resume Point:** STAGE 3, Step 3A (create feature branch)
 
 ## Feature 9: AI Features
 
@@ -153,7 +153,52 @@ Feature 12 (Polish) depends on ALL above
 - **Frontend pages:** /admin/rules (list), /admin/rules/new (create), /admin/rules/[id] (edit)
 - **Prisma schema:** BusinessRule model with BusinessRuleStatus + BusinessRuleActionType enums
 - **Route registration:** app.ts + test-helpers/app.ts updated
-- **Total tests:** 962 (was 939 before, +23 route tests; 50 total business rules tests)
+- **Total tests:** 962 backend (1248 total across all workspaces)
+
+### E2E Validation
+- E2E: SKIP — Feature 11 is backend-only API + frontend admin pages (E2E deferred to Polish phase)
+
+### Completion Summary
+- **Tests added:** 46 (net delta from 1202 to 1248 across all workspaces)
+- **Batches:** 1 (batch 31, committed directly to dev)
+- **Status:** COMPLETE
+
+## Feature 12: Polish & NFRs
+
+### PRD References
+- NFR-001: Response time (API p95 <200ms)
+- NFR-002: Concurrent users (50 simultaneous)
+- NFR-003: Availability (99.5% uptime)
+- NFR-004: Mobile responsiveness (320px+, 44px touch targets)
+- NFR-005: Accessibility (WCAG 2.1 AA)
+- NFR-006: Browser support (Chrome, Firefox, Safari, Edge)
+- NFR-007: Authentication & authorization (JWT, RBAC)
+- NFR-008: Data security (RLS, encryption)
+- NFR-009: Audit trail (immutable, 3-year retention)
+- NFR-010: Error handling (structured, graceful degradation)
+- NFR-011: Monitoring & observability (Sentry, PostHog)
+- NFR-012: Data integrity (ACID, backup/recovery)
+- NFR-013: API documentation
+- NFR-014: Code quality (80% coverage, lint clean)
+
+### Planning Checklist
+- [x] 2.1 Create feature directory — .specify/specs/013-polish-nfrs
+- [x] 2.2 Generate spec.md — 6 user stories, 10 FRs (NFR-001 through NFR-014)
+- [x] 2.3 Clarify — 9 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 28/28 items passing
+- [x] 2.5 Conflict analysis — 5 safe, 4 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domains: providers + hooks + error-handler
+- [x] 2.7 Plan — 37 files planned (27 new, 10 modified) across 3 batches
+- [x] 2.8 Tasks — 26 tasks in 3 batches (32-34), T220-T245
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [ ] Batch 32: Error handling, loading states & monitoring (T220-T228)
+- [ ] Batch 33: Accessibility, mobile responsiveness & sidebar (T229-T238)
+- [ ] Batch 34: Frontend tests & final quality (T239-T245)
+
+### E2E Validation
+(populated after build completes)
 
 ## Feature 8: Admin & Data Import
 

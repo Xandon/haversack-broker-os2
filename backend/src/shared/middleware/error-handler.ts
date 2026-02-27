@@ -1,6 +1,7 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { ERROR_CODES } from '@haversack/shared';
+import { getSentry } from '../plugins/sentry.plugin';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -64,6 +65,15 @@ export function errorHandler(
     },
     'Unhandled error',
   );
+
+  // Report to Sentry if available
+  const Sentry = getSentry();
+  if (Sentry) {
+    Sentry.captureException(error, {
+      tags: { requestId },
+      extra: { url: request.url, method: request.method },
+    });
+  }
 
   void reply.status(500).send({
     error: 'INTERNAL_SERVER_ERROR',
