@@ -161,6 +161,7 @@ model User {
   disputesResolved        CommissionDispute[]   @relation("CommissionDisputeResolver")
   commissionExports       CommissionExport[]    @relation("CommissionExportCreator")
   dataImports             DataImport[]          @relation("DataImportCreator")
+  savedReports            SavedReport[]         @relation("SavedReportCreator")
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -848,6 +849,36 @@ model DataImport {
   @@index([tenantId, status, createdAt(sort: Desc)])
   @@index([tenantId, entityType])
   @@map("data_imports")
+}
+
+enum ReportEntityType {
+  ACCOUNT
+  ORDER
+  PRODUCT
+  COMMISSION
+  ACTIVITY
+}
+
+model SavedReport {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  createdById String           @map("created_by_id") @db.Uuid
+  name        String           @db.VarChar(255)
+  description String?          @db.VarChar(1000)
+  entityType  ReportEntityType @map("entity_type")
+  filters     Json             @default("{}")
+  columns     String[]         @default([])
+  isShared    Boolean          @default(false) @map("is_shared")
+  lastRunAt   DateTime?        @map("last_run_at") @db.Timestamptz()
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz()
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz()
+
+  createdBy User @relation("SavedReportCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId, createdById, deletedAt])
+  @@index([tenantId, isShared, deletedAt])
+  @@map("saved_reports")
 }
 
 model DataQualityScore {
