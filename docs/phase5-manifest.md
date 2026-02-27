@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-27 00:00 UTC
+**Last Updated:** 2026-02-27 01:00 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 17
+**Global Batch Counter:** 18
 
 ## Feature Queue
 
@@ -42,8 +42,8 @@ Feature 12 (Polish) depends on ALL above
 
 - **Active Feature:** 6 (Pipeline & Opportunities)
 - **Active Stage:** BUILDING
-- **Active Step:** batch 17
-- **Resume Point:** STAGE 3, Batch 17
+- **Active Step:** batch 18
+- **Resume Point:** STAGE 3, Batch 18
 
 ## Feature 6: Pipeline & Opportunities
 
@@ -64,7 +64,7 @@ Feature 12 (Polish) depends on ALL above
 
 ### Build Checklist
 - [x] Batch 16: Schema, shared schemas, opportunity CRUD & transitions (T116-T123) — 30 tests, merged to dev
-- [ ] Batch 17: Routes, pipeline summary, brand association (T124-T131)
+- [x] Batch 17: Routes, pipeline summary, brand association (T124-T131) — 36 tests, merged to dev
 - [ ] Batch 18: Analytics, RBAC, audit, edge cases (T132-T137)
 
 ### E2E Validation

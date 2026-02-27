@@ -550,6 +550,304 @@ describe('FR-016: Opportunity service', () => {
     });
   });
 
+  describe('audit trail verification (T135)', () => {
+    test('SC-004: logs audit on create', async () => {
+      accountMock.findFirst.mockResolvedValue({ id: ACCOUNT_ID, tenantId: TENANT_ID });
+      oppMock.create.mockResolvedValue(createMockOppWithRelations());
+
+      await createOpportunity(prisma, TENANT_ID, {
+        name: 'Audit Test',
+        estimatedValue: 5000,
+        expectedCloseDate: '2026-06-30',
+        stage: 'prospect',
+        accountId: ACCOUNT_ID,
+      }, REP_ID, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prisma,
+          tenantId: TENANT_ID,
+          actorId: REP_ID,
+          actorEmail: 'rep@test.com',
+          entityType: 'Opportunity',
+          action: 'create',
+          changeSummary: expect.objectContaining({ name: 'Audit Test' }),
+        }),
+      );
+    });
+
+    test('SC-004: logs audit on update', async () => {
+      oppMock.findFirst.mockResolvedValue(createMockOpportunity());
+      oppMock.update.mockResolvedValue(createMockOppWithRelations({ name: 'Updated Name' }));
+
+      await updateOpportunity(
+        prisma, TENANT_ID, OPP_ID,
+        { name: 'Updated Name' },
+        undefined,
+        AUDIT_CTX,
+      );
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Opportunity',
+          entityId: OPP_ID,
+          action: 'update',
+          changeSummary: expect.objectContaining({ name: 'Updated Name' }),
+        }),
+      );
+    });
+
+    test('SC-004: logs audit on soft delete', async () => {
+      oppMock.findFirst.mockResolvedValue(createMockOpportunity());
+      oppMock.update.mockResolvedValue(createMockOpportunity({ isActive: false }));
+
+      await softDeleteOpportunity(prisma, TENANT_ID, OPP_ID, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityType: 'Opportunity',
+          entityId: OPP_ID,
+          action: 'delete',
+          changeSummary: expect.objectContaining({ name: 'Q3 Honey Expansion' }),
+        }),
+      );
+    });
+
+    test('SC-004: audit includes IP address and request ID', async () => {
+      accountMock.findFirst.mockResolvedValue({ id: ACCOUNT_ID, tenantId: TENANT_ID });
+      oppMock.create.mockResolvedValue(createMockOppWithRelations());
+
+      await createOpportunity(prisma, TENANT_ID, {
+        name: 'IP Test',
+        estimatedValue: 1000,
+        expectedCloseDate: '2026-06-30',
+        stage: 'prospect',
+        accountId: ACCOUNT_ID,
+      }, REP_ID, AUDIT_CTX);
+
+      expect(mockWriteAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ipAddress: '127.0.0.1',
+          requestId: 'req-123',
+        }),
+      );
+    });
+  });
+
+  describe('optimistic concurrency & edge cases (T136)', () => {
+    test('SC-003: passes concurrency check when If-Match matches', async () => {
+      const updatedAt = new Date('2026-01-01');
+      oppMock.findFirst.mockResolvedValue(createMockOpportunity({ updatedAt }));
+      oppMock.update.mockResolvedValue(createMockOppWithRelations({ name: 'Concurrent OK' }));
+
+      const result = await updateOpportunity(
+        prisma, TENANT_ID, OPP_ID,
+        { name: 'Concurrent OK' },
+        updatedAt.toISOString(),
+        AUDIT_CTX,
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    test('SC-003: transition fails for non-existent opportunity', async () => {
+      oppMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        transitionOpportunity(
+          prisma, TENANT_ID, 'nonexistent',
+          { stage: 'qualified' },
+          AUDIT_CTX,
+        ),
+      ).rejects.toThrow('Opportunity not found');
+    });
+
+    test('SC-003: soft delete fails for already-deleted opportunity', async () => {
+      oppMock.findFirst.mockResolvedValue(null); // isActive: true filter excludes it
+
+      await expect(
+        softDeleteOpportunity(prisma, TENANT_ID, OPP_ID, AUDIT_CTX),
+      ).rejects.toThrow('Opportunity not found');
+    });
+
+    test('SC-001: list returns empty array when no opportunities match', async () => {
+      oppMock.findMany.mockResolvedValue([]);
+
+      const result = await listOpportunities(prisma, TENANT_ID, {
+        stage: 'closed_won',
+        limit: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      expect(result.data).toHaveLength(0);
+      expect(result.pagination.hasMore).toBe(false);
+      expect(result.pagination.cursor).toBeNull();
+    });
+
+    test('SC-003: update with brand replace removes old brands and adds new', async () => {
+      oppMock.findFirst
+        .mockResolvedValueOnce(createMockOpportunity())
+        .mockResolvedValueOnce(createMockOppWithRelations());
+      oppMock.update.mockResolvedValue(createMockOppWithRelations());
+      oppBrandMock.deleteMany.mockResolvedValue({ count: 2 });
+      oppBrandMock.createMany.mockResolvedValue({ count: 2 });
+
+      const newBrandId1 = '00000000-0000-4000-a000-000000000031';
+      const newBrandId2 = '00000000-0000-4000-a000-000000000032';
+
+      await updateOpportunity(
+        prisma, TENANT_ID, OPP_ID,
+        { brandIds: [newBrandId1, newBrandId2] },
+        undefined,
+        AUDIT_CTX,
+      );
+
+      expect(oppBrandMock.deleteMany).toHaveBeenCalledWith({ where: { opportunityId: OPP_ID } });
+      expect(oppBrandMock.createMany).toHaveBeenCalledWith({
+        data: [
+          { opportunityId: OPP_ID, brandId: newBrandId1 },
+          { opportunityId: OPP_ID, brandId: newBrandId2 },
+        ],
+      });
+    });
+
+    test('SC-003: update with empty brandIds removes all brands', async () => {
+      oppMock.findFirst
+        .mockResolvedValueOnce(createMockOpportunity())
+        .mockResolvedValueOnce(createMockOppWithRelations());
+      oppMock.update.mockResolvedValue(createMockOppWithRelations());
+      oppBrandMock.deleteMany.mockResolvedValue({ count: 1 });
+
+      await updateOpportunity(
+        prisma, TENANT_ID, OPP_ID,
+        { brandIds: [] },
+        undefined,
+        AUDIT_CTX,
+      );
+
+      expect(oppBrandMock.deleteMany).toHaveBeenCalledWith({ where: { opportunityId: OPP_ID } });
+      expect(oppBrandMock.createMany).not.toHaveBeenCalled();
+    });
+
+    test('SC-003: transition to closed_lost sets probability to 0%', async () => {
+      oppMock.findFirst.mockResolvedValue(createMockOpportunity({ stage: 'negotiation' }));
+      oppMock.update.mockResolvedValue(
+        createMockOppWithRelations({ stage: 'closed_lost', probability: new Decimal('0') }),
+      );
+
+      await transitionOpportunity(
+        prisma, TENANT_ID, OPP_ID,
+        { stage: 'closed_lost', closeReason: 'Budget constraints' },
+        AUDIT_CTX,
+      );
+
+      expect(oppMock.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            probability: new Decimal('0'),
+            closedAt: expect.any(Date),
+            closeReason: 'Budget constraints',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('tenant isolation (T137)', () => {
+    const OTHER_TENANT = '00000000-0000-4000-a000-000000000099';
+
+    test('SC-001: create scopes account lookup to tenant', async () => {
+      accountMock.findFirst.mockResolvedValue(null); // wrong tenant returns null
+
+      await expect(
+        createOpportunity(prisma, OTHER_TENANT, {
+          name: 'Cross Tenant',
+          estimatedValue: 1000,
+          expectedCloseDate: '2026-06-30',
+          stage: 'prospect',
+          accountId: ACCOUNT_ID,
+        }, REP_ID, AUDIT_CTX),
+      ).rejects.toThrow('Account not found');
+
+      expect(accountMock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT }),
+        }),
+      );
+    });
+
+    test('SC-001: getById scopes to tenant', async () => {
+      oppMock.findFirst.mockResolvedValue(null);
+
+      await getOpportunityById(prisma, OTHER_TENANT, OPP_ID).catch(() => {});
+
+      expect(oppMock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT, id: OPP_ID }),
+        }),
+      );
+    });
+
+    test('SC-001: update scopes to tenant', async () => {
+      oppMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        updateOpportunity(prisma, OTHER_TENANT, OPP_ID, { name: 'Hack' }, undefined, AUDIT_CTX),
+      ).rejects.toThrow('Opportunity not found');
+
+      expect(oppMock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT }),
+        }),
+      );
+    });
+
+    test('SC-001: soft delete scopes to tenant', async () => {
+      oppMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        softDeleteOpportunity(prisma, OTHER_TENANT, OPP_ID, AUDIT_CTX),
+      ).rejects.toThrow('Opportunity not found');
+
+      expect(oppMock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT }),
+        }),
+      );
+    });
+
+    test('SC-001: list scopes to tenant', async () => {
+      oppMock.findMany.mockResolvedValue([]);
+
+      await listOpportunities(prisma, OTHER_TENANT, {
+        limit: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      expect(oppMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT }),
+        }),
+      );
+    });
+
+    test('SC-001: transition scopes to tenant', async () => {
+      oppMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        transitionOpportunity(prisma, OTHER_TENANT, OPP_ID, { stage: 'qualified' }, AUDIT_CTX),
+      ).rejects.toThrow('Opportunity not found');
+
+      expect(oppMock.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ tenantId: OTHER_TENANT }),
+        }),
+      );
+    });
+  });
+
   describe('formatOpportunityResponse', () => {
     test('FR-016a: formats opportunity with weighted value', () => {
       const opp = createMockOppWithRelations();

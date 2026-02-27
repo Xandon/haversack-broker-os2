@@ -44,6 +44,7 @@
 | 14 | Product Catalog | feature/batch-batch-14-line-card-pdf | 26 | Merged to dev |
 | 15 | Product Catalog | feature/batch-batch-15-product-rbac-polish | 37 | Merged to dev |
 | 16 | Pipeline & Opportunities | feature/batch-batch-16-opportunity-schema | 30 | Merged to dev |
+| 17 | Pipeline & Opportunities | feature/batch-batch-17-opportunity-routes | 36 | Merged to dev |
 
 ## Regression History
 
@@ -66,9 +67,10 @@
 | 2026-02-26 | dev (post-batch-14) | 608 | +26 | PASS |
 | 2026-02-26 | dev (post-batch-15) | 645 | +37 | PASS |
 | 2026-02-27 | dev (post-batch-16) | 675 | +30 | PASS |
+| 2026-02-27 | dev (post-batch-17) | 711 | +36 | PASS |
 
 ## Task Completion
 
-- **Completed:** 123 / 177 (T001-T123)
-- **Last completed task:** T123
-- **Global batch counter:** 16
+- **Completed:** 131 / 177 (T001-T131)
+- **Last completed task:** T131
+- **Global batch counter:** 17
