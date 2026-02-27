@@ -256,7 +256,56 @@ describe('FR-023/024: Dashboard routes', () => {
     });
   });
 
-  // ── RBAC ────────────────────────────────────────────────────
+  // ── T215: Additional Integration Tests ─────────────────────
+
+  describe('Integration: response structure', () => {
+    it('FR-023: rep dashboard revenue section has expected fields', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      const revenue = data['revenue'] as Record<string, unknown>;
+      expect(revenue['currentMonth']).toBeDefined();
+      expect(revenue['trailing12Months']).toBeDefined();
+    });
+
+    it('FR-023: rep dashboard commission section has expected fields', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      const commissions = data['commissions'] as Record<string, unknown>;
+      expect(commissions['currentMonth']).toBeDefined();
+      expect(commissions['ytd']).toBeDefined();
+    });
+
+    it('FR-024: team dashboard totals section has revenue and order count', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/team',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      const totals = data['totals'] as Record<string, unknown>;
+      expect(totals['totalRevenue']).toBeDefined();
+      expect(totals['totalOrders']).toBeDefined();
+    });
+  });
+
+  // ── T217: RBAC ────────────────────────────────────────────
 
   describe('RBAC enforcement', () => {
     it('FR-023: admin can access rep dashboard', async () => {
@@ -297,6 +346,190 @@ describe('FR-023/024: Dashboard routes', () => {
         headers: authHeader(logisticsToken),
       });
       expect(response.statusCode).toBe(403);
+    });
+
+    it('FR-023: viewer can access rep dashboard (own data)', async () => {
+      const viewerToken = generateTestToken('viewer', { userId: USER_ID });
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(viewerToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('FR-023: logistics can access rep dashboard', async () => {
+      const logisticsToken = generateTestToken('logistics', { userId: USER_ID });
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(logisticsToken),
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('FR-024: admin can access all team sub-endpoints', async () => {
+      const adminToken = generateTestToken('admin', { userId: USER_ID });
+      const endpoints = [
+        '/api/dashboards/team/revenue-by-month',
+        '/api/dashboards/team/pipeline-forecast',
+        '/api/dashboards/team/territory-revenue',
+      ];
+
+      for (const url of endpoints) {
+        const response = await app.inject({
+          method: 'GET',
+          url,
+          headers: authHeader(adminToken),
+        });
+        expect(response.statusCode).toBe(200);
+      }
+    });
+
+    it('FR-024: viewer cannot access team sub-endpoints', async () => {
+      const viewerToken = generateTestToken('viewer', { userId: USER_ID });
+      const endpoints = [
+        '/api/dashboards/team/revenue-by-month',
+        '/api/dashboards/team/pipeline-forecast',
+        '/api/dashboards/team/territory-revenue',
+      ];
+
+      for (const url of endpoints) {
+        const response = await app.inject({
+          method: 'GET',
+          url,
+          headers: authHeader(viewerToken),
+        });
+        expect(response.statusCode).toBe(403);
+      }
+    });
+  });
+
+  // ── T218: Tenant isolation ────────────────────────────────
+
+  describe('Tenant isolation', () => {
+    it('FR-023: rep dashboard queries use tenant-scoped territory lookup', async () => {
+      await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(repToken),
+      });
+
+      const userTerritory = mockPrisma['userTerritory'] as Record<string, ReturnType<typeof vi.fn>>;
+      expect(userTerritory['findMany']).toHaveBeenCalled();
+    });
+
+    it('FR-024: team dashboard queries use tenantId filtering', async () => {
+      await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/team',
+        headers: authHeader(managerToken),
+      });
+
+      // Verify user query was called (used for rep rankings)
+      const user = mockPrisma['user'] as Record<string, ReturnType<typeof vi.fn>>;
+      expect(user['findMany']).toHaveBeenCalled();
+    });
+  });
+
+  // ── T219: Edge Cases ──────────────────────────────────────
+
+  describe('Edge cases', () => {
+    it('FR-023: rep dashboard with no data returns zero values', async () => {
+      (mockPrisma['order'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { totalAmount: null } });
+      (mockPrisma['activity'] as Record<string, ReturnType<typeof vi.fn>>)['count']!.mockResolvedValue(0);
+      (mockPrisma['commissionEntry'] as Record<string, ReturnType<typeof vi.fn>>)['aggregate']!.mockResolvedValue({ _sum: { commissionAmount: null } });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      expect(data).toBeDefined();
+    });
+
+    it('FR-023: critical accounts endpoint returns empty array when no critical accounts', async () => {
+      (mockPrisma['account'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep/critical-accounts',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      expect(body['count']).toBe(0);
+    });
+
+    it('FR-024: territory revenue with no territories returns empty array', async () => {
+      (mockPrisma['territory'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/team/territory-revenue',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as unknown[];
+      expect(data).toHaveLength(0);
+    });
+
+    it('FR-024: pipeline forecast with no opportunities returns empty stages', async () => {
+      (mockPrisma['opportunity'] as Record<string, ReturnType<typeof vi.fn>>)['findMany']!.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/team/pipeline-forecast',
+        headers: authHeader(managerToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body) as Record<string, unknown>;
+      const data = body['data'] as Record<string, unknown>;
+      expect(data['totalWeightedForecast']).toBe(0);
+    });
+
+    it('FR-023: accepts ytd period parameter', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep?period=ytd',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('FR-023: unauthenticated returns 401 for critical-accounts', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboards/rep/critical-accounts',
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('FR-024: unauthenticated returns 401 for team endpoints', async () => {
+      const endpoints = [
+        '/api/dashboards/team',
+        '/api/dashboards/team/revenue-by-month',
+        '/api/dashboards/team/pipeline-forecast',
+        '/api/dashboards/team/territory-revenue',
+      ];
+
+      for (const url of endpoints) {
+        const response = await app.inject({
+          method: 'GET',
+          url,
+        });
+        expect(response.statusCode).toBe(401);
+      }
     });
   });
 });

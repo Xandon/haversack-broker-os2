@@ -42,8 +42,8 @@ Feature 12 (Polish) depends on ALL above
 
 - **Active Feature:** 10 (Dashboards & Reports)
 - **Active Stage:** BUILDING
-- **Active Step:** batch 29
-- **Resume Point:** STAGE 3, batch 29
+- **Active Step:** batch 30
+- **Resume Point:** STAGE 3, batch 30
 
 ## Feature 9: AI Features
 
@@ -109,7 +109,7 @@ Feature 12 (Polish) depends on ALL above
 
 ### Build Checklist
 - [x] Batch 28: Schema, shared schemas & dashboard services (T200-T207) — 44 tests, merged to dev
-- [ ] Batch 29: Report CRUD, executor & export (T208-T214)
+- [x] Batch 29: Report CRUD, executor & export (T208-T214) — 36 tests, merged to dev
 - [ ] Batch 30: Route integration, RBAC, audit & polish (T215-T219)
 
 ### E2E Validation
