@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest
 
 **Created:** 2026-02-26
-**Last Updated:** 2026-02-27 01:00 UTC
+**Last Updated:** 2026-02-27 02:00 UTC
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 18
+**Global Batch Counter:** 19
 
 ## Feature Queue
 
@@ -16,7 +16,7 @@
 | 3 | Activity & Task Management | 004-activity-tasks | FR-007, FR-008, FR-009, FR-010 | COMPLETE | 3/3 | 175 | SKIP (backend-only) |
 | 4 | Order Entry & Approval | 005-order-entry | FR-011, FR-012, FR-013, FR-014, FR-015 | COMPLETE | 3/3 | 118 | SKIP (backend-only) |
 | 5 | Product Catalog & Line Cards | 006-product-catalog | FR-018, FR-019 | COMPLETE | 3/3 | 148 | SKIP (backend-only) |
-| 6 | Pipeline & Opportunities | 007-pipeline-opportunities | FR-016, FR-017 | PENDING | -- | -- | -- |
+| 6 | Pipeline & Opportunities | 007-pipeline-opportunities | FR-016, FR-017 | COMPLETE | 3/3 | 89 | SKIP (backend-only) |
 | 7 | Commissions | 008-commissions | FR-020, FR-021, FR-022 | PENDING | -- | -- | -- |
 | 8 | Admin & Data Import | 009-admin-import | FR-026, FR-027 | PENDING | -- | -- | -- |
 | 9 | AI Features | 010-ai-features | FR-014, FR-030 | PENDING | -- | -- | -- |
@@ -40,10 +40,10 @@ Feature 12 (Polish) depends on ALL above
 
 ## Current State
 
-- **Active Feature:** 6 (Pipeline & Opportunities)
-- **Active Stage:** BUILDING
-- **Active Step:** batch 18
-- **Resume Point:** STAGE 3, Batch 18
+- **Active Feature:** 7 (Commissions)
+- **Active Stage:** PLANNING
+- **Active Step:** 2.1 (Create feature directory)
+- **Resume Point:** STAGE 2, Step 2.1
 
 ## Feature 6: Pipeline & Opportunities
 
@@ -65,10 +65,45 @@ Feature 12 (Polish) depends on ALL above
 ### Build Checklist
 - [x] Batch 16: Schema, shared schemas, opportunity CRUD & transitions (T116-T123) — 30 tests, merged to dev
 - [x] Batch 17: Routes, pipeline summary, brand association (T124-T131) — 36 tests, merged to dev
-- [ ] Batch 18: Analytics, RBAC, audit, edge cases (T132-T137)
+- [x] Batch 18: Analytics, RBAC, audit, edge cases (T132-T137) — 23 tests, merged to dev
 
 ### E2E Validation
 - E2E: SKIP — Feature 6 is backend-only API (no UI pages yet)
+
+### Completion Summary
+- **Tests added:** 89 (30 batch 16 + 36 batch 17 + 23 batch 18)
+- **Batches:** 3 (batches 16-18, all merged to dev)
+- **Files created/modified:** 19 files (14 new, 5 modified)
+- **Key deliverables:**
+  - Prisma schema: PipelineStage enum, Opportunity model, OpportunityBrand join table
+  - Shared Zod schemas: opportunity CRUD, transition, list, pipeline summary, win/loss analytics
+  - Opportunity service: CRUD, stage transitions, optimistic concurrency, soft delete, audit logging
+  - Pipeline service: getPipelineSummary (stage grouping + weighted forecast), getWinLossAnalytics
+  - 8 Fastify routes: opportunity CRUD + transition + pipeline summary + analytics
+  - RBAC enforcement: rep/manager for writes, all authenticated for reads, analytics restricted
+  - Stage defaults: auto-probability per stage (prospect 10%, qualified 40%, etc.)
+  - Comprehensive test coverage: audit trail, tenant isolation, edge cases, concurrency
+
+## Feature 7: Commissions
+
+### PRD References
+- FR-020: Commission rule configuration
+- FR-021: Automated commission calculation
+- FR-022: Monthly statement generation
+
+### Planning Checklist
+- [ ] 2.1 Create feature directory
+- [ ] 2.2 Generate spec.md
+- [ ] 2.3 Clarify
+- [ ] 2.4 Requirements checklist
+- [ ] 2.5 Conflict analysis
+- [ ] 2.6 Research
+- [ ] 2.7 Plan
+- [ ] 2.8 Tasks
+- [ ] 2.9 Validation gate
+
+### Build Checklist
+(populated after planning completes)
 
 ## Feature 5: Product Catalog & Line Cards
 
