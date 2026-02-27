@@ -5,7 +5,7 @@
 **Base Branch:** dev
 **Merge Mode:** auto
 **Baseline Tests:** 1
-**Global Batch Counter:** 16
+**Global Batch Counter:** 17
 
 ## Feature Queue
 
@@ -42,8 +42,8 @@ Feature 12 (Polish) depends on ALL above
 
 - **Active Feature:** 6 (Pipeline & Opportunities)
 - **Active Stage:** BUILDING
-- **Active Step:** batch 16
-- **Resume Point:** STAGE 3, Batch 16
+- **Active Step:** batch 17
+- **Resume Point:** STAGE 3, Batch 17
 
 ## Feature 6: Pipeline & Opportunities
 
@@ -63,7 +63,7 @@ Feature 12 (Polish) depends on ALL above
 - [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-- [ ] Batch 16: Schema, shared schemas, opportunity CRUD & transitions (T116-T123)
+- [x] Batch 16: Schema, shared schemas, opportunity CRUD & transitions (T116-T123) — 30 tests, merged to dev
 - [ ] Batch 17: Routes, pipeline summary, brand association (T124-T131)
 - [ ] Batch 18: Analytics, RBAC, audit, edge cases (T132-T137)
 
