@@ -9,6 +9,8 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { activityColumns } from '@/components/activities/activity-columns';
 import { ActivityFilterBar, type ActivityFilters } from '@/components/activities/activity-filters';
+import { ActivityFormDialog } from '@/components/activities/activity-form-dialog';
+import { QuickLogFab } from '@/components/activities/quick-log-fab';
 import { useActivities } from '@/hooks/use-activities';
 import { useAccounts, type AccountListItem } from '@/hooks/use-accounts';
 
@@ -31,6 +33,7 @@ function ActivityListSkeleton(): React.ReactElement {
 export default function ActivitiesPage(): React.ReactElement {
   const [selectedAccountId, setSelectedAccountId] = React.useState<string>('');
   const [filters, setFilters] = React.useState<ActivityFilters>({});
+  const [formOpen, setFormOpen] = React.useState(false);
 
   const { data: accountsData, isLoading: accountsLoading } = useAccounts({ limit: 100 });
 
@@ -122,6 +125,15 @@ export default function ActivitiesPage(): React.ReactElement {
           />
         </>
       )}
+
+      <QuickLogFab onClick={() => setFormOpen(true)} />
+
+      <ActivityFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
+        defaultAccountId={selectedAccountId || undefined}
+      />
     </div>
   );
 }
