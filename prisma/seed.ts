@@ -16,42 +16,42 @@ interface SeedUser {
 
 const SEED_USERS: SeedUser[] = [
   {
-    email: 'admin@haversack.test',
+    email: 'admin@haversack.com',
     firstName: 'Alex',
     lastName: 'Admin',
     role: UserRole.admin,
     password: 'AdminPass123!',
   },
   {
-    email: 'manager@haversack.test',
+    email: 'manager@haversack.com',
     firstName: 'Morgan',
     lastName: 'Manager',
     role: UserRole.manager,
     password: 'ManagerPass123!',
   },
   {
-    email: 'rep1@haversack.test',
+    email: 'rep1@haversack.com',
     firstName: 'Riley',
     lastName: 'Rep',
     role: UserRole.rep,
     password: 'RepPass123!',
   },
   {
-    email: 'rep2@haversack.test',
+    email: 'rep2@haversack.com',
     firstName: 'Sam',
     lastName: 'Sales',
     role: UserRole.rep,
     password: 'RepPass123!',
   },
   {
-    email: 'logistics@haversack.test',
+    email: 'logistics@haversack.com',
     firstName: 'Logan',
     lastName: 'Logistics',
     role: UserRole.logistics,
     password: 'LogisticsPass123!',
   },
   {
-    email: 'viewer@haversack.test',
+    email: 'viewer@haversack.com',
     firstName: 'Val',
     lastName: 'Viewer',
     role: UserRole.viewer,
@@ -134,8 +134,8 @@ async function main(): Promise<void> {
   console.log(`Created ${users.length} users`);
 
   // Assign reps to territories (rep1 -> Portland, rep2 -> Seattle)
-  const rep1 = users.find((u) => u.email === 'rep1@haversack.test');
-  const rep2 = users.find((u) => u.email === 'rep2@haversack.test');
+  const rep1 = users.find((u) => u.email === 'rep1@haversack.com');
+  const rep2 = users.find((u) => u.email === 'rep2@haversack.com');
   const portland = territories.find((t) => t.name === 'Portland Metro');
   const seattle = territories.find((t) => t.name === 'Seattle Metro');
 

@@ -55,6 +55,44 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
+  // GET /api/auth/me — returns current authenticated user
+  app.get(
+    '/api/auth/me',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      if (!request.user) {
+        return reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required',
+          code: ERROR_CODES.AUTH_MISSING_TOKEN,
+          requestId: request.requestId,
+        });
+      }
+
+      const user = await app.prisma.user.findUnique({
+        where: { id: request.user.userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          firstName: true,
+          lastName: true,
+        },
+      });
+
+      if (!user) {
+        return reply.status(401).send({
+          error: 'UNAUTHORIZED',
+          message: 'User not found',
+          code: ERROR_CODES.AUTH_MISSING_TOKEN,
+          requestId: request.requestId,
+        });
+      }
+
+      return reply.status(200).send({ data: user });
+    },
+  );
+
   // POST /api/auth/logout — requires authentication
   app.post(
     '/api/auth/logout',

@@ -27,7 +27,7 @@ export async function checkDuplicates(
   >(
     `SELECT id, name, levenshtein(LOWER(name), LOWER($1)) as distance
      FROM accounts
-     WHERE tenant_id = $2
+     WHERE tenant_id = $2::uuid
        AND deleted_at IS NULL
        AND levenshtein(LOWER(name), LOWER($1)) <= 3
      ORDER BY levenshtein(LOWER(name), LOWER($1)) ASC
@@ -60,7 +60,7 @@ export async function checkDuplicates(
         `SELECT DISTINCT a.id, a.name as account_name
          FROM accounts a
          JOIN contacts c ON c.account_id = a.id AND c.deleted_at IS NULL
-         WHERE a.tenant_id = $1
+         WHERE a.tenant_id = $1::uuid
            AND a.deleted_at IS NULL
            AND REPLACE(REPLACE(REPLACE(c.phone, '-', ''), '(', ''), ')', '') LIKE $2
          LIMIT 5`,
@@ -89,7 +89,7 @@ export async function checkDuplicates(
     >(
       `SELECT id, name
        FROM accounts
-       WHERE tenant_id = $1
+       WHERE tenant_id = $1::uuid
          AND deleted_at IS NULL
          AND LOWER(street_address) = LOWER($2)
        LIMIT 5`,

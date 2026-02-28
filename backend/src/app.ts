@@ -25,6 +25,7 @@ import { aiRoutes } from './domains/ai/ai.routes';
 import { dashboardRoutes } from './domains/dashboards/dashboard.routes';
 import { reportRoutes } from './domains/reports/report.routes';
 import { businessRuleRoutes } from './domains/business-rules/business-rule.routes';
+import { notificationRoutes } from './domains/notifications/notification.routes';
 import { territoryRoutes } from './domains/territories/territory.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
@@ -70,6 +71,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(dashboardRoutes);
   await app.register(reportRoutes);
   await app.register(businessRuleRoutes);
+  await app.register(notificationRoutes);
   await app.register(territoryRoutes);
 
   // Health check
