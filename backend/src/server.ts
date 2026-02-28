@@ -3,6 +3,7 @@ import helmet from '@fastify/helmet';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { accountRoutes } from './domains/accounts/account.routes.js';
+import { commissionRoutes } from './domains/commissions/commission.routes.js';
 import { contactRoutes } from './domains/contacts/contact.routes.js';
 import { opportunityRoutes } from './domains/opportunities/opportunity.routes.js';
 import { productRoutes } from './domains/products/product.routes.js';
@@ -35,6 +36,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   // Domain routes
   await fastify.register(accountRoutes);
+  await fastify.register(commissionRoutes);
   await fastify.register(contactRoutes);
   await fastify.register(opportunityRoutes);
   await fastify.register(productRoutes);
