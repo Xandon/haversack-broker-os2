@@ -36,35 +36,35 @@ function TimelineItemCard({ item }: { item: TimelineItem }): React.ReactElement 
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-2">
           <StatusBadge status={item.type} />
-          {item.type === 'activity' && data['type'] && (
-            <StatusBadge status={data['type'] as string} />
-          )}
-          {item.type === 'task' && data['priority'] && (
-            <StatusBadge status={data['priority'] as string} />
-          )}
+          {item.type === 'activity' && typeof data['type'] === 'string' ? (
+            <StatusBadge status={data['type']} />
+          ) : null}
+          {item.type === 'task' && typeof data['priority'] === 'string' ? (
+            <StatusBadge status={data['priority']} />
+          ) : null}
         </div>
 
-        {item.type === 'activity' && data['notes'] && (
-          <p className="text-sm">{data['notes'] as string}</p>
-        )}
-        {item.type === 'email' && (
-          <p className="text-sm">{data['subject'] as string}</p>
-        )}
-        {item.type === 'task' && (
-          <p className="text-sm">{data['title'] as string}</p>
-        )}
+        {item.type === 'activity' && typeof data['notes'] === 'string' ? (
+          <p className="text-sm">{data['notes']}</p>
+        ) : null}
+        {item.type === 'email' && typeof data['subject'] === 'string' ? (
+          <p className="text-sm">{data['subject']}</p>
+        ) : null}
+        {item.type === 'task' && typeof data['title'] === 'string' ? (
+          <p className="text-sm">{data['title']}</p>
+        ) : null}
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{formattedDate} at {formattedTime}</span>
-          {userName && (
+          {userName ? (
             <>
               <span>by</span>
               <span>{userName}</span>
             </>
-          )}
-          {item.type === 'activity' && data['durationMinutes'] && (
-            <span>({data['durationMinutes'] as number} min)</span>
-          )}
+          ) : null}
+          {item.type === 'activity' && typeof data['durationMinutes'] === 'number' ? (
+            <span>({data['durationMinutes']} min)</span>
+          ) : null}
         </div>
       </div>
     </div>
