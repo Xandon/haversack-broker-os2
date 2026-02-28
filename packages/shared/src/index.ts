@@ -361,6 +361,11 @@ export {
 } from './schemas/report.schema';
 
 export {
+  territoryResponseSchema,
+  type TerritoryResponse,
+} from './schemas/territory.schema';
+
+export {
   contactSearchQuerySchema,
   contactSearchResultSchema,
   globalSearchResultSchema,

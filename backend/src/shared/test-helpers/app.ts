@@ -20,6 +20,7 @@ import { aiRoutes } from '../../domains/ai/ai.routes';
 import { dashboardRoutes } from '../../domains/dashboards/dashboard.routes';
 import { reportRoutes } from '../../domains/reports/report.routes';
 import { businessRuleRoutes } from '../../domains/business-rules/business-rule.routes';
+import { territoryRoutes } from '../../domains/territories/territory.routes';
 import { ERROR_CODES } from '@haversack/shared';
 
 export async function buildTestApp(
@@ -59,6 +60,7 @@ export async function buildTestApp(
   await app.register(dashboardRoutes);
   await app.register(reportRoutes);
   await app.register(businessRuleRoutes);
+  await app.register(territoryRoutes);
 
   // Health check
   app.get('/api/health', async (_request, reply) => {

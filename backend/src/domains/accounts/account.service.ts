@@ -322,6 +322,7 @@ export async function listAccounts(
   const [accounts, total] = await Promise.all([
     prisma.account.findMany({
       where,
+      include: { territory: { select: { id: true, name: true } } },
       orderBy: { [sortBy]: sortOrder },
       take: limit + 1,
       ...(cursorObj ? { cursor: cursorObj, skip: 1 } : {}),
