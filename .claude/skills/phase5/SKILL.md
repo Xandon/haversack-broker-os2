@@ -50,7 +50,7 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
 
 **When:** First invocation (`/phase5 init`) or no manifest exists.
 
-**Reads:** `docs/prd.md` (FR sections only, ~300 lines), `docs/progress.md` (~185 lines), `.specify/specs/001-haversack-unified-platform/tasks.md` (dependency section only, ~50 lines)
+**Reads:** `docs/prd-frontend.md` (FR sections only, ~400 lines), `docs/progress.md` (~185 lines), `.specify/specs/001-haversack-unified-platform/tasks.md` (dependency section only, ~50 lines)
 
 ### Step 0.1: Pre-Flight
 
@@ -65,20 +65,37 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
 
 ### Step 0.2: Discover Remaining Features
 
-1. Read `docs/prd.md` — extract all FR-XXX groups that represent distinct features.
+1. Read `docs/prd-frontend.md` — extract all FR-XXX groups that represent distinct frontend features (FR-031 through FR-053).
 2. Read `docs/progress.md` — identify which batches/features are already complete.
 3. Cross-reference to identify remaining features not yet built.
 
-**Expected remaining features for Haversack (update if progress.md shows otherwise):**
+**Expected remaining features for Haversack Frontend (update if progress.md shows otherwise):**
 
 | # | Feature | PRD References | Depends On |
 |---|---------|---------------|------------|
-| 1 | Pipeline & Opportunities | FR-016, FR-017 | Accounts (done) |
-| 2 | Commissions | FR-020, FR-021, FR-022 | Orders (done) |
-| 3 | Dashboards & Reports | FR-023, FR-024, FR-025 | Commissions |
-| 4 | Business Rules Engine | FR-028 | Accounts (done) |
-| 5 | AI Meeting Briefs | FR-030 | AI provider (done) |
-| 6 | Polish & NFRs | NFR-001 through NFR-014 | All features |
+| 1 | F-000: Design System & Component Library | FR-031 | None (foundational) |
+| 2 | F-001: Global Search (Cmd+K) | FR-032 | F-000 |
+| 3 | F-002a: Account List & Search | FR-033 | F-000 |
+| 4 | F-002b: Account Detail View | FR-034 | F-000, F-002a |
+| 5 | F-002c: Account Forms & Contacts | FR-035 | F-000, F-002a |
+| 6 | F-003: Activity Logging & Timeline | FR-036 | F-000, F-002a |
+| 7 | F-004: Task Management | FR-037 | F-000 |
+| 8 | F-005a: Order List & Detail | FR-038 | F-000, F-002a |
+| 9 | F-005b: Order Entry Form | FR-039 | F-000, F-005a |
+| 10 | F-005c: Order Approval Queue | FR-040 | F-000, F-005a |
+| 11 | F-006: Product Catalog & Brands | FR-041 | F-000 |
+| 12 | F-007: Pipeline Kanban | FR-042 | F-000 |
+| 13 | F-007b: Opportunity CRUD | FR-043 | F-000, F-007 |
+| 14 | F-008: Commission Tracking | FR-044 | F-000 |
+| 15 | F-009: Enhanced Dashboard & Charts | FR-045 | F-000 |
+| 16 | F-010: Custom Reports | FR-046 | F-000 |
+| 17 | F-011: AI Features Integration | FR-047 | F-000, F-002b |
+| 18 | F-012: User Management | FR-048 | F-000 |
+| 19 | F-013: Data Import Wizard | FR-049 | F-000 |
+| 20 | F-014: Data Quality Scorecard | FR-050 | F-000 |
+| 21 | F-015: Email Integration | FR-051 | F-000, F-002b |
+| 22 | F-016: Notifications | FR-052 | F-000 |
+| 23 | F-053: Cross-Cutting UI Polish | FR-053 | All features |
 
 ### Step 0.3: Determine Base State
 
@@ -86,8 +103,8 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
    - Check if `dev` branch exists: `git show-ref --verify --quiet refs/heads/dev`
    - If yes -> `BASE_BRANCH=dev`
    - If no -> default to `main`
-2. Get current test count from progress.md regression history (currently 507).
-3. Get current global batch counter from progress.md (currently 7).
+2. Get current test count from progress.md regression history (currently 1356).
+3. Get current global batch counter from progress.md (currently 34).
 
 ### Step 0.4: Create Manifest
 
@@ -169,10 +186,10 @@ Phase 5 executes the speckit pipeline logic DIRECTLY for each feature — it doe
 
 ### Step 2.2: Generate spec.md
 
-**Reads:** `docs/prd.md` (only the target FR sections, ~100 lines), `.specify/templates/spec-template.md` (~50 lines)
+**Reads:** `docs/prd-frontend.md` (only the target FR sections, ~100 lines), `.specify/templates/spec-template.md` (~50 lines)
 
 1. Load the spec template to understand required sections.
-2. Read the relevant FR sections from the PRD for this feature.
+2. Read the relevant FR sections from the frontend PRD for this feature.
 3. Generate a complete spec.md following the template structure:
    - User stories with priorities and acceptance criteria
    - Functional requirements (reference PRD FR numbers)
@@ -294,7 +311,7 @@ Write `FEATURE_DIR/conflicts.md`.
      - Each P1 user story gets its own batch
      - P2/P3 stories grouped (max 8-10 tasks per batch)
    - Branch names: `feature/batch-{N}-{slug}` where N continues global counter
-2. Task IDs continue from the last task in progress.md (currently T122, so start at T123+).
+2. Task IDs continue from the last task in progress.md (currently T245, so start at T246+).
 3. Include dependency chain and batch boundaries.
 
 **Update manifest:** `[x] 2.8 Tasks — {N} tasks in {M} batches, starting at batch {K}`
@@ -619,7 +636,7 @@ Execute their choice.
 
 | Context | When to Read | When NOT to Read |
 |---------|-------------|-----------------|
-| `docs/prd.md` | STAGE 0, Step 2.2 only | During build (STAGE 3) |
+| `docs/prd-frontend.md` | STAGE 0, Step 2.2 only | During build (STAGE 3) |
 | `FEATURE_DIR/plan.md` | Never during build | Its info is in tasks.md |
 | `FEATURE_DIR/spec.md` | Steps 2.2-2.9, batch anchor, drift checks | Don't read full spec during build — only relevant US |
 | `FEATURE_DIR/tasks.md` | Steps 2.8-2.9, batch anchor | Only current batch section, not full file |
@@ -686,32 +703,29 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 **Last Updated:** {date time}
 **Base Branch:** dev
 **Merge Mode:** auto
-**Baseline Tests:** 507
-**Global Batch Counter:** 7
+**Baseline Tests:** 1356
+**Global Batch Counter:** 34
 
 ## Feature Queue
 
 | # | Feature | Spec Dir | Status | Batches | Tests Added | E2E |
 |---|---------|----------|--------|---------|-------------|-----|
-| 1 | Pipeline & Opportunities | 002-pipeline-opportunities | PENDING | -- | -- | -- |
-| 2 | Commissions | 003-commissions | PENDING | -- | -- | -- |
-| 3 | Dashboards & Reports | 004-dashboards-reports | PENDING | -- | -- | -- |
-| 4 | Business Rules Engine | 005-business-rules | PENDING | -- | -- | -- |
-| 5 | AI Meeting Briefs | 006-ai-meeting-briefs | PENDING | -- | -- | -- |
-| 6 | Polish & NFRs | 007-polish-nfrs | PENDING | -- | -- | -- |
+| 1 | F-000: Design System & Component Library | 014-design-system | PENDING | -- | -- | -- |
+| 2 | F-001: Global Search (Cmd+K) | 015-global-search | PENDING | -- | -- | -- |
+| 3 | F-002a: Account List & Search | 016-account-list | PENDING | -- | -- | -- |
+| ... | ... | ... | ... | ... | ... | ... |
 
 ## Current State
 
-- **Active Feature:** 1 (Pipeline & Opportunities)
+- **Active Feature:** 1 (F-000: Design System & Component Library)
 - **Active Stage:** PLANNING
 - **Active Step:** 2.1 (Create feature directory)
 - **Resume Point:** STAGE 2, Step 2.1
 
-## Feature 1: Pipeline & Opportunities
+## Feature 1: F-000: Design System & Component Library
 
 ### PRD References
-- FR-016: Pipeline stage management
-- FR-017: Opportunity tracking and forecasting
+- FR-031: Design system (theme tokens, component library, composite patterns)
 
 ### Planning Checklist
 - [ ] 2.1 Create feature directory
@@ -736,26 +750,43 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 **Key properties:**
 - `## Current State` is the resume dispatch — tells any new conversation exactly where to pick up
 - Checklists are updated one line at a time (minimal writes)
-- Batch numbering is global and sequential across all features (continues from 7)
+- Batch numbering is global and sequential across all features (continues from 34)
 - Only the active feature has a detailed section; pending features show only their queue row
 - Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `E2E_TESTING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`, `E2E_FAIL`
 
 ---
 
-## Feature Queue Reference (Haversack-Specific)
+## Feature Queue Reference (Haversack Frontend Phase)
 
-These are the expected remaining features based on the PRD. Verify against actual `docs/progress.md` during STAGE 0.
+These are the frontend features based on `docs/prd-frontend.md`. Verify against actual `docs/progress.md` during STAGE 0.
 
 | # | Feature | PRD References | Description | Depends On |
 |---|---------|---------------|-------------|------------|
-| 1 | Pipeline & Opportunities | FR-016, FR-017 | Pipeline stages (lead/qualify/propose/negotiate/close), opportunity tracking, revenue forecasting, win/loss analysis | Accounts (Batch 1-2) |
-| 2 | Commissions | FR-020, FR-021, FR-022 | Commission rule configuration per brand/territory/tier, automated calculation, monthly statement generation, audit trail | Orders (Batch 4) |
-| 3 | Dashboards & Reports | FR-023, FR-024, FR-025 | Territory dashboard, sales performance metrics, pipeline analytics, commission summaries, exportable reports | Commissions (Feature 2) |
-| 4 | Business Rules Engine | FR-028 | Configurable business rules for pricing, approvals, territory assignments, commission tiers. Admin-managed rule sets | Accounts (Batch 1-2) |
-| 5 | AI Meeting Briefs | FR-030 | AI-generated pre-meeting account briefs with recent activity, order history, health score, talking points. "AI-Generated" label required | AI provider (Batch 6) |
-| 6 | Polish & NFRs | NFR-001 through NFR-014 | Performance optimization, accessibility (WCAG 2.1 AA), mobile responsiveness, error handling hardening, monitoring, documentation | All features |
+| 1 | F-000: Design System & Component Library | FR-031 | Theme tokens, shadcn/ui primitives (15+), composite patterns (12+), new deps (@tanstack/react-table, cmdk, sonner, date-fns, react-day-picker, recharts, @dnd-kit) | None (foundational) |
+| 2 | F-001: Global Search (Cmd+K) | FR-032 | Command palette, 300ms debounce, categorized results (accounts, contacts, products), keyboard navigation | F-000 |
+| 3 | F-002a: Account List & Search | FR-033 | /accounts data table, territory/type/health filters, sortable columns, cursor pagination | F-000 |
+| 4 | F-002b: Account Detail View | FR-034 | /accounts/[id] tabbed layout (overview, contacts, timeline, orders, opportunities), health score breakdown | F-000, F-002a |
+| 5 | F-002c: Account Forms & Contacts | FR-035 | /accounts/new + /accounts/[id]/edit, RHF+Zod, duplicate detection, contact CRUD modals | F-000, F-002a |
+| 6 | F-003: Activity Logging & Timeline | FR-036 | /activities page, quick-log FAB, demo fields, activity form (<60s), timeline with infinite scroll | F-000, F-002a |
+| 7 | F-004: Task Management | FR-037 | /tasks page, status/priority/overdue filters, task dialog forms, quick status toggle | F-000 |
+| 8 | F-005a: Order List & Detail | FR-038 | /orders + /orders/[id], status badges, line items, vendor splits, approval history | F-000, F-002a |
+| 9 | F-005b: Order Entry Form | FR-039 | /orders/new, product search combobox, revenue model toggle, running subtotals, AI reorder suggestions | F-000, F-005a |
+| 10 | F-005c: Order Approval Queue | FR-040 | /orders/approval-queue, Manager/Admin only, approve/reject with reason | F-000, F-005a |
+| 11 | F-006: Product Catalog & Brands | FR-041 | /products grid/list, /products/[id], /brands, /brands/[id], line card PDF, email share | F-000 |
+| 12 | F-007: Pipeline Kanban | FR-042 | /opportunities kanban, @dnd-kit drag-and-drop, weighted forecast, close dialogs, list view toggle | F-000 |
+| 13 | F-007b: Opportunity CRUD | FR-043 | /opportunities/new + /opportunities/[id], stage history timeline, brand association | F-000, F-007 |
+| 14 | F-008: Commission Tracking | FR-044 | /commissions dashboard, statement detail, approve/reject, disputes, rules CRUD, QB export | F-000 |
+| 15 | F-009: Enhanced Dashboard & Charts | FR-045 | Extend /dashboard with recharts: revenue-by-month, territory table, rep ranking, pipeline forecast, health donut | F-000 |
+| 16 | F-010: Custom Reports | FR-046 | /reports, /reports/new builder, entity/filter/column picker, preview, CSV/XLSX export | F-000 |
+| 17 | F-011: AI Features Integration | FR-047 | Meeting brief + email draft + activity summary panels, AI-Generated labels, editable, graceful degradation | F-000, F-002b |
+| 18 | F-012: User Management | FR-048 | /admin/users CRUD, role/status filters, deactivation | F-000 |
+| 19 | F-013: Data Import Wizard | FR-049 | /admin/imports, 4-step wizard (type, upload, preview, confirm), drag-and-drop, 50MB limit | F-000 |
+| 20 | F-014: Data Quality Scorecard | FR-050 | /admin/quality, composite score, metric cards, trend indicators, drill-down tables | F-000 |
+| 21 | F-015: Email Integration | FR-051 | Email engagement badges on timeline, /admin/emails/unmatched for manual linking | F-000, F-002b |
+| 22 | F-016: Notifications | FR-052 | Bell icon + unread badge, dropdown panel, date grouping, click-to-navigate, mark-as-read | F-000 |
+| 23 | F-053: Cross-Cutting UI Polish | FR-053 | Responsive 320-1440px, WCAG 2.1 AA, keyboard navigation, FCP <2s on 4G | All features |
 
-**Dependency ordering:** Features 1, 2, 4, 5 can start independently (their dependencies are met). Feature 3 depends on Feature 2 (Commissions). Feature 6 depends on all others.
+**Dependency ordering:** F-000 blocks everything. After F-000: F-001 through F-006 (Epic 1-2 core) can start. F-002b is needed before F-011 and F-015. F-007 before F-007b. F-005a before F-005b/F-005c. F-053 (polish) depends on all others.
 
 ---
 
