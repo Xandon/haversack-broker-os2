@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest — Frontend Phase
 
 **Created:** 2026-02-27
-**Last Updated:** 2026-02-27 19:45 UTC
+**Last Updated:** 2026-02-27 19:55 UTC
 **Base Branch:** dev
 **Merge Mode:** auto (confirmed by user)
 **Baseline Tests:** 1356
-**Global Batch Counter:** 39
+**Global Batch Counter:** 41
 **PRD Source:** docs/prd-frontend.md
 **Phase:** Frontend UI/UX (FR-031 through FR-053)
 
@@ -19,7 +19,7 @@
 |---|---------|----------|---------------|--------|---------|-------------|-----|
 | 1 | F-000: Design System & Component Library | 014-design-system | FR-031 | COMPLETE | 3/3 | 47 | SKIP (foundational) |
 | 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | COMPLETE | 2/2 | 60 | PENDING |
-| 3 | F-002a: Account List & Search | 016-account-list | FR-033 | PENDING | -- | -- | -- |
+| 3 | F-002a: Account List & Search | 016-account-list | FR-033 | E2E_TESTING | 2/2 | 33 | PENDING |
 | 4 | F-002b: Account Detail View | 017-account-detail | FR-034 | PENDING | -- | -- | -- |
 | 5 | F-002c: Account Forms & Contacts | 018-account-forms | FR-035 | PENDING | -- | -- | -- |
 | 6 | F-003: Activity Logging & Timeline | 019-activity-timeline | FR-036 | PENDING | -- | -- | -- |
@@ -68,9 +68,9 @@ F-053 (UI Polish) depends on ALL above
 ## Current State
 
 - **Active Feature:** 3 (F-002a: Account List & Search)
-- **Active Stage:** PLANNING
-- **Active Step:** 2.1
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** E2E_TESTING
+- **Active Step:** 4.2 (Playwright E2E)
+- **Resume Point:** STAGE 4, Step 4.2
 
 ## Feature 1: F-000: Design System & Component Library
 
@@ -125,18 +125,19 @@ SKIP — foundational design system feature, no user-facing pages to test via E2
 - FR-033: Account list data table with filters
 
 ### Planning Checklist
-- [ ] 2.1 Create feature directory
-- [ ] 2.2 Generate spec.md
-- [ ] 2.3 Clarify
-- [ ] 2.4 Requirements checklist
-- [ ] 2.5 Conflict analysis
-- [ ] 2.6 Research
-- [ ] 2.7 Plan
-- [ ] 2.8 Tasks
-- [ ] 2.9 Validation gate
+- [x] 2.1 Create feature directory — .specify/specs/016-account-list
+- [x] 2.2 Generate spec.md — 5 user stories, 10 FRs (FR-033a through FR-033j)
+- [x] 2.3 Clarify — 8 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 18/18 items passing
+- [x] 2.5 Conflict analysis — 12 safe, 5 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: accounts + dashboard hooks
+- [x] 2.7 Plan — 19 files planned (16 new, 3 modified)
+- [x] 2.8 Tasks — 14 tasks in 2 batches (40-41), T284-T297
+- [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-(populated after planning completes)
+- [x] Batch 40: Backend + Frontend Foundation (T284-T290) — 7 tasks, 26 new tests, merged
+- [x] Batch 41: Page Assembly, Filters & E2E (T291-T296) — 6 tasks, 7 new tests, merged
 
 ### E2E Validation
-- [ ] E2E browser testing — pending
+- [ ] Playwright E2E — pending (T297)
