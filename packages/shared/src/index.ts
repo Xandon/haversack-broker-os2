@@ -1,3 +1,3 @@
-export * from './types/index';
-// schemas/index.ts re-exported when schemas are added in Phase 5
-export * from './constants/index';
+export * from './types/index.js';
+export * from './constants/index.js';
+export * from './schemas/index.js';

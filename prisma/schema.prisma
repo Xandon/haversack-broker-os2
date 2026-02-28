@@ -1,11 +1,794 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgTrgm(map: "pg_trgm")]
 }
 
-// Placeholder — full schema generated in Phase 5 Batch 0
-// All 18 entities defined in .specify/specs/001-haversack-unified-platform/data-model.md
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum SubscriptionStatus {
+  active
+  suspended
+  cancelled
+}
+
+enum Role {
+  admin
+  manager
+  rep
+  logistics
+  viewer
+}
+
+enum AccountType {
+  store
+  restaurant
+  distributor
+  other
+}
+
+enum RevenueModel {
+  broker
+  wholesale
+}
+
+enum AvailabilityStatus {
+  in_stock
+  limited
+  out_of_stock
+  discontinued
+}
+
+enum OrderStatus {
+  draft
+  pending
+  pending_approval
+  approved
+  confirmed
+  rejected
+  cancelled
+}
+
+enum ActivityType {
+  visit
+  call
+  email
+  demo
+  sampling
+  task
+  note
+  system
+}
+
+enum DemoOutcome {
+  interested
+  not_interested
+  order_placed
+  follow_up_needed
+}
+
+enum EmailDirection {
+  inbound
+  outbound
+}
+
+enum EngagementStatus {
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  unsubscribed
+}
+
+enum EmailTemplateCategory {
+  line_card
+  follow_up
+  notification
+  custom
+}
+
+enum OpportunityStage {
+  prospecting
+  qualified
+  proposal
+  negotiation
+  closed_won
+  closed_lost
+}
+
+enum CommissionStatus {
+  pending
+  pending_approval
+  approved
+  exported
+  disputed
+}
+
+enum BusinessRuleEntityType {
+  account
+  contact
+  order
+  opportunity
+  activity
+  product
+}
+
+enum TaskPriority {
+  high
+  medium
+  low
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum NotificationType {
+  task_reminder
+  order_approval
+  commission_approval
+  system
+  mention
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+  approve
+  reject
+  export_action
+  login
+  logout
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Organization {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String             @unique @db.VarChar(255)
+  addressLine1       String             @map("address_line1") @db.VarChar(255)
+  addressLine2       String?            @map("address_line2") @db.VarChar(255)
+  city               String             @db.VarChar(100)
+  state              String             @db.VarChar(50)
+  zipCode            String             @map("zip_code") @db.VarChar(20)
+  phone              String?            @db.VarChar(30)
+  website            String?            @db.VarChar(500)
+  logoUrl            String?            @map("logo_url") @db.VarChar(500)
+  configuration      Json               @default("{}")
+  subscriptionStatus SubscriptionStatus @default(active) @map("subscription_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  users          User[]
+  territories    Territory[]
+  accounts       Account[]
+  contacts       Contact[]
+  brands         Brand[]
+  products       Product[]
+  orders         Order[]
+  orderItems     OrderItem[]
+  activities     Activity[]
+  demos          Demo[]
+  emailRecords   EmailRecord[]
+  emailTemplates EmailTemplate[]
+  opportunities  Opportunity[]
+  commissions    Commission[]
+  commissionRules CommissionRule[]
+  lineCards      LineCard[]
+  businessRules  BusinessRule[]
+  tasks          Task[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  email            String    @db.VarChar(255)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  firstName        String    @map("first_name") @db.VarChar(100)
+  lastName         String    @map("last_name") @db.VarChar(100)
+  role             Role
+  territoryId      String?   @map("territory_id") @db.Uuid
+  isActive         Boolean   @default(true) @map("is_active")
+  avatarUrl        String?   @map("avatar_url") @db.VarChar(500)
+  lastLoginAt      DateTime? @map("last_login_at")
+  refreshTokenHash String?   @map("refresh_token_hash") @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  tenant    Organization @relation(fields: [tenantId], references: [id])
+  territory Territory?   @relation("UserTerritory", fields: [territoryId], references: [id])
+
+  assignedTerritories Territory[]     @relation("TerritoryAssignedRep")
+  assignedAccounts    Account[]       @relation("AccountAssignedRep")
+  activities          Activity[]
+  orders              Order[]         @relation("OrderRep")
+  approvedOrders      Order[]         @relation("OrderApprover")
+  opportunities       Opportunity[]
+  commissions         Commission[]    @relation("CommissionRep")
+  approvedCommissions Commission[]    @relation("CommissionApprover")
+  emailRecords        EmailRecord[]
+  emailTemplates      EmailTemplate[]
+  lineCards           LineCard[]
+  assignedTasks       Task[]          @relation("TaskAssignee")
+  createdTasks        Task[]          @relation("TaskCreator")
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+
+  @@unique([tenantId, email], map: "idx_user_tenant_email")
+  @@index([tenantId, role], map: "idx_user_tenant_role")
+  @@index([territoryId], map: "idx_user_territory")
+  @@index([tenantId, isActive], map: "idx_user_is_active")
+  @@map("users")
+}
+
+model Territory {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String  @map("tenant_id") @db.Uuid
+  name               String  @db.VarChar(255)
+  region             String  @db.VarChar(100)
+  zipCodes           String[] @default([]) @map("zip_codes")
+  boundary           Json?
+  assignedRepId      String? @map("assigned_rep_id") @db.Uuid
+  commissionModifier Decimal @default(1.00) @map("commission_modifier") @db.Decimal(4, 2)
+  isActive           Boolean @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  tenant      Organization @relation(fields: [tenantId], references: [id])
+  assignedRep User?        @relation("TerritoryAssignedRep", fields: [assignedRepId], references: [id])
+
+  users           User[]           @relation("UserTerritory")
+  accounts        Account[]
+  commissionRules CommissionRule[]
+
+  @@unique([tenantId, name], map: "idx_territory_tenant_name")
+  @@index([assignedRepId], map: "idx_territory_assigned_rep")
+  @@index([tenantId, region], map: "idx_territory_region")
+  @@map("territories")
+}
+
+model Account {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  name                  String    @db.VarChar(255)
+  accountType           AccountType @map("account_type")
+  addressLine1          String    @map("address_line1") @db.VarChar(255)
+  addressLine2          String?   @map("address_line2") @db.VarChar(255)
+  city                  String    @db.VarChar(100)
+  state                 String    @db.VarChar(50)
+  zipCode               String    @map("zip_code") @db.VarChar(20)
+  phone                 String?   @db.VarChar(30)
+  email                 String?   @db.VarChar(255)
+  website               String?   @db.VarChar(500)
+  territoryId           String    @map("territory_id") @db.Uuid
+  assignedRepId         String    @map("assigned_rep_id") @db.Uuid
+  parentAccountId       String?   @map("parent_account_id") @db.Uuid
+  healthScore           Int?      @map("health_score")
+  healthScoreCalculatedAt DateTime? @map("health_score_calculated_at")
+  notes                 String?
+  tags                  String[]  @default([])
+  metadata              Json      @default("{}")
+  isActive              Boolean   @default(true) @map("is_active")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  tenant        Organization @relation(fields: [tenantId], references: [id])
+  territory     Territory    @relation(fields: [territoryId], references: [id])
+  assignedRep   User         @relation("AccountAssignedRep", fields: [assignedRepId], references: [id])
+  parentAccount Account?     @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  childAccounts Account[]    @relation("AccountHierarchy")
+
+  contacts      Contact[]
+  activities    Activity[]
+  orders        Order[]
+  emailRecords  EmailRecord[]
+  opportunities Opportunity[]
+  tasks         Task[]
+
+  @@index([tenantId, name], map: "idx_account_tenant_name")
+  @@index([territoryId], map: "idx_account_territory")
+  @@index([assignedRepId], map: "idx_account_assigned_rep")
+  @@index([parentAccountId], map: "idx_account_parent")
+  @@index([tenantId, healthScore], map: "idx_account_health_score")
+  @@index([tenantId, accountType], map: "idx_account_type")
+  @@map("accounts")
+}
+
+model Contact {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  accountId   String    @map("account_id") @db.Uuid
+  firstName   String    @map("first_name") @db.VarChar(100)
+  lastName    String    @map("last_name") @db.VarChar(100)
+  email       String?   @db.VarChar(255)
+  phone       String?   @db.VarChar(30)
+  title       String?   @db.VarChar(100)
+  isPrimary   Boolean   @default(false) @map("is_primary")
+  optOutEmail Boolean   @default(false) @map("opt_out_email")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  tenant       Organization  @relation(fields: [tenantId], references: [id])
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  activities   Activity[]
+  emailRecords EmailRecord[]
+
+  @@index([accountId], map: "idx_contact_account")
+  @@index([tenantId, email], map: "idx_contact_tenant_email")
+  @@map("contacts")
+}
+
+model Brand {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String       @map("tenant_id") @db.Uuid
+  name                  String       @db.VarChar(255)
+  principalContactName  String?      @map("principal_contact_name") @db.VarChar(200)
+  principalContactEmail String?      @map("principal_contact_email") @db.VarChar(255)
+  principalContactPhone String?      @map("principal_contact_phone") @db.VarChar(30)
+  baseCommissionRate    Decimal      @map("base_commission_rate") @db.Decimal(5, 2)
+  defaultRevenueModel   RevenueModel @default(broker) @map("default_revenue_model")
+  logoUrl               String?      @map("logo_url") @db.VarChar(500)
+  description           String?
+  isActive              Boolean      @default(true) @map("is_active")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  tenant          Organization     @relation(fields: [tenantId], references: [id])
+  products        Product[]
+  orders          Order[]
+  commissions     Commission[]
+  commissionRules CommissionRule[]
+  lineCards       LineCard[]
+
+  @@unique([tenantId, name], map: "idx_brand_tenant_name")
+  @@index([tenantId, isActive], map: "idx_brand_active")
+  @@map("brands")
+}
+
+model Product {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String             @map("tenant_id") @db.Uuid
+  brandId            String             @map("brand_id") @db.Uuid
+  name               String             @db.VarChar(255)
+  sku                String             @db.VarChar(100)
+  category           String             @db.VarChar(100)
+  subcategory        String?            @db.VarChar(100)
+  unitPrice          Decimal            @map("unit_price") @db.Decimal(10, 2)
+  wholesalePrice     Decimal?           @map("wholesale_price") @db.Decimal(10, 2)
+  caseSize           String?            @map("case_size") @db.VarChar(50)
+  certifications     String[]           @default([])
+  allergens          String[]           @default([])
+  dietaryAttributes  String[]           @default([]) @map("dietary_attributes")
+  availabilityStatus AvailabilityStatus @default(in_stock) @map("availability_status")
+  imageUrl           String?            @map("image_url") @db.VarChar(500)
+  description        String?
+  revenueModel       RevenueModel       @map("revenue_model")
+  promoPrice         Decimal?           @map("promo_price") @db.Decimal(10, 2)
+  promoStartDate     DateTime?          @map("promo_start_date")
+  promoEndDate       DateTime?          @map("promo_end_date")
+  lotNumber          String?            @map("lot_number") @db.VarChar(100)
+  batchId            String?            @map("batch_id") @db.VarChar(100)
+  origin             String?            @db.VarChar(255)
+  isActive           Boolean            @default(true) @map("is_active")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  tenant     Organization @relation(fields: [tenantId], references: [id])
+  brand      Brand        @relation(fields: [brandId], references: [id])
+  orderItems OrderItem[]
+  demos      Demo[]
+
+  @@unique([tenantId, sku], map: "idx_product_tenant_sku")
+  @@index([brandId], map: "idx_product_brand")
+  @@index([tenantId, category], map: "idx_product_category")
+  @@index([tenantId, availabilityStatus], map: "idx_product_availability")
+  @@index([tenantId, isActive], map: "idx_product_active")
+  @@map("products")
+}
+
+model Order {
+  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String      @map("tenant_id") @db.Uuid
+  orderNumber         String      @map("order_number") @db.VarChar(50)
+  accountId           String      @map("account_id") @db.Uuid
+  repId               String      @map("rep_id") @db.Uuid
+  status              OrderStatus @default(draft)
+  parentOrderId       String?     @map("parent_order_id") @db.Uuid
+  vendorBrandId       String?     @map("vendor_brand_id") @db.Uuid
+  subtotal            Decimal     @default(0.00) @db.Decimal(12, 2)
+  taxAmount           Decimal     @default(0.00) @map("tax_amount") @db.Decimal(12, 2)
+  total               Decimal     @default(0.00) @db.Decimal(12, 2)
+  approvalRequired    Boolean     @default(false) @map("approval_required")
+  approvedById        String?     @map("approved_by_id") @db.Uuid
+  approvedAt          DateTime?   @map("approved_at")
+  rejectionReason     String?     @map("rejection_reason")
+  confirmedAt         DateTime?   @map("confirmed_at")
+  exportedAt          DateTime?   @map("exported_at")
+  accountingReference String?     @map("accounting_reference") @db.VarChar(100)
+  notes               String?
+  fsmaLotNumbers      Json        @default("[]") @map("fsma_lot_numbers")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  tenant      Organization @relation(fields: [tenantId], references: [id])
+  account     Account      @relation(fields: [accountId], references: [id])
+  rep         User         @relation("OrderRep", fields: [repId], references: [id])
+  parentOrder Order?       @relation("OrderHierarchy", fields: [parentOrderId], references: [id])
+  subOrders   Order[]      @relation("OrderHierarchy")
+  vendorBrand Brand?       @relation(fields: [vendorBrandId], references: [id])
+  approvedBy  User?        @relation("OrderApprover", fields: [approvedById], references: [id])
+  items       OrderItem[]
+  commissions Commission[]
+
+  @@unique([tenantId, orderNumber], map: "idx_order_tenant_number")
+  @@index([accountId], map: "idx_order_account")
+  @@index([repId], map: "idx_order_rep")
+  @@index([tenantId, status], map: "idx_order_status")
+  @@index([parentOrderId], map: "idx_order_parent")
+  @@index([vendorBrandId], map: "idx_order_vendor_brand")
+  @@index([confirmedAt], map: "idx_order_confirmed_at")
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  orderId       String       @map("order_id") @db.Uuid
+  productId     String       @map("product_id") @db.Uuid
+  quantity      Int
+  unitPrice     Decimal      @map("unit_price") @db.Decimal(10, 2)
+  lineTotal     Decimal      @map("line_total") @db.Decimal(12, 2)
+  revenueModel  RevenueModel @map("revenue_model")
+  commissionRate Decimal?    @map("commission_rate") @db.Decimal(5, 2)
+  promoApplied  Boolean      @default(false) @map("promo_applied")
+  lotNumber     String?      @map("lot_number") @db.VarChar(100)
+  batchId       String?      @map("batch_id") @db.VarChar(100)
+  notes         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  tenant      Organization @relation(fields: [tenantId], references: [id])
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+  commissions Commission[]
+
+  @@index([orderId], map: "idx_orderitem_order")
+  @@index([productId], map: "idx_orderitem_product")
+  @@index([tenantId, revenueModel], map: "idx_orderitem_revenue_model")
+  @@map("order_items")
+}
+
+model Activity {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String       @map("tenant_id") @db.Uuid
+  accountId       String       @map("account_id") @db.Uuid
+  userId          String       @map("user_id") @db.Uuid
+  contactId       String?      @map("contact_id") @db.Uuid
+  activityType    ActivityType @map("activity_type")
+  subject         String?      @db.VarChar(255)
+  notes           String?
+  occurredAt      DateTime     @default(now()) @map("occurred_at")
+  durationMinutes Int?         @map("duration_minutes")
+  metadata        Json         @default("{}")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  tenant       Organization  @relation(fields: [tenantId], references: [id])
+  account      Account       @relation(fields: [accountId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  contact      Contact?      @relation(fields: [contactId], references: [id])
+  demos        Demo[]
+  emailRecords EmailRecord[]
+
+  @@index([accountId, occurredAt(sort: Desc)], map: "idx_activity_account")
+  @@index([userId, occurredAt(sort: Desc)], map: "idx_activity_user")
+  @@index([tenantId, activityType], map: "idx_activity_type")
+  @@index([tenantId, occurredAt(sort: Desc)], map: "idx_activity_occurred_at")
+  @@index([contactId], map: "idx_activity_contact")
+  @@map("activities")
+}
+
+model Demo {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  activityId      String      @map("activity_id") @db.Uuid
+  productId       String      @map("product_id") @db.Uuid
+  quantitySampled Int         @map("quantity_sampled")
+  buyerFeedback   String?     @map("buyer_feedback")
+  outcome         DemoOutcome @default(follow_up_needed)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  tenant   Organization @relation(fields: [tenantId], references: [id])
+  activity Activity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  product  Product      @relation(fields: [productId], references: [id])
+
+  @@index([activityId], map: "idx_demo_activity")
+  @@index([productId], map: "idx_demo_product")
+  @@map("demos")
+}
+
+model EmailRecord {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String           @map("tenant_id") @db.Uuid
+  accountId        String?          @map("account_id") @db.Uuid
+  contactId        String?          @map("contact_id") @db.Uuid
+  userId           String?          @map("user_id") @db.Uuid
+  activityId       String?          @map("activity_id") @db.Uuid
+  direction        EmailDirection
+  subject          String?          @db.VarChar(500)
+  bodyPreview      String?          @map("body_preview")
+  fromAddress      String           @map("from_address") @db.VarChar(255)
+  toAddresses      String[]         @map("to_addresses")
+  ccAddresses      String[]         @default([]) @map("cc_addresses")
+  messageId        String?          @map("message_id") @db.VarChar(500)
+  threadId         String?          @map("thread_id") @db.VarChar(500)
+  engagementStatus EngagementStatus @default(sent) @map("engagement_status")
+  openedAt         DateTime?        @map("opened_at")
+  clickedAt        DateTime?        @map("clicked_at")
+  bouncedAt        DateTime?        @map("bounced_at")
+  isMatched        Boolean          @default(false) @map("is_matched")
+  canSpamCompliant Boolean          @default(true) @map("can_spam_compliant")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  tenant   Organization @relation(fields: [tenantId], references: [id])
+  account  Account?     @relation(fields: [accountId], references: [id])
+  contact  Contact?     @relation(fields: [contactId], references: [id])
+  user     User?        @relation(fields: [userId], references: [id])
+  activity Activity?    @relation(fields: [activityId], references: [id])
+
+  @@index([accountId], map: "idx_email_account")
+  @@index([contactId], map: "idx_email_contact")
+  @@index([userId], map: "idx_email_user")
+  @@index([tenantId, fromAddress], map: "idx_email_from")
+  @@index([tenantId, isMatched], map: "idx_email_unmatched")
+  @@index([tenantId, messageId], map: "idx_email_message_id")
+  @@index([tenantId, engagementStatus], map: "idx_email_engagement")
+  @@map("email_records")
+}
+
+model EmailTemplate {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  name            String                @db.VarChar(255)
+  subjectTemplate String                @map("subject_template") @db.VarChar(500)
+  bodyTemplate    String                @map("body_template")
+  category        EmailTemplateCategory @default(custom)
+  mergeFields     String[]              @default([]) @map("merge_fields")
+  isActive        Boolean               @default(true) @map("is_active")
+  createdById     String                @map("created_by_id") @db.Uuid
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  tenant    Organization @relation(fields: [tenantId], references: [id])
+  createdBy User         @relation(fields: [createdById], references: [id])
+
+  @@unique([tenantId, name], map: "idx_emailtemplate_tenant_name")
+  @@index([tenantId, category], map: "idx_emailtemplate_category")
+  @@index([tenantId, isActive], map: "idx_emailtemplate_active")
+  @@map("email_templates")
+}
+
+model Opportunity {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  accountId         String           @map("account_id") @db.Uuid
+  name              String           @db.VarChar(255)
+  stage             OpportunityStage @default(prospecting)
+  probability       Decimal          @db.Decimal(5, 2)
+  estimatedValue    Decimal          @map("estimated_value") @db.Decimal(12, 2)
+  weightedValue     Decimal          @map("weighted_value") @db.Decimal(12, 2)
+  closeDate         DateTime         @map("close_date") @db.Date
+  closeReason       String?          @map("close_reason")
+  assignedRepId     String           @map("assigned_rep_id") @db.Uuid
+  notes             String?
+  associatedBrandIds String[]        @default([]) @map("associated_brand_ids") @db.Uuid
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  deletedAt         DateTime?        @map("deleted_at")
+
+  tenant      Organization @relation(fields: [tenantId], references: [id])
+  account     Account      @relation(fields: [accountId], references: [id])
+  assignedRep User         @relation(fields: [assignedRepId], references: [id])
+
+  @@index([accountId], map: "idx_opportunity_account")
+  @@index([tenantId, stage], map: "idx_opportunity_stage")
+  @@index([assignedRepId], map: "idx_opportunity_rep")
+  @@index([tenantId, closeDate], map: "idx_opportunity_close_date")
+  @@map("opportunities")
+}
+
+model Commission {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String           @map("tenant_id") @db.Uuid
+  repId                String           @map("rep_id") @db.Uuid
+  orderId              String           @map("order_id") @db.Uuid
+  orderItemId          String           @map("order_item_id") @db.Uuid
+  brandId              String           @map("brand_id") @db.Uuid
+  period               String           @db.VarChar(7)
+  lineTotal            Decimal          @map("line_total") @db.Decimal(12, 2)
+  baseRate             Decimal          @map("base_rate") @db.Decimal(5, 2)
+  territoryModifier    Decimal          @map("territory_modifier") @db.Decimal(4, 2)
+  volumeTier           String?          @map("volume_tier") @db.VarChar(50)
+  volumeTierAdjustment Decimal          @default(0.00) @map("volume_tier_adjustment") @db.Decimal(5, 2)
+  effectiveRate        Decimal          @map("effective_rate") @db.Decimal(5, 2)
+  amount               Decimal          @db.Decimal(12, 2)
+  status               CommissionStatus @default(pending)
+  approvedById         String?          @map("approved_by_id") @db.Uuid
+  approvedAt           DateTime?        @map("approved_at")
+  exportedAt           DateTime?        @map("exported_at")
+  accountingReference  String?          @map("accounting_reference") @db.VarChar(100)
+  calculationLog       Json             @map("calculation_log")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  tenant     Organization @relation(fields: [tenantId], references: [id])
+  rep        User         @relation("CommissionRep", fields: [repId], references: [id])
+  order      Order        @relation(fields: [orderId], references: [id])
+  orderItem  OrderItem    @relation(fields: [orderItemId], references: [id])
+  brand      Brand        @relation(fields: [brandId], references: [id])
+  approvedBy User?        @relation("CommissionApprover", fields: [approvedById], references: [id])
+
+  @@index([repId, period], map: "idx_commission_rep_period")
+  @@index([orderId], map: "idx_commission_order")
+  @@index([orderItemId], map: "idx_commission_order_item")
+  @@index([tenantId, status], map: "idx_commission_status")
+  @@index([brandId], map: "idx_commission_brand")
+  @@index([tenantId, period], map: "idx_commission_period")
+  @@map("commissions")
+}
+
+model CommissionRule {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  brandId          String    @map("brand_id") @db.Uuid
+  territoryId      String?   @map("territory_id") @db.Uuid
+  baseRate         Decimal   @map("base_rate") @db.Decimal(5, 2)
+  volumeTierLabel  String?   @map("volume_tier_label") @db.VarChar(50)
+  volumeThreshold  Decimal?  @map("volume_threshold") @db.Decimal(12, 2)
+  tierAdjustment   Decimal   @default(0.00) @map("tier_adjustment") @db.Decimal(5, 2)
+  effectiveDate    DateTime  @map("effective_date") @db.Date
+  endDate          DateTime? @map("end_date") @db.Date
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  tenant    Organization @relation(fields: [tenantId], references: [id])
+  brand     Brand        @relation(fields: [brandId], references: [id])
+  territory Territory?   @relation(fields: [territoryId], references: [id])
+
+  @@index([brandId, effectiveDate(sort: Desc)], map: "idx_commrule_brand_effective")
+  @@index([territoryId], map: "idx_commrule_territory")
+  @@index([tenantId, isActive, effectiveDate], map: "idx_commrule_active")
+  @@map("commission_rules")
+}
+
+model LineCard {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  brandId           String   @map("brand_id") @db.Uuid
+  generatedById     String   @map("generated_by_id") @db.Uuid
+  documentUrl       String   @map("document_url") @db.VarChar(500)
+  documentSizeBytes Int?     @map("document_size_bytes")
+  productCount      Int      @map("product_count")
+  generatedAt       DateTime @default(now()) @map("generated_at")
+  expiresAt         DateTime? @map("expires_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant      Organization @relation(fields: [tenantId], references: [id])
+  brand       Brand        @relation(fields: [brandId], references: [id])
+  generatedBy User         @relation(fields: [generatedById], references: [id])
+
+  @@index([brandId, generatedAt(sort: Desc)], map: "idx_linecard_brand")
+  @@index([generatedById], map: "idx_linecard_generated_by")
+  @@map("line_cards")
+}
+
+model BusinessRule {
+  id            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String                 @map("tenant_id") @db.Uuid
+  name          String                 @db.VarChar(255)
+  description   String?
+  entityType    BusinessRuleEntityType  @map("entity_type")
+  conditions    Json
+  actions       Json
+  priority      Int                    @default(0)
+  isActive      Boolean                @default(true) @map("is_active")
+  lastTriggered DateTime?              @map("last_triggered")
+  triggerCount  Int                    @default(0) @map("trigger_count")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  tenant Organization @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, name], map: "idx_businessrule_tenant_name")
+  @@index([tenantId, entityType, isActive], map: "idx_businessrule_entity_active")
+  @@map("business_rules")
+}
+
+model Task {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String     @map("tenant_id") @db.Uuid
+  title       String     @db.VarChar(255)
+  description String?
+  priority    TaskPriority @default(medium)
+  status      TaskStatus   @default(pending)
+  dueDate     DateTime?    @map("due_date")
+  assigneeId  String       @map("assignee_id") @db.Uuid
+  creatorId   String       @map("creator_id") @db.Uuid
+  accountId   String?      @map("account_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  tenant   Organization @relation(fields: [tenantId], references: [id])
+  assignee User         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator  User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  account  Account?     @relation(fields: [accountId], references: [id])
+
+  @@index([assigneeId, status], map: "idx_task_assignee_status")
+  @@index([tenantId, dueDate], map: "idx_task_due_date")
+  @@index([accountId], map: "idx_task_account")
+  @@map("tasks")
+}
+
+model Notification {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String           @map("tenant_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  body      String?
+  linkUrl   String?          @map("link_url") @db.VarChar(500)
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  metadata  Json             @default("{}")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  tenant Organization @relation(fields: [tenantId], references: [id])
+  user   User         @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead], map: "idx_notification_user_read")
+  @@index([tenantId, createdAt(sort: Desc)], map: "idx_notification_tenant_created")
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String      @map("tenant_id") @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(100)
+  entityId   String      @map("entity_id") @db.Uuid
+  changes    Json        @default("{}")
+  ipAddress  String?     @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  tenant Organization @relation(fields: [tenantId], references: [id])
+  user   User         @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, entityType, entityId], map: "idx_audit_entity")
+  @@index([userId, createdAt(sort: Desc)], map: "idx_audit_user")
+  @@index([tenantId, createdAt(sort: Desc)], map: "idx_audit_tenant_created")
+  @@map("audit_logs")
+}
