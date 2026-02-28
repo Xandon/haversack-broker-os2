@@ -34,6 +34,8 @@
 | **Frontend Phase** | | | | |
 | 13 | F-000: Design System & Component Library | COMPLETE | 3 | 47 |
 | 14 | F-001: Global Search (Cmd+K) | COMPLETE | 2 | 60 |
+| 15 | F-002a: Account List & Search | COMPLETE | 2 | 33 |
+| 16 | F-005: Order Entry Frontend | COMPLETE | 3 | 35 |
 
 ## Completed Batches
 
@@ -114,6 +116,9 @@
 | 2026-02-27 | dev (post-batch-37) | 1403 | +47 | PASS |
 | 2026-02-27 | dev (post-batch-38) | 1448 | +45 | PASS |
 | 2026-02-27 | dev (post-batch-39) | 1463 | +15 | PASS |
+| 2026-02-27 | dev (post-batch-40) | 1479 | +16 | PASS |
+| 2026-02-27 | dev (post-batch-41) | 1493 | +14 | PASS |
+| 2026-02-27 | dev (post-batch-42) | 1530 | +5 (frontend) +32 (shared recount) | PASS |
 
 ## Completed Batches (continued)
 
@@ -128,9 +133,12 @@
 | 37 | F-000: Design System | feature/batch-37-design-system-hooks-tests | 47 | Merged to dev |
 | 38 | F-001: Global Search | feature/batch-38-global-search-foundation | 45 | Merged to dev |
 | 39 | F-001: Global Search | feature/batch-batch-39-global-search-polish | 15 | Merged to dev |
+| 40 | F-002a/F-005: Account List + Order List | feature/batch-batch-40-account-list | 16 | Merged to dev |
+| 41 | F-005: Order Entry Form | feature/batch-batch-41-account-list-page | 14 | Merged to dev |
+| 42 | F-005: Order Detail, Approval, Suggestions | feature/batch-batch-42-order-detail-approval | 5 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 283 (T001-T245, T246-T270, T271-T283)
-- **Last completed task:** T283
-- **Global batch counter:** 39
+- **Completed:** 297 (T001-T245, T246-T283, T284-T297)
+- **Last completed task:** T297
+- **Global batch counter:** 42
