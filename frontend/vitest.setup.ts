@@ -10,6 +10,23 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   };
 }
 
+// Polyfill matchMedia for jsdom (required by useMediaQuery)
+if (typeof window.matchMedia === 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: (): void => { /* noop */ },
+      removeListener: (): void => { /* noop */ },
+      addEventListener: (): void => { /* noop */ },
+      removeEventListener: (): void => { /* noop */ },
+      dispatchEvent: (): boolean => false,
+    }),
+  });
+}
+
 afterEach(() => {
   cleanup();
 });

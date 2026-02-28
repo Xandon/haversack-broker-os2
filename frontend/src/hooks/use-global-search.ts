@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -38,6 +39,7 @@ export interface GlobalSearchResults {
   products: GlobalSearchResult[];
   isLoading: boolean;
   isError: boolean;
+  refetch: () => void;
 }
 
 export function useGlobalSearch(query: string): GlobalSearchResults {
@@ -74,6 +76,7 @@ export function useGlobalSearch(query: string): GlobalSearchResults {
         secondaryText: contact.email ?? contact.phone ?? '',
         url: `/accounts/${contact.accountId}?tab=contacts`,
         parentId: contact.accountId,
+        tertiaryText: contact.accountName,
       }));
     },
     enabled,
@@ -96,11 +99,18 @@ export function useGlobalSearch(query: string): GlobalSearchResults {
     enabled,
   });
 
+  const refetch = useCallback((): void => {
+    void accountsQuery.refetch();
+    void contactsQuery.refetch();
+    void productsQuery.refetch();
+  }, [accountsQuery, contactsQuery, productsQuery]);
+
   return {
     accounts: accountsQuery.data ?? [],
     contacts: contactsQuery.data ?? [],
     products: productsQuery.data ?? [],
     isLoading: accountsQuery.isLoading || contactsQuery.isLoading || productsQuery.isLoading,
     isError: accountsQuery.isError && contactsQuery.isError && productsQuery.isError,
+    refetch,
   };
 }

@@ -167,4 +167,62 @@ describe('FR-032: useGlobalSearch hook', () => {
       );
     });
   });
+
+  it('FR-032: exposes refetch function', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockApiClient = apiClient as ReturnType<typeof vi.fn>;
+    mockApiClient.mockResolvedValue({ data: [] });
+
+    const { result } = renderHook(() => useGlobalSearch('test'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(typeof result.current.refetch).toBe('function');
+  });
+
+  it('FR-032: sets tertiaryText for contact results with account name', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockApiClient = apiClient as ReturnType<typeof vi.fn>;
+
+    mockApiClient.mockImplementation((url: string) => {
+      if (url.includes('/api/contacts')) {
+        return Promise.resolve({
+          data: [
+            { id: 'con-1', firstName: 'Jane', lastName: 'Doe', email: 'jane@test.com', phone: null, accountId: 'acc-1', accountName: 'Pacific Foods' },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    const { result } = renderHook(() => useGlobalSearch('jane'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.contacts[0].tertiaryText).toBe('Pacific Foods');
+  });
+
+  it('FR-032: isError false when only some queries fail (partial error)', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockApiClient = apiClient as ReturnType<typeof vi.fn>;
+
+    mockApiClient.mockImplementation((url: string) => {
+      if (url.includes('/api/accounts')) {
+        return Promise.resolve({
+          data: [{ id: 'acc-1', name: 'Pacific Foods', territory: { name: 'Portland' } }],
+        });
+      }
+      return Promise.reject(new Error('Network error'));
+    });
+
+    const { result } = renderHook(() => useGlobalSearch('pacific'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isError).toBe(false);
+    expect(result.current.accounts).toHaveLength(1);
+  });
 });

@@ -29,6 +29,7 @@ export const globalSearchResultSchema = z.object({
   secondaryText: z.string(),
   url: z.string(),
   parentId: z.string().optional(),
+  tertiaryText: z.string().optional(),
 });
 
 export type GlobalSearchResult = z.infer<typeof globalSearchResultSchema>;

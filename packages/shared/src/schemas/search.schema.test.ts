@@ -128,5 +128,29 @@ describe('FR-032: Search schemas', () => {
         }),
       ).toThrow();
     });
+
+    test('FR-032: validates result with optional tertiaryText', () => {
+      const result = globalSearchResultSchema.parse({
+        type: 'contact',
+        id: '456',
+        name: 'Jane Doe',
+        secondaryText: 'jane@example.com',
+        url: '/accounts/789?tab=contacts',
+        parentId: '789',
+        tertiaryText: 'Pacific Foods NW',
+      });
+      expect(result.tertiaryText).toBe('Pacific Foods NW');
+    });
+
+    test('FR-032: allows tertiaryText to be omitted', () => {
+      const result = globalSearchResultSchema.parse({
+        type: 'account',
+        id: '123',
+        name: 'Pacific Foods NW',
+        secondaryText: 'Portland Metro',
+        url: '/accounts/123',
+      });
+      expect(result.tertiaryText).toBeUndefined();
+    });
   });
 });

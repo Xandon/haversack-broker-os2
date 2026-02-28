@@ -5,7 +5,7 @@
 **Base Branch:** dev
 **Merge Mode:** auto (confirmed by user)
 **Baseline Tests:** 1356
-**Global Batch Counter:** 37
+**Global Batch Counter:** 38
 **PRD Source:** docs/prd-frontend.md
 **Phase:** Frontend UI/UX (FR-031 through FR-053)
 
@@ -70,8 +70,8 @@ F-053 (UI Polish) depends on ALL above
 - **Active Feature:** 2 (F-001: Global Search (Cmd+K))
 - **Active Stage:** PLANNING
 - **Active Stage:** BUILDING
-- **Active Step:** batch 38
-- **Resume Point:** STAGE 3, batch 38 (3A — Create feature branch)
+- **Active Step:** batch 39
+- **Resume Point:** STAGE 3, batch 39 (3A — Create feature branch)
 
 ## Feature 1: F-000: Design System & Component Library
 
@@ -114,7 +114,7 @@ SKIP — foundational design system feature, no user-facing pages to test via E2
 - [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-- [ ] Batch 38: Search Backend + Frontend Hook Foundation (T271-T277) — 7 tasks
+- [x] Batch 38: Search Backend + Frontend Hook Foundation (T271-T277) — 7 tasks, 45 new tests, merged
 - [ ] Batch 39: Polish & Edge Cases (T278-T283) — 6 tasks
 
 ### E2E Validation
