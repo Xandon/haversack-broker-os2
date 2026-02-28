@@ -5,7 +5,7 @@
 **Base Branch:** dev
 **Merge Mode:** auto (confirmed by user)
 **Baseline Tests:** 1356
-**Global Batch Counter:** 38
+**Global Batch Counter:** 39
 **PRD Source:** docs/prd-frontend.md
 **Phase:** Frontend UI/UX (FR-031 through FR-053)
 
@@ -18,7 +18,7 @@
 | # | Feature | Spec Dir | PRD References | Status | Batches | Tests Added | E2E |
 |---|---------|----------|---------------|--------|---------|-------------|-----|
 | 1 | F-000: Design System & Component Library | 014-design-system | FR-031 | COMPLETE | 3/3 | 47 | SKIP (foundational) |
-| 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | BUILDING | -- | -- | -- |
+| 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | COMPLETE | 2/2 | 60 | PENDING |
 | 3 | F-002a: Account List & Search | 016-account-list | FR-033 | PENDING | -- | -- | -- |
 | 4 | F-002b: Account Detail View | 017-account-detail | FR-034 | PENDING | -- | -- | -- |
 | 5 | F-002c: Account Forms & Contacts | 018-account-forms | FR-035 | PENDING | -- | -- | -- |
@@ -67,11 +67,10 @@ F-053 (UI Polish) depends on ALL above
 
 ## Current State
 
-- **Active Feature:** 2 (F-001: Global Search (Cmd+K))
+- **Active Feature:** 3 (F-002a: Account List & Search)
 - **Active Stage:** PLANNING
-- **Active Stage:** BUILDING
-- **Active Step:** batch 39
-- **Resume Point:** STAGE 3, batch 39 (3A — Create feature branch)
+- **Active Step:** 2.1
+- **Resume Point:** STAGE 2, Step 2.1
 
 ## Feature 1: F-000: Design System & Component Library
 
@@ -115,7 +114,29 @@ SKIP — foundational design system feature, no user-facing pages to test via E2
 
 ### Build Checklist
 - [x] Batch 38: Search Backend + Frontend Hook Foundation (T271-T277) — 7 tasks, 45 new tests, merged
-- [ ] Batch 39: Polish & Edge Cases (T278-T283) — 6 tasks
+- [x] Batch 39: Polish & Edge Cases (T278-T283) — 6 tasks, 15 new tests, merged
+
+### E2E Validation
+- [ ] E2E browser testing — pending
+
+## Feature 3: F-002a: Account List & Search
+
+### PRD References
+- FR-033: Account list data table with filters
+
+### Planning Checklist
+- [ ] 2.1 Create feature directory
+- [ ] 2.2 Generate spec.md
+- [ ] 2.3 Clarify
+- [ ] 2.4 Requirements checklist
+- [ ] 2.5 Conflict analysis
+- [ ] 2.6 Research
+- [ ] 2.7 Plan
+- [ ] 2.8 Tasks
+- [ ] 2.9 Validation gate
+
+### Build Checklist
+(populated after planning completes)
 
 ### E2E Validation
 - [ ] E2E browser testing — pending

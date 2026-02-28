@@ -80,7 +80,7 @@
 **Branch**: `feature/batch-39-global-search-polish`
 **Tasks**: T278–T283 (6 tasks)
 
-### T278: Implement backdrop click to close
+### [X] T278: Implement backdrop click to close
 - **US**: US-1 (Open and Search)
 - **Refs**: FR-032-09
 - **Priority**: P1
@@ -89,7 +89,7 @@
 - **Dependencies**: T276
 - **Description**: Ensure clicking the overlay backdrop closes the palette. CommandDialog (via Radix Dialog) handles this by default — verify behavior and add test. Also verify Cmd+K toggle behavior (pressing Cmd+K while open closes it). Test: backdrop click closes, Cmd+K toggle behavior.
 
-### T279: Implement error state with retry
+### [X] T279: Implement error state with retry
 - **US**: US-1 (Open and Search)
 - **Refs**: FR-032-11, FR-032-12
 - **Priority**: P2
@@ -99,7 +99,7 @@
 - **[P]** — Can be developed in parallel with T278
 - **Description**: When all 3 search queries error, display "Search unavailable. Please try again." with a retry button. Retry calls `refetch()` on all 3 queries. If only some queries error, show available results and hide errored categories. Test: all-error state shows message, retry button triggers refetch, partial error shows partial results.
 
-### T280: Mobile full-screen overlay
+### [X] T280: Mobile full-screen overlay
 - **US**: US-3 (Click Search Trigger)
 - **Refs**: FR-032-14
 - **Priority**: P2
@@ -109,7 +109,7 @@
 - **[P]** — Can be developed in parallel with T278, T279
 - **Description**: Below 768px viewport, CommandDialog renders as full-screen overlay (100vh, 100vw, no rounded corners). Add a visible close button (X) in the top-right corner for mobile. Adjust CommandList max-height for mobile viewport. Test: mobile viewport shows full-screen, close button visible, desktop viewport shows standard modal.
 
-### T281: Accessibility enhancements
+### [X] T281: Accessibility enhancements
 - **US**: US-2 (Navigate via Keyboard)
 - **Refs**: FR-032-07
 - **Priority**: P2
@@ -119,7 +119,7 @@
 - **[P]** — Can be developed in parallel with T278-T280
 - **Description**: Add `aria-label="Global search"` to dialog. Ensure result count is announced via live region ("5 accounts, 3 contacts, 2 products found"). Verify screen reader announces highlighted item. Verify focus returns to previously focused element on close. Test: aria attributes present, live region updates, focus management on close.
 
-### T282: Contact search result display refinement
+### [X] T282: Contact search result display refinement
 - **US**: US-1 (Open and Search)
 - **Refs**: FR-032-06, FR-032-08
 - **Priority**: P2
@@ -128,7 +128,7 @@
 - **Dependencies**: T276, T273
 - **Description**: Ensure contact results display correctly: show full name, email as secondary text (fallback to phone if email is null). Show parent account name as tertiary text. On click, navigate to `/accounts/${accountId}?tab=contacts`. Test: contact display format, fallback to phone, navigation URL includes tab param.
 
-### T283: Integration test — full search flow
+### [X] T283: Integration test — full search flow
 - **US**: US-1, US-2, US-3, US-4
 - **Refs**: FR-032-01 through FR-032-14
 - **Priority**: P1

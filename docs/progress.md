@@ -33,6 +33,7 @@
 | 12 | Polish & NFRs | COMPLETE | 3 | 108 |
 | **Frontend Phase** | | | | |
 | 13 | F-000: Design System & Component Library | COMPLETE | 3 | 47 |
+| 14 | F-001: Global Search (Cmd+K) | COMPLETE | 2 | 60 |
 
 ## Completed Batches
 
@@ -112,6 +113,7 @@
 | 2026-02-27 | dev (post-batch-36) | 1356 | +0 | PASS |
 | 2026-02-27 | dev (post-batch-37) | 1403 | +47 | PASS |
 | 2026-02-27 | dev (post-batch-38) | 1448 | +45 | PASS |
+| 2026-02-27 | dev (post-batch-39) | 1463 | +15 | PASS |
 
 ## Completed Batches (continued)
 
@@ -125,9 +127,10 @@
 | 36 | F-000: Design System | feature/batch-36-design-system-patterns | 0 (composites) | Merged to dev |
 | 37 | F-000: Design System | feature/batch-37-design-system-hooks-tests | 47 | Merged to dev |
 | 38 | F-001: Global Search | feature/batch-38-global-search-foundation | 45 | Merged to dev |
+| 39 | F-001: Global Search | feature/batch-batch-39-global-search-polish | 15 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 277 (T001-T245, T246-T270, T271-T277)
-- **Last completed task:** T277
-- **Global batch counter:** 38
+- **Completed:** 283 (T001-T245, T246-T270, T271-T283)
+- **Last completed task:** T283
+- **Global batch counter:** 39
