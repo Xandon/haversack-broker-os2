@@ -41,12 +41,12 @@ describe('FR-033c: AccountFilters component', () => {
 
   test('FR-033c: renders territory filter dropdown', () => {
     render(<AccountFilters onFiltersChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText(/territory/i)).toBeDefined();
+    expect(screen.getByLabelText('Territory')).toBeDefined();
   });
 
   test('FR-033c: renders account type filter dropdown', () => {
     render(<AccountFilters onFiltersChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText(/type/i)).toBeDefined();
+    expect(screen.getByLabelText('Type')).toBeDefined();
   });
 
   test('FR-033c: renders health score preset buttons', () => {
