@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd backend && npx vitest run --reporter=min 2>&1 | tail -20"
+            "command": "npx vitest run --config vitest.config.ts --reporter=min 2>&1 | tail -20"
           }
         ]
       },

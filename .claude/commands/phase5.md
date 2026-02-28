@@ -9,10 +9,6 @@ handoffs:
     agent: speckit.tasks
     prompt: Regenerate the task breakdown
     send: true
-  - label: Run E2E Tests
-    agent: e2e-test
-    prompt: Run comprehensive end-to-end browser testing for the current feature
-    send: true
 ---
 
 ## User Input
@@ -50,7 +46,7 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
 
 **When:** First invocation (`/phase5 init`) or no manifest exists.
 
-**Reads:** `docs/prd-frontend.md` (FR sections only, ~400 lines), `docs/progress.md` (~185 lines), `.specify/specs/001-haversack-unified-platform/tasks.md` (dependency section only, ~50 lines)
+**Reads:** `docs/prd.md` (FR sections only, ~300 lines), `docs/progress.md` (~185 lines), `.specify/specs/001-haversack-unified-platform/tasks.md` (dependency section only, ~50 lines)
 
 ### Step 0.1: Pre-Flight
 
@@ -65,37 +61,20 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
 
 ### Step 0.2: Discover Remaining Features
 
-1. Read `docs/prd-frontend.md` — extract all FR-XXX groups that represent distinct frontend features (FR-031 through FR-053).
+1. Read `docs/prd.md` — extract all FR-XXX groups that represent distinct features.
 2. Read `docs/progress.md` — identify which batches/features are already complete.
 3. Cross-reference to identify remaining features not yet built.
 
-**Expected remaining features for Haversack Frontend (update if progress.md shows otherwise):**
+**Expected remaining features for Haversack (update if progress.md shows otherwise):**
 
 | # | Feature | PRD References | Depends On |
 |---|---------|---------------|------------|
-| 1 | F-000: Design System & Component Library | FR-031 | None (foundational) |
-| 2 | F-001: Global Search (Cmd+K) | FR-032 | F-000 |
-| 3 | F-002a: Account List & Search | FR-033 | F-000 |
-| 4 | F-002b: Account Detail View | FR-034 | F-000, F-002a |
-| 5 | F-002c: Account Forms & Contacts | FR-035 | F-000, F-002a |
-| 6 | F-003: Activity Logging & Timeline | FR-036 | F-000, F-002a |
-| 7 | F-004: Task Management | FR-037 | F-000 |
-| 8 | F-005a: Order List & Detail | FR-038 | F-000, F-002a |
-| 9 | F-005b: Order Entry Form | FR-039 | F-000, F-005a |
-| 10 | F-005c: Order Approval Queue | FR-040 | F-000, F-005a |
-| 11 | F-006: Product Catalog & Brands | FR-041 | F-000 |
-| 12 | F-007: Pipeline Kanban | FR-042 | F-000 |
-| 13 | F-007b: Opportunity CRUD | FR-043 | F-000, F-007 |
-| 14 | F-008: Commission Tracking | FR-044 | F-000 |
-| 15 | F-009: Enhanced Dashboard & Charts | FR-045 | F-000 |
-| 16 | F-010: Custom Reports | FR-046 | F-000 |
-| 17 | F-011: AI Features Integration | FR-047 | F-000, F-002b |
-| 18 | F-012: User Management | FR-048 | F-000 |
-| 19 | F-013: Data Import Wizard | FR-049 | F-000 |
-| 20 | F-014: Data Quality Scorecard | FR-050 | F-000 |
-| 21 | F-015: Email Integration | FR-051 | F-000, F-002b |
-| 22 | F-016: Notifications | FR-052 | F-000 |
-| 23 | F-053: Cross-Cutting UI Polish | FR-053 | All features |
+| 1 | Pipeline & Opportunities | FR-016, FR-017 | Accounts (done) |
+| 2 | Commissions | FR-020, FR-021, FR-022 | Orders (done) |
+| 3 | Dashboards & Reports | FR-023, FR-024, FR-025 | Commissions |
+| 4 | Business Rules Engine | FR-028 | Accounts (done) |
+| 5 | AI Meeting Briefs | FR-030 | AI provider (done) |
+| 6 | Polish & NFRs | NFR-001 through NFR-014 | All features |
 
 ### Step 0.3: Determine Base State
 
@@ -103,8 +82,8 @@ You are the **multi-feature development orchestrator**. Your job is to discover 
    - Check if `dev` branch exists: `git show-ref --verify --quiet refs/heads/dev`
    - If yes -> `BASE_BRANCH=dev`
    - If no -> default to `main`
-2. Get current test count from progress.md regression history (currently 1356).
-3. Get current global batch counter from progress.md (currently 34).
+2. Get current test count from progress.md regression history (currently 507).
+3. Get current global batch counter from progress.md (currently 7).
 
 ### Step 0.4: Create Manifest
 
@@ -153,7 +132,6 @@ Based on the resume point:
 |-------------|-----------|-------------|
 | PLANNING | Step 2.X unchecked | STAGE 2, continue from Step 2.X |
 | BUILDING | Batch N in progress | STAGE 3, continue from batch N |
-| E2E_TESTING | E2E in progress or failed | STAGE 4, Step 4.2 (re-run e2e-test) |
 | COMPLETE | More features pending | STAGE 4, transition to next |
 | COMPLETE | All features done | STAGE 5, final acceptance |
 
@@ -186,10 +164,10 @@ Phase 5 executes the speckit pipeline logic DIRECTLY for each feature — it doe
 
 ### Step 2.2: Generate spec.md
 
-**Reads:** `docs/prd-frontend.md` (only the target FR sections, ~100 lines), `.specify/templates/spec-template.md` (~50 lines)
+**Reads:** `docs/prd.md` (only the target FR sections, ~100 lines), `.specify/templates/spec-template.md` (~50 lines)
 
 1. Load the spec template to understand required sections.
-2. Read the relevant FR sections from the frontend PRD for this feature.
+2. Read the relevant FR sections from the PRD for this feature.
 3. Generate a complete spec.md following the template structure:
    - User stories with priorities and acceptance criteria
    - Functional requirements (reference PRD FR numbers)
@@ -311,16 +289,7 @@ Write `FEATURE_DIR/conflicts.md`.
      - Each P1 user story gets its own batch
      - P2/P3 stories grouped (max 8-10 tasks per batch)
    - Branch names: `feature/batch-{N}-{slug}` where N continues global counter
-   - **Playwright E2E task** — the LAST task in the FINAL batch MUST be a Playwright E2E test:
-     - File: `e2e/tests/{feature-slug}.spec.ts` (NEW)
-     - Follow patterns in existing `e2e/tests/auth.spec.ts` and `e2e/tests/dashboard.spec.ts`
-     - Use the `loginAs` fixture from `e2e/fixtures/auth.fixture.ts`
-     - Cover every user story: login, navigate to the feature page, perform each user journey, assert expected UI elements are visible
-     - Test both happy path and key error states
-     - Screenshots are captured automatically by Playwright config (`screenshot: 'on'`)
-     - Test runs on desktop Chrome AND mobile Pixel 5 (configured in `e2e/playwright.config.ts`)
-     - Mark as P1 priority, depends on all other tasks in the feature
-2. Task IDs continue from the last task in progress.md (currently T245, so start at T246+).
+2. Task IDs continue from the last task in progress.md (currently T122, so start at T123+).
 3. Include dependency chain and batch boundaries.
 
 **Update manifest:** `[x] 2.8 Tasks — {N} tasks in {M} batches, starting at batch {K}`
@@ -503,61 +472,13 @@ git checkout {BASE_BRANCH}
 bash scripts/verify-regression.sh
 ```
 
-### Step 4.2: Playwright E2E Validation
-
-**Required:** Every completed feature MUST pass Playwright E2E browser testing before being marked complete.
-
-**Prerequisites:** Docker containers must be running (`npm run docker:up`) with database seeded (`docker exec haversack-backend npx tsx prisma/seed.ts`). The Playwright config at `e2e/playwright.config.ts` auto-starts the dev server if not already running.
-
-1. **Ensure Playwright browsers are installed:**
-   ```bash
-   cd e2e && npx playwright install --with-deps chromium 2>/dev/null
-   ```
-
-2. **Run the feature's Playwright E2E tests:**
-   ```bash
-   cd e2e && npx playwright test tests/{feature-slug}.spec.ts --reporter=list
-   ```
-   This runs the test suite against both desktop Chrome and mobile Pixel 5 viewports.
-   Screenshots are automatically saved to `e2e/test-results/` for every test.
-   An HTML report is generated at `e2e/playwright-report/`.
-
-3. **Check results:**
-   - **ALL PASS** -> proceed to Step 4.3
-   - **ANY FAIL** -> fix the reported issues:
-     a. Read the Playwright error output to identify the failure
-     b. Check screenshots in `e2e/test-results/` for visual evidence
-     c. Fix the code (UI component, route, or test itself)
-     d. Commit fixes: `fix(e2e): {description}`
-     e. Re-run the failing tests (max 3 attempts)
-     f. If still failing after 3 attempts: **STOP** and report with full diagnostics. Update manifest: `Status: E2E_FAIL (attempt 3/3)`
-
-4. **Run the FULL E2E suite** (not just the feature's tests) to catch regressions:
-   ```bash
-   cd e2e && npx playwright test --reporter=list
-   ```
-   All existing E2E tests (auth, dashboard, and all previous features) must still pass.
-
-5. **Report to user:**
-   ```
-   E2E RESULTS — {FEATURE_NAME}
-   Desktop Chrome: {N} tests passed
-   Mobile Pixel 5: {N} tests passed
-   Screenshots: e2e/test-results/
-   HTML Report: e2e/playwright-report/index.html
-   ```
-   Tell the user they can open the HTML report to visually review screenshots:
-   `npx playwright show-report e2e/playwright-report`
-
-6. Update manifest: `E2E: PASS — {N} tests, desktop + mobile`
-
-### Step 4.3: Mark Feature Complete
+### Step 4.2: Mark Feature Complete
 
 1. Update manifest: feature status -> `COMPLETE`
-2. Record final test count, batches used, and E2E results
-3. Update `docs/progress.md` with feature completion summary (including E2E pass status)
+2. Record final test count and batches used
+3. Update `docs/progress.md` with feature completion summary
 
-### Step 4.4: Check Next Feature
+### Step 4.3: Check Next Feature
 
 Parse manifest feature queue for the next PENDING feature.
 
@@ -567,8 +488,6 @@ Parse manifest feature queue for the next PENDING feature.
   FEATURE COMPLETE: {name}
   Tests: {baseline} -> {new total} (+{added})
   Batches: {start}-{end} merged to {BASE_BRANCH}
-  E2E: PASS — {N} Playwright tests, desktop + mobile
-  Report: npx playwright show-report e2e/playwright-report
 
   Next: {next feature name}
   Run /phase5 resume in a new conversation.
@@ -596,7 +515,7 @@ Update manifest:
 git checkout {BASE_BRANCH}
 git pull origin {BASE_BRANCH}
 bash scripts/verify-regression.sh
-cd e2e && npx playwright test --reporter=list
+npm run test:e2e 2>/dev/null || echo "No E2E tests configured"
 ```
 
 ### Step 5.2: Acceptance Report
@@ -623,15 +542,9 @@ cd e2e && npx playwright test --reporter=list
   Type check clean:          {YES/NO}
   Build succeeds:            {YES/NO}
 
-  Playwright E2E:
-  ----------------------
-  Per-feature specs:     {count} features with e2e specs
-  Total E2E tests:       {count} (desktop + mobile)
-  Failures fixed:        {count}
-
   Feature Summary:
   ----------------------
-  {For each feature: name, batches, tests added, Playwright E2E pass/fail, status}
+  {For each feature: name, batches, tests added, status}
 
 ======================================================
   OVERALL STATUS: {READY FOR PRODUCTION MERGE / NEEDS ATTENTION}
@@ -671,7 +584,7 @@ Execute their choice.
 
 | Context | When to Read | When NOT to Read |
 |---------|-------------|-----------------|
-| `docs/prd-frontend.md` | STAGE 0, Step 2.2 only | During build (STAGE 3) |
+| `docs/prd.md` | STAGE 0, Step 2.2 only | During build (STAGE 3) |
 | `FEATURE_DIR/plan.md` | Never during build | Its info is in tasks.md |
 | `FEATURE_DIR/spec.md` | Steps 2.2-2.9, batch anchor, drift checks | Don't read full spec during build — only relevant US |
 | `FEATURE_DIR/tasks.md` | Steps 2.8-2.9, batch anchor | Only current batch section, not full file |
@@ -705,11 +618,10 @@ Layer 1: Per-task      Task tests pass + no regressions
 Layer 2: Per-batch     finish-batch.sh (unit, integration, lint, typecheck, coverage, build)
 Layer 3: Pre-merge     merge-batch.sh (post-merge regression)
 Layer 4: Cross-batch   verify-regression.sh (on integration branch)
-Layer 5: Per-feature   Playwright E2E browser testing (STAGE 4, Step 4.2) — desktop + mobile
-Layer 6: Final         Full acceptance suite (STAGE 5) + E2E regression
+Layer 5: Final         Full acceptance suite (STAGE 5)
 ```
 
-Seven layers. Feature branch isolation means a failed batch never pollutes the integration branch. E2E browser testing catches visual, UX, RBAC, and data integrity issues that unit/integration tests miss.
+Six layers. Feature branch isolation means a failed batch never pollutes the integration branch.
 
 ---
 
@@ -720,7 +632,6 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 | Context exhausted mid-planning | Step 2.X marked [x], 2.Y still [ ] | Continues from step 2.Y |
 | Build batch fails verification | `Status: FAILED (attempt N/5)` | Retries from clean state |
 | Post-merge regression fails | `Status: REGRESSION_FAIL` | Reports to user, awaits guidance |
-| E2E testing fails | `Status: E2E_FAIL (attempt N/3)` | Fix issues and re-run Playwright tests |
 | User wants to skip a feature | User says "skip {feature}" | Mark SKIPPED in manifest, advance |
 | BREAKING conflict found | `Status: BLOCKED (BREAKING)` | Present conflicts, await resolution |
 | Conversation ended mid-batch | Build checklist shows batch in progress | Resume from batch start (3A) |
@@ -738,29 +649,32 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 **Last Updated:** {date time}
 **Base Branch:** dev
 **Merge Mode:** auto
-**Baseline Tests:** 1356
-**Global Batch Counter:** 34
+**Baseline Tests:** 507
+**Global Batch Counter:** 7
 
 ## Feature Queue
 
-| # | Feature | Spec Dir | Status | Batches | Tests Added | E2E |
-|---|---------|----------|--------|---------|-------------|-----|
-| 1 | F-000: Design System & Component Library | 014-design-system | PENDING | -- | -- | -- |
-| 2 | F-001: Global Search (Cmd+K) | 015-global-search | PENDING | -- | -- | -- |
-| 3 | F-002a: Account List & Search | 016-account-list | PENDING | -- | -- | -- |
-| ... | ... | ... | ... | ... | ... | ... |
+| # | Feature | Spec Dir | Status | Batches | Tests Added |
+|---|---------|----------|--------|---------|-------------|
+| 1 | Pipeline & Opportunities | 002-pipeline-opportunities | PENDING | -- | -- |
+| 2 | Commissions | 003-commissions | PENDING | -- | -- |
+| 3 | Dashboards & Reports | 004-dashboards-reports | PENDING | -- | -- |
+| 4 | Business Rules Engine | 005-business-rules | PENDING | -- | -- |
+| 5 | AI Meeting Briefs | 006-ai-meeting-briefs | PENDING | -- | -- |
+| 6 | Polish & NFRs | 007-polish-nfrs | PENDING | -- | -- |
 
 ## Current State
 
-- **Active Feature:** 1 (F-000: Design System & Component Library)
+- **Active Feature:** 1 (Pipeline & Opportunities)
 - **Active Stage:** PLANNING
 - **Active Step:** 2.1 (Create feature directory)
 - **Resume Point:** STAGE 2, Step 2.1
 
-## Feature 1: F-000: Design System & Component Library
+## Feature 1: Pipeline & Opportunities
 
 ### PRD References
-- FR-031: Design system (theme tokens, component library, composite patterns)
+- FR-016: Pipeline stage management
+- FR-017: Opportunity tracking and forecasting
 
 ### Planning Checklist
 - [ ] 2.1 Create feature directory
@@ -777,51 +691,31 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 (populated after planning completes)
 - [ ] Batch {N}: {description} -- {test count} tests
 - [ ] Batch {N+1}: {description} -- {test count} tests
-
-### E2E Validation
-- [ ] Playwright E2E -- {N} tests passing (desktop + mobile)
 ```
 
 **Key properties:**
 - `## Current State` is the resume dispatch — tells any new conversation exactly where to pick up
 - Checklists are updated one line at a time (minimal writes)
-- Batch numbering is global and sequential across all features (continues from 34)
+- Batch numbering is global and sequential across all features (continues from 7)
 - Only the active feature has a detailed section; pending features show only their queue row
-- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `E2E_TESTING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`, `E2E_FAIL`
+- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`
 
 ---
 
-## Feature Queue Reference (Haversack Frontend Phase)
+## Feature Queue Reference (Haversack-Specific)
 
-These are the frontend features based on `docs/prd-frontend.md`. Verify against actual `docs/progress.md` during STAGE 0.
+These are the expected remaining features based on the PRD. Verify against actual `docs/progress.md` during STAGE 0.
 
 | # | Feature | PRD References | Description | Depends On |
 |---|---------|---------------|-------------|------------|
-| 1 | F-000: Design System & Component Library | FR-031 | Theme tokens, shadcn/ui primitives (15+), composite patterns (12+), new deps (@tanstack/react-table, cmdk, sonner, date-fns, react-day-picker, recharts, @dnd-kit) | None (foundational) |
-| 2 | F-001: Global Search (Cmd+K) | FR-032 | Command palette, 300ms debounce, categorized results (accounts, contacts, products), keyboard navigation | F-000 |
-| 3 | F-002a: Account List & Search | FR-033 | /accounts data table, territory/type/health filters, sortable columns, cursor pagination | F-000 |
-| 4 | F-002b: Account Detail View | FR-034 | /accounts/[id] tabbed layout (overview, contacts, timeline, orders, opportunities), health score breakdown | F-000, F-002a |
-| 5 | F-002c: Account Forms & Contacts | FR-035 | /accounts/new + /accounts/[id]/edit, RHF+Zod, duplicate detection, contact CRUD modals | F-000, F-002a |
-| 6 | F-003: Activity Logging & Timeline | FR-036 | /activities page, quick-log FAB, demo fields, activity form (<60s), timeline with infinite scroll | F-000, F-002a |
-| 7 | F-004: Task Management | FR-037 | /tasks page, status/priority/overdue filters, task dialog forms, quick status toggle | F-000 |
-| 8 | F-005a: Order List & Detail | FR-038 | /orders + /orders/[id], status badges, line items, vendor splits, approval history | F-000, F-002a |
-| 9 | F-005b: Order Entry Form | FR-039 | /orders/new, product search combobox, revenue model toggle, running subtotals, AI reorder suggestions | F-000, F-005a |
-| 10 | F-005c: Order Approval Queue | FR-040 | /orders/approval-queue, Manager/Admin only, approve/reject with reason | F-000, F-005a |
-| 11 | F-006: Product Catalog & Brands | FR-041 | /products grid/list, /products/[id], /brands, /brands/[id], line card PDF, email share | F-000 |
-| 12 | F-007: Pipeline Kanban | FR-042 | /opportunities kanban, @dnd-kit drag-and-drop, weighted forecast, close dialogs, list view toggle | F-000 |
-| 13 | F-007b: Opportunity CRUD | FR-043 | /opportunities/new + /opportunities/[id], stage history timeline, brand association | F-000, F-007 |
-| 14 | F-008: Commission Tracking | FR-044 | /commissions dashboard, statement detail, approve/reject, disputes, rules CRUD, QB export | F-000 |
-| 15 | F-009: Enhanced Dashboard & Charts | FR-045 | Extend /dashboard with recharts: revenue-by-month, territory table, rep ranking, pipeline forecast, health donut | F-000 |
-| 16 | F-010: Custom Reports | FR-046 | /reports, /reports/new builder, entity/filter/column picker, preview, CSV/XLSX export | F-000 |
-| 17 | F-011: AI Features Integration | FR-047 | Meeting brief + email draft + activity summary panels, AI-Generated labels, editable, graceful degradation | F-000, F-002b |
-| 18 | F-012: User Management | FR-048 | /admin/users CRUD, role/status filters, deactivation | F-000 |
-| 19 | F-013: Data Import Wizard | FR-049 | /admin/imports, 4-step wizard (type, upload, preview, confirm), drag-and-drop, 50MB limit | F-000 |
-| 20 | F-014: Data Quality Scorecard | FR-050 | /admin/quality, composite score, metric cards, trend indicators, drill-down tables | F-000 |
-| 21 | F-015: Email Integration | FR-051 | Email engagement badges on timeline, /admin/emails/unmatched for manual linking | F-000, F-002b |
-| 22 | F-016: Notifications | FR-052 | Bell icon + unread badge, dropdown panel, date grouping, click-to-navigate, mark-as-read | F-000 |
-| 23 | F-053: Cross-Cutting UI Polish | FR-053 | Responsive 320-1440px, WCAG 2.1 AA, keyboard navigation, FCP <2s on 4G | All features |
+| 1 | Pipeline & Opportunities | FR-016, FR-017 | Pipeline stages (lead/qualify/propose/negotiate/close), opportunity tracking, revenue forecasting, win/loss analysis | Accounts (Batch 1-2) |
+| 2 | Commissions | FR-020, FR-021, FR-022 | Commission rule configuration per brand/territory/tier, automated calculation, monthly statement generation, audit trail | Orders (Batch 4) |
+| 3 | Dashboards & Reports | FR-023, FR-024, FR-025 | Territory dashboard, sales performance metrics, pipeline analytics, commission summaries, exportable reports | Commissions (Feature 2) |
+| 4 | Business Rules Engine | FR-028 | Configurable business rules for pricing, approvals, territory assignments, commission tiers. Admin-managed rule sets | Accounts (Batch 1-2) |
+| 5 | AI Meeting Briefs | FR-030 | AI-generated pre-meeting account briefs with recent activity, order history, health score, talking points. "AI-Generated" label required | AI provider (Batch 6) |
+| 6 | Polish & NFRs | NFR-001 through NFR-014 | Performance optimization, accessibility (WCAG 2.1 AA), mobile responsiveness, error handling hardening, monitoring, documentation | All features |
 
-**Dependency ordering:** F-000 blocks everything. After F-000: F-001 through F-006 (Epic 1-2 core) can start. F-002b is needed before F-011 and F-015. F-007 before F-007b. F-005a before F-005b/F-005c. F-053 (polish) depends on all others.
+**Dependency ordering:** Features 1, 2, 4, 5 can start independently (their dependencies are met). Feature 3 depends on Feature 2 (Commissions). Feature 6 depends on all others.
 
 ---
 
