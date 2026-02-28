@@ -54,7 +54,7 @@ export default function BrandListPage(): React.ReactElement {
       {!isLoading && !isError && brands.length === 0 && (
         <EmptyState
           title="No brands found"
-          message="No active brands available."
+          description="No active brands available."
         />
       )}
 

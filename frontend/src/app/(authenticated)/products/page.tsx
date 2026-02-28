@@ -76,7 +76,7 @@ export default function ProductCatalogPage(): React.ReactElement {
       {!isLoading && !isError && products.length === 0 && (
         <EmptyState
           title="No products found"
-          message="Try adjusting your filters or check back later."
+          description="Try adjusting your filters or check back later."
         />
       )}
 
