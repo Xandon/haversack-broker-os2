@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import { accountRoutes } from './domains/accounts/account.routes.js';
 import { contactRoutes } from './domains/contacts/contact.routes.js';
+import { opportunityRoutes } from './domains/opportunities/opportunity.routes.js';
 import { productRoutes } from './domains/products/product.routes.js';
 import { userRoutes } from './domains/users/user.routes.js';
 import { authPluginRegistration } from './shared/plugins/auth.js';
@@ -35,6 +36,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   // Domain routes
   await fastify.register(accountRoutes);
   await fastify.register(contactRoutes);
+  await fastify.register(opportunityRoutes);
   await fastify.register(productRoutes);
   await fastify.register(userRoutes);
 

@@ -130,6 +130,48 @@ export const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// ─── Opportunity ─────────────────────────────────────────────────────────────
+
+export const opportunityStageSchema = z.enum([
+  'prospecting',
+  'qualified',
+  'proposal',
+  'negotiation',
+  'closed_won',
+  'closed_lost',
+]);
+
+export const STAGE_DEFAULT_PROBABILITY: Record<string, number> = {
+  prospecting: 10,
+  qualified: 40,
+  proposal: 60,
+  negotiation: 75,
+  closed_won: 100,
+  closed_lost: 0,
+};
+
+export const createOpportunitySchema = z.object({
+  accountId: uuidSchema,
+  name: z.string().min(1).max(255),
+  stage: opportunityStageSchema.default('prospecting'),
+  estimatedValue: z.number().min(0),
+  probability: z.number().min(0).max(100).optional(),
+  closeDate: z.string().min(1),
+  closeReason: z.string().optional(),
+  assignedRepId: uuidSchema,
+  notes: z.string().optional(),
+  associatedBrandIds: z.array(uuidSchema).default([]),
+});
+
+export const updateOpportunitySchema = createOpportunitySchema
+  .partial()
+  .omit({ accountId: true, assignedRepId: true });
+
+export const updateOpportunityStageSchema = z.object({
+  stage: opportunityStageSchema,
+  closeReason: z.string().optional(),
+});
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export const apiErrorSchema = z.object({
@@ -149,4 +191,7 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type CreateOpportunityInput = z.infer<typeof createOpportunitySchema>;
+export type UpdateOpportunityInput = z.infer<typeof updateOpportunitySchema>;
+export type UpdateOpportunityStageInput = z.infer<typeof updateOpportunityStageSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
