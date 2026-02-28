@@ -11,6 +11,9 @@ import { ContactsTab } from '@/components/accounts/contacts-tab';
 import { TimelineTab } from '@/components/accounts/timeline-tab';
 import { OrdersTab } from '@/components/accounts/orders-tab';
 import { OpportunitiesTab } from '@/components/accounts/opportunities-tab';
+import { MeetingBriefPanel } from '@/components/ai/meeting-brief-panel';
+import { EmailDraftPanel } from '@/components/ai/email-draft-panel';
+import { ActivitySummaryPanel } from '@/components/ai/activity-summary-panel';
 import { useAccountDetail } from '@/hooks/use-account-detail';
 
 function AccountDetailSkeleton(): React.ReactElement {
@@ -71,6 +74,7 @@ export default function AccountDetailPage(): React.ReactElement {
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+          <TabsTrigger value="ai">AI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -91,6 +95,14 @@ export default function AccountDetailPage(): React.ReactElement {
 
         <TabsContent value="opportunities">
           <OpportunitiesTab accountId={account.id} />
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <div className="space-y-6">
+            <MeetingBriefPanel accountId={account.id} />
+            <EmailDraftPanel accountId={account.id} contacts={account.contacts} />
+            <ActivitySummaryPanel accountId={account.id} />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
