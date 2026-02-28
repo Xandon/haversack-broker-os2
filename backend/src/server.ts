@@ -7,6 +7,7 @@ import { aiRoutes } from './domains/ai/ai.routes.js';
 import { commissionRoutes } from './domains/commissions/commission.routes.js';
 import { contactRoutes } from './domains/contacts/contact.routes.js';
 import { dashboardRoutes } from './domains/dashboards/dashboard.routes.js';
+import { dataQualityRoutes } from './domains/data-quality/data-quality.routes.js';
 import { importRoutes } from './domains/imports/import.routes.js';
 import { notificationRoutes } from './domains/notifications/notification.routes.js';
 import { opportunityRoutes } from './domains/opportunities/opportunity.routes.js';
@@ -44,6 +45,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await fastify.register(accountRoutes);
   await fastify.register(commissionRoutes);
   await fastify.register(contactRoutes);
+  await fastify.register(dataQualityRoutes);
   await fastify.register(dashboardRoutes);
   await fastify.register(importRoutes);
   await fastify.register(notificationRoutes);
