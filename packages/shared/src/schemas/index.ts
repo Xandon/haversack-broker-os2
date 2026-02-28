@@ -192,6 +192,97 @@ export const commissionFilterSchema = z.object({
   brandId: uuidSchema.optional(),
 });
 
+// ─── Report ─────────────────────────────────────────────────────────────────
+
+export const reportEntityTypeSchema = z.enum([
+  'account',
+  'order',
+  'product',
+  'commission',
+  'activity',
+]);
+
+export const reportFilterSchema = z.object({
+  field: z.string().min(1),
+  operator: z.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in']),
+  value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]),
+});
+
+export const runReportSchema = z.object({
+  entityType: reportEntityTypeSchema,
+  filters: z.array(reportFilterSchema).default([]),
+  columns: z.array(z.string()).min(1),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(500).default(50),
+});
+
+export const exportReportSchema = z.object({
+  entityType: reportEntityTypeSchema,
+  filters: z.array(reportFilterSchema).default([]),
+  columns: z.array(z.string()).min(1),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  format: z.enum(['csv', 'xlsx']),
+});
+
+export const REPORT_ENTITY_COLUMNS: Record<string, { key: string; label: string }[]> = {
+  account: [
+    { key: 'name', label: 'Name' },
+    { key: 'accountType', label: 'Type' },
+    { key: 'city', label: 'City' },
+    { key: 'state', label: 'State' },
+    { key: 'zipCode', label: 'Zip Code' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'email', label: 'Email' },
+    { key: 'healthScore', label: 'Health Score' },
+    { key: 'isActive', label: 'Active' },
+    { key: 'createdAt', label: 'Created' },
+  ],
+  order: [
+    { key: 'orderNumber', label: 'Order Number' },
+    { key: 'status', label: 'Status' },
+    { key: 'subtotal', label: 'Subtotal' },
+    { key: 'taxAmount', label: 'Tax' },
+    { key: 'total', label: 'Total' },
+    { key: 'approvalRequired', label: 'Approval Required' },
+    { key: 'confirmedAt', label: 'Confirmed' },
+    { key: 'createdAt', label: 'Created' },
+  ],
+  product: [
+    { key: 'name', label: 'Name' },
+    { key: 'sku', label: 'SKU' },
+    { key: 'category', label: 'Category' },
+    { key: 'subcategory', label: 'Subcategory' },
+    { key: 'unitPrice', label: 'Unit Price' },
+    { key: 'wholesalePrice', label: 'Wholesale Price' },
+    { key: 'availabilityStatus', label: 'Availability' },
+    { key: 'revenueModel', label: 'Revenue Model' },
+    { key: 'createdAt', label: 'Created' },
+  ],
+  commission: [
+    { key: 'period', label: 'Period' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'rate', label: 'Rate' },
+    { key: 'status', label: 'Status' },
+    { key: 'approvedAt', label: 'Approved' },
+    { key: 'createdAt', label: 'Created' },
+  ],
+  activity: [
+    { key: 'activityType', label: 'Type' },
+    { key: 'subject', label: 'Subject' },
+    { key: 'occurredAt', label: 'Occurred At' },
+    { key: 'durationMinutes', label: 'Duration (min)' },
+    { key: 'createdAt', label: 'Created' },
+  ],
+};
+
+export type ReportEntityType = z.infer<typeof reportEntityTypeSchema>;
+export type ReportFilter = z.infer<typeof reportFilterSchema>;
+export type RunReportInput = z.infer<typeof runReportSchema>;
+export type ExportReportInput = z.infer<typeof exportReportSchema>;
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export const apiErrorSchema = z.object({
