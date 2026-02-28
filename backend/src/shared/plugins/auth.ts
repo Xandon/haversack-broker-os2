@@ -1,7 +1,10 @@
 import { Role } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import { sign, verify } from 'jsonwebtoken';
+// eslint-disable-next-line import/default
+import jwt from 'jsonwebtoken';
+
+const { sign, verify } = jwt;
 
 export interface JwtPayload {
   userId: string;
