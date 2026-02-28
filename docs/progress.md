@@ -37,6 +37,7 @@
 | 15 | F-002a: Account List & Search | COMPLETE | 2 | 33 |
 | 16 | F-005: Order Entry Frontend | COMPLETE | 3 | 35 |
 | 17 | F-002b: Account Detail View | COMPLETE | 2 | 63 |
+| 18 | F-003: Activity Logging & Timeline | COMPLETE | 2 | 37 |
 
 ## Completed Batches
 
@@ -122,6 +123,8 @@
 | 2026-02-27 | dev (post-batch-42) | 1530 | +5 (frontend) +32 (shared recount) | PASS |
 | 2026-02-27 | dev (post-batch-43) | 1564 | +34 | PASS |
 | 2026-02-27 | dev (post-batch-44) | 1593 | +29 | PASS |
+| 2026-02-28 | dev (post-batch-45) | 1614 | +21 | PASS |
+| 2026-02-28 | dev (post-batch-46) | 1631 | +16 | PASS |
 
 ## Completed Batches (continued)
 
@@ -141,9 +144,11 @@
 | 42 | F-005: Order Detail, Approval, Suggestions | feature/batch-batch-42-order-detail-approval | 5 | Merged to dev |
 | 43 | F-002b: Account Detail Core | feature/batch-43-account-detail-core | 34 | Merged to dev |
 | 44 | F-002b: Account Detail Tabs | feature/batch-44-account-detail-tabs | 29 | Merged to dev |
+| 45 | F-003: Activities List Page | feature/batch-batch-45-activities-list-dev | 21 | Merged to dev |
+| 46 | F-003: Activity Form + FAB | feature/batch-batch-46-activity-form-fab-dev | 16 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 312 (T001-T245, T246-T283, T284-T297, T298-T312)
-- **Last completed task:** T312
+- **Completed:** 324 (T001-T245, T246-T283, T284-T297, T298-T312, T313-T324)
+- **Last completed task:** T324
 - **Global batch counter:** 44
