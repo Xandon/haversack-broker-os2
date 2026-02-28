@@ -28,6 +28,8 @@ export interface DataTableProps<TData, TValue> {
   manualSorting?: boolean;
   columnVisibility?: VisibilityState;
   className?: string;
+  onRowClick?: (row: TData) => void;
+  getRowClassName?: (row: TData) => string;
 }
 
 function DataTable<TData, TValue>({
@@ -44,6 +46,8 @@ function DataTable<TData, TValue>({
   manualSorting = false,
   columnVisibility: externalColumnVisibility,
   className,
+  onRowClick,
+  getRowClassName,
 }: DataTableProps<TData, TValue>): React.ReactElement {
   const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>({});
@@ -86,7 +90,15 @@ function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={cn(
+                    onRowClick && 'cursor-pointer',
+                    getRowClassName?.(row.original),
+                  )}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}

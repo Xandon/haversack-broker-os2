@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { StatusBadge } from '@/components/patterns/status-badge';
+import { TaskStatusToggle } from '@/components/tasks/task-status-toggle';
 import type { TaskItem } from '@/hooks/use-tasks';
 
 export type TaskRow = TaskItem;
@@ -21,6 +22,31 @@ function capitalizeFirst(str: string): string {
 function truncateText(text: string | null, maxLength: number = 80): string {
   if (!text) return '';
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+export interface TaskColumnOptions {
+  onStatusToggle?: (taskId: string, currentStatus: string) => void;
+}
+
+export function getTaskColumns(options?: TaskColumnOptions): ColumnDef<TaskRow>[] {
+  const toggleColumn: ColumnDef<TaskRow> = {
+    id: 'toggle',
+    header: '',
+    enableSorting: false,
+    cell: ({ row }) => (
+      <TaskStatusToggle
+        status={row.original.status}
+        onToggle={() =>
+          options?.onStatusToggle?.(row.original.id, row.original.status)
+        }
+      />
+    ),
+  };
+
+  return [
+    ...(options?.onStatusToggle ? [toggleColumn] : []),
+    ...taskColumns,
+  ];
 }
 
 export const taskColumns: ColumnDef<TaskRow>[] = [
