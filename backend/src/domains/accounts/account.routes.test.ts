@@ -502,4 +502,65 @@ describe('FR-001: Account routes integration', () => {
       expect(body.data.deletedAt).toBeDefined();
     });
   });
+
+  describe('GET /api/contacts/search', () => {
+    it('FR-032: returns matching contacts for valid search query', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([
+        {
+          id: CONTACT_ID,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          email: 'jane@pacific.com',
+          phone: '503-555-1234',
+          account_id: ACCOUNT_ID,
+          account_name: 'Pacific Bistro',
+        },
+      ]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/contacts/search?q=jane&limit=5',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(1);
+      expect(body.data[0].firstName).toBe('Jane');
+      expect(body.data[0].accountName).toBe('Pacific Bistro');
+    });
+
+    it('FR-032: returns empty array for no matches', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/contacts/search?q=nonexistent&limit=5',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.data).toHaveLength(0);
+    });
+
+    it('FR-032: requires authentication', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/contacts/search?q=jane',
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('FR-032: rejects missing query parameter', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/contacts/search',
+        headers: authHeader(repToken),
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+  });
 });

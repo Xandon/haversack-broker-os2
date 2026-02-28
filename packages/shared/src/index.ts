@@ -359,3 +359,12 @@ export {
   type ColumnMetadata,
   type ExecuteReportResponse,
 } from './schemas/report.schema';
+
+export {
+  contactSearchQuerySchema,
+  contactSearchResultSchema,
+  globalSearchResultSchema,
+  type ContactSearchQuery,
+  type ContactSearchResult,
+  type GlobalSearchResult,
+} from './schemas/search.schema';

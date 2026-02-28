@@ -21,6 +21,8 @@ import {
 import { searchAccounts } from './account-search.service';
 import { checkDuplicates } from './duplicate.service';
 import { createContact, updateContact, softDeleteContact } from './contact.service';
+import { searchContacts } from './contact-search.service';
+import { contactSearchQuerySchema } from '@haversack/shared';
 
 function getAuditContext(request: { user?: { userId: string; email: string }; requestId: string; ip: string; headers: Record<string, string | string[] | undefined> }): {
   actorId: string;
@@ -318,6 +320,23 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
       } catch (error: unknown) {
         return handleAccountError(error, request.requestId, reply);
       }
+    },
+  );
+
+  // GET /api/contacts/search — global search for contacts
+  app.get(
+    '/api/contacts/search',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const query = contactSearchQuerySchema.parse(request.query);
+      const tenantId = request.user!.tenantId;
+
+      const results = await searchContacts(app.prisma, tenantId, {
+        query: query.q,
+        limit: query.limit,
+      });
+
+      return reply.status(200).send({ data: results });
     },
   );
 }
