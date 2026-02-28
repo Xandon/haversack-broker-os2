@@ -142,7 +142,7 @@ function ApprovalHistory({ approvals }: { approvals: OrderApprovalResponse[] }):
 export default function OrderDetailPage(): React.ReactElement {
   const params = useParams();
   const { user } = useAuth();
-  const orderId = params.id as string;
+  const orderId = params['id'] as string;
 
   const { data, isLoading, isError, refetch } = useOrder(orderId);
   const submitOrder = useSubmitOrder();

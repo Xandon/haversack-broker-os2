@@ -8,6 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AccountDetailHeader } from '@/components/accounts/account-detail-header';
 import { OverviewTab } from '@/components/accounts/overview-tab';
 import { ContactsTab } from '@/components/accounts/contacts-tab';
+import { TimelineTab } from '@/components/accounts/timeline-tab';
+import { OrdersTab } from '@/components/accounts/orders-tab';
+import { OpportunitiesTab } from '@/components/accounts/opportunities-tab';
 import { useAccountDetail } from '@/hooks/use-account-detail';
 
 function AccountDetailSkeleton(): React.ReactElement {
@@ -34,7 +37,7 @@ function AccountDetailSkeleton(): React.ReactElement {
 
 export default function AccountDetailPage(): React.ReactElement {
   const params = useParams();
-  const accountId = params.id as string;
+  const accountId = params['id'] as string;
   const { data, isLoading, isError, refetch } = useAccountDetail(accountId);
 
   if (isLoading) {
@@ -79,21 +82,15 @@ export default function AccountDetailPage(): React.ReactElement {
         </TabsContent>
 
         <TabsContent value="timeline">
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            Timeline coming in batch 44.
-          </div>
+          <TimelineTab accountId={account.id} />
         </TabsContent>
 
         <TabsContent value="orders">
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            Orders coming in batch 44.
-          </div>
+          <OrdersTab accountId={account.id} />
         </TabsContent>
 
         <TabsContent value="opportunities">
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            Opportunities coming in batch 44.
-          </div>
+          <OpportunitiesTab accountId={account.id} />
         </TabsContent>
       </Tabs>
     </div>

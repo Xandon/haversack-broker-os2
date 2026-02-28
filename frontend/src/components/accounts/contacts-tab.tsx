@@ -309,7 +309,7 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
       <div className="space-y-4">
         <EmptyState
           title="No contacts yet"
-          message="Add contacts to keep track of key people at this account."
+          description="Add contacts to keep track of key people at this account."
           actionLabel="Add Contact"
           onAction={handleAddNew}
         />
@@ -353,8 +353,8 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
       />
 
       <ConfirmationDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        isOpen={Boolean(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
         title="Delete Contact"
         description={
           deleteTarget
@@ -364,7 +364,6 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
         onConfirm={handleDelete}
         confirmLabel="Delete"
         variant="destructive"
-        isLoading={deleteContact.isPending}
       />
     </div>
   );

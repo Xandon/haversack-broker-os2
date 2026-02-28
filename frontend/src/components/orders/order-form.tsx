@@ -82,8 +82,11 @@ export function OrderForm({
       if (!groups[item.brandName]) {
         groups[item.brandName] = { brandName: item.brandName, items: [], subtotal: 0 };
       }
-      groups[item.brandName].items.push(item);
-      groups[item.brandName].subtotal += item.lineTotal;
+      const group = groups[item.brandName];
+      if (group) {
+        group.items.push(item);
+        group.subtotal += item.lineTotal;
+      }
     }
     return Object.values(groups);
   }, [lineItems]);
