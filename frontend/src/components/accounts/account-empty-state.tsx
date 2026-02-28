@@ -1,6 +1,4 @@
-import Link from 'next/link';
 import { EmptyState } from '@/components/patterns/empty-state';
-import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
 
 interface AccountEmptyStateProps {
@@ -12,30 +10,24 @@ export function AccountEmptyState({ isFiltered, onClearFilters }: AccountEmptySt
   if (isFiltered) {
     return (
       <EmptyState
-        icon={Users}
+        icon={<Users className="h-12 w-12" />}
         title="No accounts match your filters"
         description="Try adjusting your filters or search criteria"
-        action={
-          onClearFilters ? (
-            <Button variant="outline" onClick={onClearFilters}>
-              Clear Filters
-            </Button>
-          ) : undefined
-        }
+        actionLabel="Clear Filters"
+        onAction={onClearFilters}
       />
     );
   }
 
   return (
     <EmptyState
-      icon={Users}
+      icon={<Users className="h-12 w-12" />}
       title="No accounts found"
       description="Get started by creating your first account"
-      action={
-        <Button asChild>
-          <Link href="/accounts/new">Create Account</Link>
-        </Button>
-      }
+      actionLabel="Create Account"
+      onAction={() => {
+        window.location.href = '/accounts/new';
+      }}
     />
   );
 }
