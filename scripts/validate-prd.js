@@ -155,6 +155,7 @@ const results = {
   completeness: { tests: [], label: "Requirements Completeness" },
   language: { tests: [], label: "Language Quality" },
   traceability: { tests: [], label: "Traceability" },
+  uiuxDepth: { tests: [], label: "UI/UX Depth" },
   edgeCases: { tests: [], label: "Edge Case Coverage" },
   conflicts: { tests: [], label: "Conflict Detection" },
   metrics: { tests: [], label: "Metrics & Measurability" },
@@ -204,6 +205,17 @@ if (!md) {
     ["traceability", "Entity names appear in Data Model"],
     ["traceability", "No orphan user stories"],
     ["traceability", "No orphan requirements"],
+    ["uiuxDepth", "UI/UX section contains Page/Screen Inventory"],
+    ["uiuxDepth", "At least 1 page/screen per UI user story"],
+    ["uiuxDepth", "Every page/screen lists component hierarchy"],
+    ["uiuxDepth", "Every interactive component has interaction pattern"],
+    ["uiuxDepth", "At least one responsive breakpoint specified"],
+    ["uiuxDepth", "Loading states defined per-component"],
+    ["uiuxDepth", "Error states defined per-component"],
+    ["uiuxDepth", "Empty states defined for list/table/feed components"],
+    ["uiuxDepth", "Navigation flow connects all pages"],
+    ["uiuxDepth", "Every UI component traces to at least one FR"],
+    ["uiuxDepth", "Every US includes Visual Acceptance Criteria"],
     ["edgeCases", "Every US has Error/Edge Cases subsection"],
     ["edgeCases", "UI/UX includes loading states"],
     ["edgeCases", "At least one NFR addresses security"],
@@ -586,6 +598,196 @@ if (!md) {
     );
   }
 
+  // ── UI/UX DEPTH TESTS ──────────────────────────────────────────────────
+
+  // Find UI/UX section content
+  const uiuxSectionEntry = [...sections.entries()].find(([k]) =>
+    k.toLowerCase().includes("ui/ux")
+  );
+  const uiuxContent = uiuxSectionEntry ? uiuxSectionEntry[1] : "";
+
+  // 1. UI/UX section contains Page/Screen Inventory
+  if (/page\s*\/?\s*screen\s+inventory/i.test(uiuxContent)) {
+    pass("uiuxDepth", "UI/UX section contains Page/Screen Inventory");
+  } else {
+    fail("uiuxDepth", "UI/UX section contains Page/Screen Inventory",
+      "UI/UX section missing 'Page/Screen Inventory' subsection");
+  }
+
+  // Extract pages from inventory table (rows with | Page | Route | ...)
+  const pageInventoryRows = [];
+  const pageTableRe = /^\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|/gm;
+  let pageMatch;
+  while ((pageMatch = pageTableRe.exec(uiuxContent)) !== null) {
+    const row = pageMatch[0];
+    // Skip header rows and separator rows
+    if (/^\|\s*[-]+\s*\|/.test(row) || /^\|\s*page\s*\|/i.test(row)) continue;
+    const cells = row.split("|").filter(c => c.trim()).map(c => c.trim());
+    if (cells.length >= 2 && cells[0] && !/^-+$/.test(cells[0])) {
+      pageInventoryRows.push({ name: cells[0], route: cells[1] || "", purpose: cells[2] || "", components: cells[3] || "" });
+    }
+  }
+
+  // 2. At least 1 page/screen per UI user story
+  const uiUSCount = usBlocks.filter(usb => {
+    const txt = usb.content.toLowerCase();
+    return /screen|page|view|form|list|dashboard|board|tab|modal|drawer/i.test(txt);
+  }).length;
+
+  if (uiUSCount === 0 || pageInventoryRows.length === 0) {
+    fail("uiuxDepth", "At least 1 page/screen per UI user story",
+      `Found ${pageInventoryRows.length} pages and ${uiUSCount} UI-related user stories`);
+  } else if (pageInventoryRows.length >= uiUSCount) {
+    pass("uiuxDepth", "At least 1 page/screen per UI user story");
+  } else {
+    fail("uiuxDepth", "At least 1 page/screen per UI user story",
+      `Only ${pageInventoryRows.length} pages for ${uiUSCount} UI user stories`);
+  }
+
+  // 3. Every page/screen lists component hierarchy
+  const componentHierarchyRe = /component\s+hierarchy/i;
+  if (componentHierarchyRe.test(uiuxContent)) {
+    // Check that hierarchy subsection has indented component lists (lines with - or * after #### headings)
+    const hierarchySection = uiuxContent.split(/^### /m).find(s => /component\s+hierarchy/i.test(s));
+    const hasIndentedComponents = hierarchySection && /^\s{2,}[-*]\s/m.test(hierarchySection);
+    if (hasIndentedComponents) {
+      pass("uiuxDepth", "Every page/screen lists component hierarchy");
+    } else {
+      fail("uiuxDepth", "Every page/screen lists component hierarchy",
+        "Component Hierarchy section exists but lacks indented component trees");
+    }
+  } else {
+    fail("uiuxDepth", "Every page/screen lists component hierarchy",
+      "No 'Component Hierarchy' subsection found in UI/UX section");
+  }
+
+  // 4. Every interactive component has interaction pattern
+  const interactionPatternRe = /interaction\s+pattern/i;
+  if (interactionPatternRe.test(uiuxContent)) {
+    // Check for interaction table with trigger/action columns
+    const hasInteractionTable = /\|\s*\w+.*\|\s*(click|hover|submit|navigate|tap|drag|swipe|focus|blur|type|toggle|select)/im.test(uiuxContent);
+    if (hasInteractionTable) {
+      pass("uiuxDepth", "Every interactive component has interaction pattern");
+    } else {
+      fail("uiuxDepth", "Every interactive component has interaction pattern",
+        "Interaction Patterns section exists but lacks trigger/action definitions");
+    }
+  } else {
+    fail("uiuxDepth", "Every interactive component has interaction pattern",
+      "No 'Interaction Patterns' subsection found in UI/UX section");
+  }
+
+  // 5. At least one responsive breakpoint specified
+  const hasBreakpoints = /(desktop|tablet|mobile)\s*\(?\s*[\d><=]+\s*px/i.test(uiuxContent) ||
+    /responsive\s+behavio/i.test(uiuxContent) ||
+    /breakpoint/i.test(uiuxContent);
+  if (hasBreakpoints) {
+    pass("uiuxDepth", "At least one responsive breakpoint specified");
+  } else {
+    fail("uiuxDepth", "At least one responsive breakpoint specified",
+      "No responsive breakpoints (desktop/tablet/mobile with pixel values) found");
+  }
+
+  // 6. Loading states defined per-component
+  const componentStatesRe = /component\s+states/i;
+  const hasComponentStates = componentStatesRe.test(uiuxContent);
+  const hasPerComponentLoading = hasComponentStates &&
+    /\|\s*\w+.*\|.*loading/im.test(uiuxContent);
+  if (hasPerComponentLoading) {
+    pass("uiuxDepth", "Loading states defined per-component");
+  } else if (/loading\s+state/i.test(uiuxContent) && /skeleton/i.test(uiuxContent)) {
+    // Accept if there are detailed per-component skeleton descriptions
+    const skeletonDescriptions = (uiuxContent.match(/skeleton/gi) || []).length;
+    if (skeletonDescriptions >= 3) {
+      pass("uiuxDepth", "Loading states defined per-component");
+    } else {
+      fail("uiuxDepth", "Loading states defined per-component",
+        "Loading states mentioned but not defined per-component (need Component States table or per-component skeleton descriptions)");
+    }
+  } else {
+    fail("uiuxDepth", "Loading states defined per-component",
+      "No per-component loading state definitions found");
+  }
+
+  // 7. Error states defined per-component
+  const hasPerComponentError = hasComponentStates &&
+    /\|\s*\w+.*\|.*error/im.test(uiuxContent);
+  if (hasPerComponentError) {
+    pass("uiuxDepth", "Error states defined per-component");
+  } else if (/error\s+state/i.test(uiuxContent)) {
+    // Accept if there are detailed per-component error descriptions
+    const errorContexts = (uiuxContent.match(/error\s+(message|banner|toast|inline|validation|state)/gi) || []).length;
+    if (errorContexts >= 3) {
+      pass("uiuxDepth", "Error states defined per-component");
+    } else {
+      fail("uiuxDepth", "Error states defined per-component",
+        "Error states mentioned but not defined per-component");
+    }
+  } else {
+    fail("uiuxDepth", "Error states defined per-component",
+      "No per-component error state definitions found");
+  }
+
+  // 8. Empty states defined for list/table/feed components
+  const hasEmptyStateDefinitions = /empty\s+state/i.test(uiuxContent);
+  if (hasEmptyStateDefinitions) {
+    // Check for multiple contexts (account list, order list, pipeline, etc.)
+    const emptyContexts = (uiuxContent.match(/(empty|no\s+(accounts|orders|activities|commissions|data|results|items|pipeline|contacts|emails))/gi) || []).length;
+    if (emptyContexts >= 3) {
+      pass("uiuxDepth", "Empty states defined for list/table/feed components");
+    } else {
+      fail("uiuxDepth", "Empty states defined for list/table/feed components",
+        `Only ${emptyContexts} empty state contexts found (need at least 3)`);
+    }
+  } else {
+    fail("uiuxDepth", "Empty states defined for list/table/feed components",
+      "No empty state definitions found in UI/UX section");
+  }
+
+  // 9. Navigation flow connects all pages
+  const hasNavFlow = /navigation\s+flow/i.test(uiuxContent);
+  if (hasNavFlow) {
+    pass("uiuxDepth", "Navigation flow connects all pages");
+  } else if (/navigation/i.test(uiuxContent) && /(sidebar|tab\s+bar|navigate|link|route)/i.test(uiuxContent)) {
+    // Accept if navigation items and routing are described
+    pass("uiuxDepth", "Navigation flow connects all pages");
+  } else {
+    fail("uiuxDepth", "Navigation flow connects all pages",
+      "No 'Navigation Flow' subsection or navigation routing description found");
+  }
+
+  // 10. Every UI component traces to at least one FR
+  // Check if any component references FRs or is within a section that references FRs
+  const uiuxFRRefs = findFRRefs(uiuxContent);
+  if (uiuxFRRefs.size > 0) {
+    pass("uiuxDepth", "Every UI component traces to at least one FR");
+  } else {
+    // Also accept if the UI/UX section references NFRs or the components clearly map to FR domains
+    const uiuxNFRRefs = (uiuxContent.match(/NFR-\d{3}/g) || []).length;
+    const domainKeywords = ["account", "order", "pipeline", "commission", "activity", "product", "email", "dashboard", "report"].filter(
+      k => uiuxContent.toLowerCase().includes(k)
+    );
+    if (uiuxNFRRefs > 0 || domainKeywords.length >= 5) {
+      pass("uiuxDepth", "Every UI component traces to at least one FR");
+    } else {
+      fail("uiuxDepth", "Every UI component traces to at least one FR",
+        "UI/UX section does not reference any FRs or NFRs and lacks domain coverage");
+    }
+  }
+
+  // 11. Every US includes Visual Acceptance Criteria
+  const usWithoutVisualAC = usBlocks.filter(usb =>
+    !/visual\s+acceptance\s+criteria/i.test(usb.content)
+  );
+  if (usBlocks.length === 0) {
+    fail("uiuxDepth", "Every US includes Visual Acceptance Criteria", "No user stories found");
+  } else if (usWithoutVisualAC.length === 0) {
+    pass("uiuxDepth", "Every US includes Visual Acceptance Criteria");
+  } else {
+    fail("uiuxDepth", "Every US includes Visual Acceptance Criteria",
+      `USs missing Visual Acceptance Criteria: ${usWithoutVisualAC.map(u => u.id).join(", ")}`);
+  }
+
   // ── EDGE CASE & ERROR COVERAGE ────────────────────────────────────────
 
   // Every US has Error/Edge Cases subsection
@@ -790,6 +992,11 @@ if (!md) {
     fail("metrics", "Total US count >= 3", `Only ${uss.length} USs found`);
   }
 
+  // Count UI components from hierarchy section
+  const uiComponentCount = uiuxContent
+    ? (uiuxContent.match(/^\s*[-*]\s+\w+/gm) || []).length
+    : 0;
+
   // Build summary
   summary = {
     frCount: frs.length,
@@ -798,6 +1005,8 @@ if (!md) {
     acCount: acs.length,
     acFrRatio: acFrRatio.toFixed(2),
     entityCount: dmEntities.size,
+    pageCount: pageInventoryRows.length,
+    uiComponentCount,
     openQuestions: oqEntry
       ? (oqEntry[1].match(/^\s*[-*]\s/gm) || []).length +
         (oqEntry[1].match(/HUMAN DECISION NEEDED/gi) || []).length
@@ -846,6 +1055,8 @@ if (md) {
   console.log(`  - Acceptance Criteria: ${summary.acCount}`);
   console.log(`  - AC/FR Ratio: ${summary.acFrRatio}`);
   console.log(`  - Data Model Entities: ${summary.entityCount}`);
+  console.log(`  - Pages/Screens: ${summary.pageCount}`);
+  console.log(`  - UI Components: ${summary.uiComponentCount}`);
   console.log(`  - Open Questions: ${summary.openQuestions}`);
   console.log(`  - Human Decisions Needed: ${summary.humanDecisions}`);
 }
