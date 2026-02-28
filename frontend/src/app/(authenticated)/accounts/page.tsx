@@ -111,10 +111,11 @@ export default function AccountListPage(): React.ReactElement {
   const handleSortingChange = React.useCallback(
     (updater: SortingState | ((prev: SortingState) => SortingState)) => {
       const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
-      if (newSorting.length > 0) {
+      const firstSort = newSorting[0];
+      if (firstSort) {
         updateUrl({
-          sortBy: newSorting[0].id,
-          sortOrder: newSorting[0].desc ? 'desc' : 'asc',
+          sortBy: firstSort.id,
+          sortOrder: firstSort.desc ? 'desc' : 'asc',
           cursor: undefined,
         });
         setCursorStack([]);
