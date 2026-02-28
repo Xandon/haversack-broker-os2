@@ -14,6 +14,8 @@ import {
   DollarSign,
   Settings,
   Zap,
+  Package,
+  Tag,
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,6 +28,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/accounts', label: 'Accounts', icon: Users },
+  { href: '/products', label: 'Products', icon: Package },
+  { href: '/brands', label: 'Brands', icon: Tag },
   { href: '/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/activities', label: 'Activities', icon: Calendar },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
