@@ -81,11 +81,18 @@ const SEED_TERRITORIES: SeedTerritory[] = [
 async function main(): Promise<void> {
   console.log('Seeding database...');
 
-  // Create territories
+  // Upsert territories
   const territories = await Promise.all(
     SEED_TERRITORIES.map((t) =>
-      prisma.territory.create({
-        data: {
+      prisma.territory.upsert({
+        where: {
+          tenantId_name: { tenantId: TENANT_ID, name: t.name },
+        },
+        update: {
+          region: t.region,
+          zipCodes: t.zipCodes,
+        },
+        create: {
           tenantId: TENANT_ID,
           name: t.name,
           region: t.region,
@@ -98,12 +105,20 @@ async function main(): Promise<void> {
 
   console.log(`Created ${territories.length} territories`);
 
-  // Create users with hashed passwords
+  // Upsert users with hashed passwords
   const users = await Promise.all(
     SEED_USERS.map(async (u) => {
       const passwordHash = await bcrypt.hash(u.password, BCRYPT_COST);
-      return prisma.user.create({
-        data: {
+      return prisma.user.upsert({
+        where: {
+          tenantId_email: { tenantId: TENANT_ID, email: u.email },
+        },
+        update: {
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+        },
+        create: {
           tenantId: TENANT_ID,
           email: u.email,
           passwordHash,
@@ -125,12 +140,18 @@ async function main(): Promise<void> {
   const seattle = territories.find((t) => t.name === 'Seattle Metro');
 
   if (rep1 && rep2 && portland && seattle) {
-    await prisma.userTerritory.createMany({
-      data: [
-        { userId: rep1.id, territoryId: portland.id },
-        { userId: rep2.id, territoryId: seattle.id },
-      ],
-    });
+    await Promise.all([
+      prisma.userTerritory.upsert({
+        where: { userId_territoryId: { userId: rep1.id, territoryId: portland.id } },
+        update: {},
+        create: { userId: rep1.id, territoryId: portland.id },
+      }),
+      prisma.userTerritory.upsert({
+        where: { userId_territoryId: { userId: rep2.id, territoryId: seattle.id } },
+        update: {},
+        create: { userId: rep2.id, territoryId: seattle.id },
+      }),
+    ]);
     console.log('Assigned reps to territories');
   }
 
