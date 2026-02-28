@@ -159,6 +159,7 @@ const results = {
   edgeCases: { tests: [], label: "Edge Case Coverage" },
   conflicts: { tests: [], label: "Conflict Detection" },
   metrics: { tests: [], label: "Metrics & Measurability" },
+  pageCoverage: { tests: [], label: "Page Coverage" },
 };
 
 const warnings = [];
@@ -226,6 +227,9 @@ if (!md) {
     ["metrics", "AC/FR ratio >= 1.5"],
     ["metrics", "Total FR count >= 5"],
     ["metrics", "Total US count >= 3"],
+    ["pageCoverage", "Every Screen Inventory page has a matching FR"],
+    ["pageCoverage", "Every page FR has loading/error/empty state ACs"],
+    ["pageCoverage", "Every Screen Inventory component defined in Component Hierarchy"],
   ];
   for (const [cat, name] of allTests) {
     fail(cat, name, "PRD file does not exist at docs/prd.md");
@@ -990,6 +994,126 @@ if (!md) {
     pass("metrics", "Total US count >= 3");
   } else {
     fail("metrics", "Total US count >= 3", `Only ${uss.length} USs found`);
+  }
+
+  // ── PAGE COVERAGE TESTS ──────────────────────────────────────────────
+
+  // Also load prd-pages.md if it exists for FR-PXXX page requirements
+  const prdPagesPath = path.resolve(__dirname, "..", "docs", "prd-pages.md");
+  const prdPagesMd = fs.existsSync(prdPagesPath)
+    ? fs.readFileSync(prdPagesPath, "utf-8")
+    : "";
+  const combinedMd = md + "\n" + prdPagesMd;
+
+  // Extract all FR and FR-P references from combined docs
+  const allFRIds = new Set(frs.map((f) => f.id));
+  const pageFRRe = /FR-P(\d{3})/g;
+  let pfm;
+  while ((pfm = pageFRRe.exec(combinedMd)) !== null) {
+    allFRIds.add(`FR-P${pfm[1]}`);
+  }
+
+  // 1. Every Screen Inventory page has a matching FR
+  if (pageInventoryRows.length === 0) {
+    // No pages in inventory — skip with warning
+    warn("No pages found in Screen Inventory table — skipping page coverage tests");
+    pass("pageCoverage", "Every Screen Inventory page has a matching FR");
+  } else {
+    const pagesWithoutFR = pageInventoryRows.filter((page) => {
+      // Check if page name or route appears near any FR or FR-PXXX
+      const pageName = page.name.toLowerCase();
+      const pageRoute = (page.route || "").toLowerCase();
+      // Check for FR-PXXX reference in the row itself
+      if (/FR-P?\d{3}/i.test(page.name + " " + (page.components || ""))) return false;
+      // Check if any FR or FR-P references this page
+      const frRefsPage = frs.some(
+        (f) =>
+          f.text.toLowerCase().includes(pageName) ||
+          f.text.toLowerCase().includes(pageRoute)
+      );
+      if (frRefsPage) return false;
+      // Check prd-pages.md for FR-PXXX that references this page
+      if (prdPagesMd && (prdPagesMd.toLowerCase().includes(pageName) || prdPagesMd.toLowerCase().includes(pageRoute))) return false;
+      return true;
+    });
+
+    if (pagesWithoutFR.length === 0) {
+      pass("pageCoverage", "Every Screen Inventory page has a matching FR");
+    } else {
+      fail(
+        "pageCoverage",
+        "Every Screen Inventory page has a matching FR",
+        `Pages without matching FR: ${pagesWithoutFR.map((p) => p.name).join(", ")}`
+      );
+    }
+  }
+
+  // 2. Every page FR has loading/error/empty state ACs
+  // Extract FR-PXXX blocks from prd-pages.md
+  const pageFRBlocks = [];
+  if (prdPagesMd) {
+    const pageFRBlockRe = /(?:^|\n)[-*]\s*(FR-P\d{3}):\s*([\s\S]*?)(?=\n[-*]\s*FR-P\d{3}:|\n##|\n$)/g;
+    let pfrm;
+    while ((pfrm = pageFRBlockRe.exec(prdPagesMd)) !== null) {
+      pageFRBlocks.push({ id: pfrm[1], content: pfrm[2] });
+    }
+  }
+
+  if (pageFRBlocks.length === 0) {
+    // No page FRs found — check if prd-pages.md exists
+    if (!prdPagesMd) {
+      warn("No docs/prd-pages.md found — page FR state coverage not validated");
+    }
+    pass("pageCoverage", "Every page FR has loading/error/empty state ACs");
+  } else {
+    const stateKeywords = ["loading", "error", "empty"];
+    const pageFRsWithoutStates = pageFRBlocks.filter((pfr) => {
+      const content = pfr.content.toLowerCase();
+      return !stateKeywords.every((kw) => content.includes(kw));
+    });
+
+    if (pageFRsWithoutStates.length === 0) {
+      pass("pageCoverage", "Every page FR has loading/error/empty state ACs");
+    } else {
+      fail(
+        "pageCoverage",
+        "Every page FR has loading/error/empty state ACs",
+        `Page FRs missing state ACs: ${pageFRsWithoutStates.map((p) => p.id).join(", ")}`
+      );
+    }
+  }
+
+  // 3. Every Screen Inventory component defined in Component Hierarchy
+  const hierarchySection = uiuxContent
+    ? uiuxContent.split(/^### /m).find((s) => /component\s+hierarchy/i.test(s)) || ""
+    : "";
+  const hierarchyLower = hierarchySection.toLowerCase();
+
+  if (pageInventoryRows.length === 0 || !hierarchySection) {
+    pass("pageCoverage", "Every Screen Inventory component defined in Component Hierarchy");
+  } else {
+    const allPageComponents = [];
+    for (const page of pageInventoryRows) {
+      if (!page.components) continue;
+      const comps = page.components.split(/[,;]/).map((c) => c.trim()).filter(Boolean);
+      for (const comp of comps) {
+        allPageComponents.push({ page: page.name, component: comp });
+      }
+    }
+
+    const orphanComponents = allPageComponents.filter(
+      (pc) => !hierarchyLower.includes(pc.component.toLowerCase())
+    );
+
+    if (orphanComponents.length === 0) {
+      pass("pageCoverage", "Every Screen Inventory component defined in Component Hierarchy");
+    } else {
+      fail(
+        "pageCoverage",
+        "Every Screen Inventory component defined in Component Hierarchy",
+        `Components not in hierarchy: ${orphanComponents.map((c) => `${c.component} (${c.page})`).join(", ")}`
+      );
+    }
   }
 
   // Count UI components from hierarchy section
