@@ -19,10 +19,12 @@ You are the lead product architect for this project. Your job is to produce a pr
 Before writing a single line of the PRD, create a test suite at `scripts/validate-prd.js` (Node.js) that will validate the finished PRD against all quality criteria. This is test-driven document creation — the tests define "done."
 
 The validation script must:
+
 1. **Parse** `docs/prd.md` as markdown and extract structured sections
 2. **Run the following test categories**, reporting PASS/FAIL for each:
 
 ### Structural Tests
+
 - [ ] All 10 required sections exist (Overview through Review Findings)
 - [ ] Overview contains Problem Statement, Target Users, and Success Metrics subsections
 - [ ] **UI/UX Requirements is section 3** (not section 7 or later)
@@ -30,6 +32,7 @@ The validation script must:
 - [ ] Open Questions section exists (even if empty, must be explicitly stated)
 
 ### Requirements Completeness Tests
+
 - [ ] Every functional requirement follows the pattern `FR-XXX:` with sequential numbering
 - [ ] Every FR has at least one acceptance criterion tagged `AC-XXXx:`
 - [ ] Every acceptance criterion contains "Given," "When," and "Then" (case-insensitive)
@@ -37,10 +40,12 @@ The validation script must:
 - [ ] Every NFR contains at least one number, percentage, or named standard (e.g., "WCAG 2.1 AA", "200ms", "99.9%")
 
 ### Language Quality Tests
+
 - [ ] No requirement contains subjective words without a measurable qualifier. Flag these words: "intuitive," "fast," "easy," "simple," "user-friendly," "seamless," "robust," "scalable," "flexible," "modern," "clean," "nice," "good," "efficient" — unless followed within 20 words by a number, percentage, or standard
 - [ ] No requirement contains passive voice without a clear actor (scan for "should be done" / "will be handled" without specifying who/what)
 
 ### Traceability Tests
+
 - [ ] Every FR-XXX is referenced by at least one US-XXX (cross-reference check)
 - [ ] Every US-XXX references at least one FR-XXX
 - [ ] Every entity name that appears in any FR or US also appears in the Data Model section
@@ -48,6 +53,7 @@ The validation script must:
 - [ ] No orphan requirements (FR that no US covers)
 
 ### UI/UX Depth Tests (NEW — webapp-critical)
+
 - [ ] UI/UX section contains a "Page/Screen Inventory" subsection
 - [ ] At least 1 page/screen is defined for every user story that has UI behavior
 - [ ] Every page/screen lists its component hierarchy
@@ -61,16 +67,26 @@ The validation script must:
 - [ ] Every user story includes a "Visual Acceptance Criteria" subsection
 
 ### Edge Case & Error Coverage Tests
+
 - [ ] Every user story has an "Error/Edge Cases" subsection
 - [ ] The UI/UX section includes: loading states, error states, empty states (check for these keywords)
 - [ ] At least one NFR addresses security
 - [ ] At least one NFR addresses performance with a specific response time target
 
 ### Conflict Detection Tests
+
 - [ ] No two FRs contain contradictory language (scan for requirement pairs that reference the same entity/action with different expected outcomes — flag for review)
 - [ ] Technical constraints section does not contain technologies/versions that conflict with stated FRs
 
+### Page Coverage Tests (NEW — ensures UI pages are tracked as requirements)
+
+- [ ] Every page in the Screen Inventory table has a corresponding FR (either FR-XXX or FR-PXXX)
+- [ ] Every page FR has acceptance criteria for: renders correctly, loads data, handles loading state, handles error state, handles empty state
+- [ ] Every component referenced in Screen Inventory's "Key Components" column is defined in the Component Hierarchy subsection
+- [ ] No orphan pages (pages in Screen Inventory that have no corresponding FR)
+
 ### Metrics & Measurability Tests
+
 - [ ] Success metrics in Overview section each contain at least one number or percentage
 - [ ] Coverage ratio: count of acceptance criteria / count of functional requirements >= 1.5
 - [ ] Total FR count >= 5 (sanity check)
@@ -179,23 +195,31 @@ Now build the PRD. Use agent teams to parallelize the work:
 # [Project/Feature Name] — Product Requirements Document
 
 ## 1. Overview
+
 - Problem statement
 - Target users
 - Success metrics (quantifiable with specific numbers)
 
 ## 2. Functional Requirements
+
 - FR-001: [Requirement]
   - AC-001a: Given [context], when [action], then [result]
   - AC-001b: ...
 
 ## 3. UI/UX Requirements
+
 ### 3.1 Page/Screen Inventory
-| Page | URL/Route | Purpose | Key Components |
-|------|-----------|---------|----------------|
-| [name] | [path] | [what it does] | [component list] |
+
+| Page   | URL/Route | Purpose        | Key Components   | FR      |
+| ------ | --------- | -------------- | ---------------- | ------- |
+| [name] | [path]    | [what it does] | [component list] | FR-PXXX |
+
+**IMPORTANT**: Every page in this inventory MUST have a corresponding FR (FR-PXXX series for page-level requirements). Each page FR MUST include acceptance criteria for: renders correctly, loads data via hooks, handles loading state (skeleton), handles error state (boundary), handles empty state, and navigation works (breadcrumbs, sidebar).
 
 ### 3.2 Component Hierarchy
+
 #### [Page Name]
+
 - Layout wrapper
   - Header (navigation, user menu)
   - Main content area
@@ -204,38 +228,46 @@ Now build the PRD. Use agent teams to parallelize the work:
   - Footer
 
 ### 3.3 Interaction Patterns
-| Component | Trigger | Action | Result |
-|-----------|---------|--------|--------|
-| [name] | click/hover/submit | [what happens] | [visual + data result] |
+
+| Component | Trigger            | Action         | Result                 |
+| --------- | ------------------ | -------------- | ---------------------- |
+| [name]    | click/hover/submit | [what happens] | [visual + data result] |
 
 ### 3.4 Responsive Behavior
-| Page | Desktop (>=1024px) | Tablet (768-1023px) | Mobile (<768px) |
-|------|-------------------|--------------------|-----------------|
-| [name] | [layout] | [layout] | [layout] |
+
+| Page   | Desktop (>=1024px) | Tablet (768-1023px) | Mobile (<768px) |
+| ------ | ------------------ | ------------------- | --------------- |
+| [name] | [layout]           | [layout]            | [layout]        |
 
 ### 3.5 Component States
-| Component | Default | Loading | Error | Empty | Disabled |
-|-----------|---------|---------|-------|-------|----------|
-| [name] | [desc] | [desc] | [desc] | [desc] | [desc] |
+
+| Component | Default | Loading | Error  | Empty  | Disabled |
+| --------- | ------- | ------- | ------ | ------ | -------- |
+| [name]    | [desc]  | [desc]  | [desc] | [desc] | [desc]   |
 
 ### 3.6 Navigation Flow
+
 [Describe how users move between pages: entry points, transitions, back navigation, deep links]
 
 ### 3.7 Accessibility Requirements
+
 - Keyboard navigation: [requirements]
 - Screen reader support: [ARIA landmarks, live regions]
 - Color contrast: [WCAG level]
 - Focus management: [tab order, focus trapping for modals]
 
 ## 4. Non-Functional Requirements
+
 - NFR-001: [Requirement with measurable target]
 
 ## 5. Technical Constraints
+
 - Required tech stack and versions
 - Integration points
 - Hard constraints
 
 ## 6. User Stories
+
 - US-001: As a [role], I want to [action] so that [benefit]
   - Acceptance Criteria:
     - Given [context], when [action], then [result]
@@ -247,17 +279,21 @@ Now build the PRD. Use agent teams to parallelize the work:
   - Traceability: FR-001, FR-003
 
 ## 7. Data Model
+
 - Entity definitions with field types
 - Relationships and cardinality
 - Validation rules
 
 ## 8. Out of Scope
+
 - What this version does NOT include
 
 ## 9. Open Questions
+
 - Items requiring human decision
 
 ## 10. Review Findings
+
 - Categorized findings with resolution status
 ```
 

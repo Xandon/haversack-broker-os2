@@ -78,6 +78,7 @@ TEST-C08: If CLAUDE.md exists, its MUST/MUST NOT rules appear in constitution (c
 #### STEP 2 Tests: Specification (`.specify/specs/[feature-dir]/spec.md`)
 
 **Structural tests:**
+
 ```
 TEST-S01: File exists in a correctly numbered feature directory (NNN-feature-name/)
 TEST-S02: Contains required sections: Feature Overview, User Stories, Functional Requirements, Non-Functional Requirements, UI Component Specifications, Out of Scope
@@ -86,6 +87,7 @@ TEST-S04: Checklist items are checked off (marked complete), not left blank
 ```
 
 **User Story tests:**
+
 ```
 TEST-S05: At least 3 user stories exist
 TEST-S06: Every user story has a priority level (P1, P2, or P3)
@@ -98,6 +100,7 @@ TEST-S12: Every user story has "Visual Acceptance Criteria" describing what the 
 ```
 
 **Functional Requirements tests:**
+
 ```
 TEST-S13: At least 5 functional requirements exist
 TEST-S14: Every FR follows pattern: FR-XXX: System MUST/MUST NOT [action]
@@ -106,6 +109,7 @@ TEST-S16: No FR uses subjective language without measurable definition
 ```
 
 **UI Component Specifications tests (NEW):**
+
 ```
 TEST-S28: spec.md contains a "UI Component Specifications" section
 TEST-S29: Every UI component references at least one FR
@@ -114,6 +118,7 @@ TEST-S31: Every UI component specifies: name, props/data, visual states (default
 ```
 
 **Edge case and error coverage tests:**
+
 ```
 TEST-S17: Spec contains at least 2 edge case/error scenario FRs (scan for: "error", "fail", "invalid", "boundary", "edge case", "when [X] is empty", "when [X] does not exist")
 TEST-S18: At least one NFR addresses security
@@ -121,12 +126,14 @@ TEST-S19: At least one NFR addresses performance with a specific metric
 ```
 
 **Clarification tests:**
+
 ```
 TEST-S20: Zero unresolved [NEEDS CLARIFICATION] markers remain
 TEST-S21: If a "Clarifications" section exists, every entry references a specific FR or US number
 ```
 
 **Traceability tests:**
+
 ```
 TEST-S22: Every FR-XXX is referenced by at least one user story's acceptance criteria or description
 TEST-S23: Every user story references or covers at least one FR
@@ -134,12 +141,14 @@ TEST-S24: No orphan FRs (FRs that no user story addresses)
 ```
 
 **Separation of concerns test:**
+
 ```
 TEST-S25: Spec contains NO tech stack references (scan for framework names, language names, database names, library names — these belong in plan.md, not spec.md)
   EXCEPTION: references inherited from PRD technical constraints section are acceptable if quoted as constraints
 ```
 
 **PRD alignment tests:**
+
 ```
 TEST-S26: Every FR-XXX in docs/prd.md has a corresponding FR or US in spec.md (cross-reference: no PRD requirement was dropped)
 TEST-S27: Out of Scope section exists and is non-empty
@@ -149,6 +158,7 @@ TEST-S28b: No out-of-scope item appears as an FR or user story (nothing excluded
 #### STEP 3 Tests: Plan & Supporting Artifacts
 
 **plan.md tests:**
+
 ```
 TEST-P01: File exists in same feature directory as spec.md
 TEST-P02: Contains Tech Stack Summary with all required fields: Language/Version, Primary Dependencies, Storage, Testing framework, Target Platform, Project Type, UI Framework, CSS Approach, Component Testing Library
@@ -160,6 +170,7 @@ TEST-P07: Tech stack choices do not conflict with NFRs in spec.md
 ```
 
 **research.md tests:**
+
 ```
 TEST-P08: File exists in feature directory
 TEST-P09: Every technology/library listed in plan.md's Tech Stack Summary has a corresponding entry in research.md
@@ -168,6 +179,7 @@ TEST-P11: Research entries include rationale (why this choice over alternatives)
 ```
 
 **data-model.md tests:**
+
 ```
 TEST-P12: File exists in feature directory
 TEST-P13: Every entity referenced in any FR or user story appears in the data model (cross-reference: extract nouns from FRs, verify they appear as entities)
@@ -177,6 +189,7 @@ TEST-P16: Validation rules are defined for fields that have constraints referenc
 ```
 
 **quickstart.md tests:**
+
 ```
 TEST-P17: File exists in feature directory
 TEST-P18: Contains at least one validation scenario
@@ -184,6 +197,7 @@ TEST-P19: Scenarios reference specific user stories or FRs
 ```
 
 **contracts/ tests:**
+
 ```
 TEST-P20: If any FR or user story references an API, REST, endpoint, or webhook: contracts/ directory exists with at least one file
 TEST-P21: If contracts/ exists: contract files define endpoints that map to API-related FRs
@@ -191,6 +205,7 @@ TEST-P22: If no API references exist in spec: this test is skipped (N/A)
 ```
 
 **Constitutional compliance tests:**
+
 ```
 TEST-P23: Plan decisions do not violate constitutional principles (cross-reference: for each MUST NOT in constitution, verify plan doesn't include the prohibited pattern)
 TEST-P24: If constitution mandates TDD: plan.md mentions test-first approach or TDD in its implementation phases
@@ -216,6 +231,7 @@ TEST-A06: quickstart.md scenarios are achievable with the plan.md architecture
 #### STEP 5 Tests: Tasks (`.specify/specs/[feature-dir]/tasks.md`)
 
 **Structural tests:**
+
 ```
 TEST-T01: File exists in same feature directory
 TEST-T02: Tasks are grouped by User Story (section headers reference US-XXX or "User Story N")
@@ -224,6 +240,7 @@ TEST-T04: Total task count >= (FR count x 1.5)
 ```
 
 **Task quality tests:**
+
 ```
 TEST-T05: Every task includes at least one file path
 TEST-T06: Parallel tasks are marked with [P]
@@ -232,7 +249,21 @@ TEST-T08: No two tasks specify the same file path for creation (unless one is te
 TEST-T09: Checkpoint validation markers exist between task groups (scan for "Checkpoint:" followed by what to validate)
 ```
 
+**Page wiring enforcement tests (NEW — prevents orphan components):**
+
+```
+TEST-T20: Every feature slice that creates UI components MUST also create
+          or modify at least one page (page.tsx) that renders them.
+          VALIDATION: scan tasks — if a task group creates component files
+          but no task creates or modifies a page.tsx file, FAIL.
+
+TEST-T21: No component may be created without being imported by at least
+          one page. Cross-reference: for every component file created in
+          tasks, verify a subsequent task imports it in a page or layout.
+```
+
 **Vertical Slice ordering tests (REPLACES old backend-first TEST-T11):**
+
 ```
 TEST-T11: Tasks within each user story group are organized into named
           vertical slices. Each slice delivers ONE user-visible capability
@@ -257,6 +288,7 @@ TEST-T19: Every user story with visual acceptance criteria MUST contain
 ```
 
 **Dependency order tests (revised):**
+
 ```
 TEST-T10: Setup/foundational tasks appear before user story tasks
 TEST-T13: Within a vertical slice: data/schema tasks appear before service
@@ -266,6 +298,7 @@ TEST-T13: Within a vertical slice: data/schema tasks appear before service
 ```
 
 **Security tests (NEW):**
+
 ```
 TEST-SEC01: Every API endpoint task includes a corresponding authorization test task
 TEST-SEC02: No API response task includes fields not referenced by the UI component
@@ -274,6 +307,7 @@ TEST-SEC02: No API response task includes fields not referenced by the UI compon
 ```
 
 **Traceability tests:**
+
 ```
 TEST-T14: Every task references at least one FR or US
 TEST-T15: Every FR in spec.md is covered by at least one task
@@ -290,6 +324,7 @@ For each step, use the appropriate spec-kit slash command, then run validation b
 ### Step 1: Constitution (`/speckit.constitution`)
 
 Define the project's development principles — the "north star" that every spec must respect. Include:
+
 - Code style and formatting rules
 - Testing philosophy (TDD if appropriate)
 - Architecture principles (component boundaries, data flow)
@@ -302,6 +337,7 @@ Do NOT proceed to Step 2 until all TEST-C tests pass.
 ### Step 2: Specification (`/speckit.specify`)
 
 For each feature in the PRD, create a specification that answers "what" and "why" without dictating "how." The spec MUST include:
+
 - Feature Overview
 - User Stories (with Visual Acceptance Criteria)
 - Functional Requirements
@@ -329,6 +365,7 @@ Force the AI to analyze the specification for logical gaps, missing edge cases, 
 Develop implementation strategies for each specification. **CRITICAL**: Implementation phases MUST be organized as vertical slices, not horizontal layers.
 
 **WRONG (backend-first layers):**
+
 ```
 Phase 1: Database schema and models
 Phase 2: API services and endpoints
@@ -338,6 +375,7 @@ Phase 5: Integration and testing
 ```
 
 **RIGHT (vertical slices):**
+
 ```
 Phase 0: Foundation — project setup, shared layout, routing shell, dev server
 Phase 1: User Registration — signup form + validation API + user model + tests
@@ -354,6 +392,7 @@ Do NOT proceed to Step 5 until all TEST-P tests pass.
 ### Step 5: Test Definition (`/speckit.tests`)
 
 Define how each feature will be tested before breaking into tasks. Include:
+
 - Unit test scenarios (data model, services)
 - Component test scenarios (UI components with Testing Library or equivalent)
 - Integration test scenarios (API endpoints)
@@ -394,6 +433,7 @@ This executes ALL tests across ALL steps plus the cross-artifact analysis tests 
 ## STAGE 4: Fix-and-Revalidate Loop
 
 If any tests fail:
+
 1. Read the failure report
 2. Identify the specific artifact and issue
 3. Fix the artifact
@@ -425,6 +465,7 @@ fi
 ## Completion
 
 When all tests pass, print:
+
 ```
 Phase 3 complete. Spec-kit artifacts generated and validated.
   Constitution: .specify/memory/constitution.md
