@@ -37,7 +37,7 @@ function AccountDetailSkeleton(): React.ReactElement {
 
 export default function AccountDetailPage(): React.ReactElement {
   const params = useParams();
-  const accountId = params.id as string;
+  const accountId = params['id'] as string;
   const { data, isLoading, isError, refetch } = useAccountDetail(accountId);
 
   if (isLoading) {
