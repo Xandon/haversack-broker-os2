@@ -116,6 +116,41 @@ describe('FR-002: TimelineTab component', () => {
     expect(emptyState).toBeDefined();
   });
 
+  test('AC-051a: renders email engagement badge on email timeline items', async () => {
+    const emailTimeline = {
+      data: [
+        {
+          id: 'email-1',
+          type: 'email',
+          occurredAt: '2026-02-28T10:00:00Z',
+          data: {
+            subject: 'Product samples follow-up',
+            recipientEmail: 'buyer@store.com',
+            status: 'opened',
+            openedAt: '2026-02-28T11:00:00Z',
+          },
+        },
+      ],
+      pagination: { cursor: null, hasMore: false, total: 1 },
+      counts: { activity: 0, email: 1, task: 0 },
+    };
+    mockApiClient.mockResolvedValue(emailTimeline);
+
+    const Wrapper = createWrapper();
+    render(
+      createElement(Wrapper, null,
+        createElement(TimelineTab, { accountId: 'acc-1' }),
+      ),
+    );
+
+    const subject = await screen.findByText('Product samples follow-up');
+    expect(subject).toBeDefined();
+
+    expect(screen.getByText('To: buyer@store.com')).toBeDefined();
+    expect(screen.getByTestId('engagement-badge')).toBeDefined();
+    expect(screen.getByText('Opened')).toBeDefined();
+  });
+
   test('FR-002: renders activity type filter dropdown', async () => {
     mockApiClient.mockResolvedValue(MOCK_TIMELINE);
 

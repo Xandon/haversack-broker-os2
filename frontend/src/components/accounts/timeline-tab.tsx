@@ -22,6 +22,36 @@ const ACTIVITY_TYPE_OPTIONS = [
   { value: 'sampling', label: 'Sampling' },
 ];
 
+function EmailEngagementBadge({ data }: { data: Record<string, unknown> }): React.ReactElement | null {
+  const status = typeof data['status'] === 'string' ? data['status'] : null;
+  if (!status) return null;
+
+  const badgeConfig: Record<string, { color: string; label: string }> = {
+    clicked: { color: 'bg-blue-100 text-blue-700', label: 'Clicked' },
+    opened: { color: 'bg-green-100 text-green-700', label: 'Opened' },
+    bounced: { color: 'bg-red-100 text-red-700', label: 'Bounced' },
+    failed: { color: 'bg-red-100 text-red-700', label: 'Failed' },
+    delivered: { color: 'bg-yellow-100 text-yellow-700', label: 'Delivered' },
+    sent: { color: 'bg-yellow-100 text-yellow-700', label: 'Sent' },
+  };
+
+  const config = badgeConfig[status];
+  if (!config) return null;
+
+  const timestampKey = status === 'opened' ? 'openedAt' : status === 'clicked' ? 'clickedAt' : status === 'bounced' ? 'bouncedAt' : null;
+  const timestamp = timestampKey && typeof data[timestampKey] === 'string' ? data[timestampKey] as string : null;
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.color}`}
+      title={timestamp ? `${config.label} at ${new Date(timestamp).toLocaleString()}` : config.label}
+      data-testid="engagement-badge"
+    >
+      {config.label}
+    </span>
+  );
+}
+
 function TimelineItemCard({ item }: { item: TimelineItem }): React.ReactElement {
   const data = item.data;
   const occurredAt = new Date(item.occurredAt);
@@ -48,7 +78,13 @@ function TimelineItemCard({ item }: { item: TimelineItem }): React.ReactElement 
           <p className="text-sm">{data['notes']}</p>
         ) : null}
         {item.type === 'email' && typeof data['subject'] === 'string' ? (
-          <p className="text-sm">{data['subject']}</p>
+          <div className="space-y-1">
+            <p className="text-sm">{data['subject']}</p>
+            {typeof data['recipientEmail'] === 'string' ? (
+              <p className="text-xs text-muted-foreground">To: {data['recipientEmail']}</p>
+            ) : null}
+            <EmailEngagementBadge data={data} />
+          </div>
         ) : null}
         {item.type === 'task' && typeof data['title'] === 'string' ? (
           <p className="text-sm">{data['title']}</p>
