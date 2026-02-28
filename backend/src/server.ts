@@ -2,6 +2,8 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { accountRoutes } from './domains/accounts/account.routes.js';
+import { contactRoutes } from './domains/contacts/contact.routes.js';
 import { authPluginRegistration } from './shared/plugins/auth.js';
 import { prismaPluginRegistration } from './shared/plugins/prisma.js';
 
@@ -27,6 +29,10 @@ export async function buildServer(): Promise<FastifyInstance> {
   fastify.get('/api/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
+
+  // Domain routes
+  await fastify.register(accountRoutes);
+  await fastify.register(contactRoutes);
 
   return fastify;
 }

@@ -8,12 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@haversack/shared': resolve(__dirname, '../packages/shared/src'),
     },
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [],
+    setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     passWithNoTests: true,
     coverage: {
