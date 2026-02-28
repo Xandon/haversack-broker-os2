@@ -172,6 +172,26 @@ export const updateOpportunityStageSchema = z.object({
   closeReason: z.string().optional(),
 });
 
+// ─── Commission ─────────────────────────────────────────────────────────────
+
+export const commissionStatusSchema = z.enum([
+  'pending',
+  'pending_approval',
+  'approved',
+  'exported',
+  'disputed',
+]);
+
+export const commissionFilterSchema = z.object({
+  repId: uuidSchema.optional(),
+  period: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+  status: commissionStatusSchema.optional(),
+  brandId: uuidSchema.optional(),
+});
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export const apiErrorSchema = z.object({
