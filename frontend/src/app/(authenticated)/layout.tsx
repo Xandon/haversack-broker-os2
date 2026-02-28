@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { TopBar } from '@/components/layout/top-bar';
 import { OfflineBanner } from '@/components/layout/offline-banner';
 import { MobileNav } from '@/components/layout/mobile-nav';
+import { CommandPalette } from '@/components/search';
 
 export default function AuthenticatedLayout({ children }: { children: ReactNode }): React.ReactElement {
   const [isNavOpen, setIsNavOpen] = useState(false);
@@ -30,6 +31,7 @@ export default function AuthenticatedLayout({ children }: { children: ReactNode 
           </main>
         </div>
         <MobileNav isOpen={isNavOpen} onClose={handleCloseNav} />
+        <CommandPalette />
       </div>
     </ProtectedRoute>
   );

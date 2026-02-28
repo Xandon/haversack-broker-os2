@@ -18,7 +18,7 @@
 | # | Feature | Spec Dir | PRD References | Status | Batches | Tests Added | E2E |
 |---|---------|----------|---------------|--------|---------|-------------|-----|
 | 1 | F-000: Design System & Component Library | 014-design-system | FR-031 | COMPLETE | 3/3 | 47 | SKIP (foundational) |
-| 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | PENDING | -- | -- | -- |
+| 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | BUILDING | -- | -- | -- |
 | 3 | F-002a: Account List & Search | 016-account-list | FR-033 | PENDING | -- | -- | -- |
 | 4 | F-002b: Account Detail View | 017-account-detail | FR-034 | PENDING | -- | -- | -- |
 | 5 | F-002c: Account Forms & Contacts | 018-account-forms | FR-035 | PENDING | -- | -- | -- |
@@ -69,8 +69,9 @@ F-053 (UI Polish) depends on ALL above
 
 - **Active Feature:** 2 (F-001: Global Search (Cmd+K))
 - **Active Stage:** PLANNING
-- **Active Step:** 2.1 (Create feature directory)
-- **Resume Point:** STAGE 2, Step 2.1
+- **Active Stage:** BUILDING
+- **Active Step:** batch 38
+- **Resume Point:** STAGE 3, batch 38 (3A — Create feature branch)
 
 ## Feature 1: F-000: Design System & Component Library
 
@@ -102,12 +103,19 @@ SKIP — foundational design system feature, no user-facing pages to test via E2
 - FR-032: Global search command palette
 
 ### Planning Checklist
-- [ ] 2.1 Create feature directory
-- [ ] 2.2 Generate spec.md
-- [ ] 2.3 Clarify
-- [ ] 2.4 Requirements checklist
-- [ ] 2.5 Conflict analysis
-- [ ] 2.6 Research
-- [ ] 2.7 Plan
-- [ ] 2.8 Tasks
-- [ ] 2.9 Validation gate
+- [x] 2.1 Create feature directory — .specify/specs/015-global-search
+- [x] 2.2 Generate spec.md — 4 user stories, 14 FRs (FR-032)
+- [x] 2.3 Clarify — 7 clarifications resolved, 0 outstanding
+- [x] 2.4 Requirements checklist — 20/20 items passing
+- [x] 2.5 Conflict analysis — 9 safe, 3 additive, 0 breaking
+- [x] 2.6 Research — 7 decisions documented, reference domain: accounts + dashboard hooks
+- [x] 2.7 Plan — 12 files planned (8 new, 4 modified)
+- [x] 2.8 Tasks — 13 tasks in 2 batches (38-39), T271-T283
+- [x] 2.9 Validation gate — all checks passing
+
+### Build Checklist
+- [ ] Batch 38: Search Backend + Frontend Hook Foundation (T271-T277) — 7 tasks
+- [ ] Batch 39: Polish & Edge Cases (T278-T283) — 6 tasks
+
+### E2E Validation
+- [ ] E2E browser testing — pending

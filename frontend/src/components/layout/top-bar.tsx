@@ -3,12 +3,14 @@
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu } from 'lucide-react';
+import { SearchTrigger } from '@/components/search';
 
 interface TopBarProps {
   onToggleNav?: () => void;
+  onOpenSearch?: () => void;
 }
 
-export function TopBar({ onToggleNav }: TopBarProps): React.ReactElement {
+export function TopBar({ onToggleNav, onOpenSearch }: TopBarProps): React.ReactElement {
   const { user, logout } = useAuth();
 
   return (
@@ -25,6 +27,9 @@ export function TopBar({ onToggleNav }: TopBarProps): React.ReactElement {
             <Menu className="h-5 w-5" />
           </Button>
         )}
+      </div>
+      <div className="hidden flex-1 px-4 sm:block">
+        {onOpenSearch && <SearchTrigger onClick={onOpenSearch} />}
       </div>
       <div className="flex items-center gap-2 md:gap-4">
         {user && (
