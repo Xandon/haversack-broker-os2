@@ -4,6 +4,7 @@ import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu } from 'lucide-react';
 import { SearchTrigger } from '@/components/search';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 interface TopBarProps {
   onToggleNav?: () => void;
@@ -32,6 +33,7 @@ export function TopBar({ onToggleNav, onOpenSearch }: TopBarProps): React.ReactE
         {onOpenSearch && <SearchTrigger onClick={onOpenSearch} />}
       </div>
       <div className="flex items-center gap-2 md:gap-4">
+        <NotificationBell />
         {user && (
           <span className="hidden text-sm text-muted-foreground sm:inline">
             {user.firstName} {user.lastName}
