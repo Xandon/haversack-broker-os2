@@ -42,10 +42,11 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-export function loadStoredRefreshToken(): void {
+export function loadStoredRefreshToken(): boolean {
   if (typeof window !== 'undefined') {
     refreshToken = localStorage.getItem('refreshToken');
   }
+  return refreshToken !== null;
 }
 
 async function refreshAccessToken(): Promise<void> {

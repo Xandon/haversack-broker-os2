@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
 
   // On mount, try to restore session from stored refresh token
   useEffect(() => {
-    loadStoredRefreshToken();
+    const storedRefreshToken = loadStoredRefreshToken();
 
     async function restoreSession(): Promise<void> {
       try {
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
       }
     }
 
-    if (getAccessToken() !== null) {
+    if (getAccessToken() !== null || storedRefreshToken) {
       void restoreSession();
     } else {
       setState((prev) => ({ ...prev, isLoading: false }));
