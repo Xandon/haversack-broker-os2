@@ -36,6 +36,7 @@
 | 14 | F-001: Global Search (Cmd+K) | COMPLETE | 2 | 60 |
 | 15 | F-002a: Account List & Search | COMPLETE | 2 | 33 |
 | 16 | F-005: Order Entry Frontend | COMPLETE | 3 | 35 |
+| 17 | F-002b: Account Detail View | COMPLETE | 2 | 63 |
 
 ## Completed Batches
 
@@ -119,6 +120,8 @@
 | 2026-02-27 | dev (post-batch-40) | 1479 | +16 | PASS |
 | 2026-02-27 | dev (post-batch-41) | 1493 | +14 | PASS |
 | 2026-02-27 | dev (post-batch-42) | 1530 | +5 (frontend) +32 (shared recount) | PASS |
+| 2026-02-27 | dev (post-batch-43) | 1564 | +34 | PASS |
+| 2026-02-27 | dev (post-batch-44) | 1593 | +29 | PASS |
 
 ## Completed Batches (continued)
 
@@ -136,9 +139,11 @@
 | 40 | F-002a/F-005: Account List + Order List | feature/batch-batch-40-account-list | 16 | Merged to dev |
 | 41 | F-005: Order Entry Form | feature/batch-batch-41-account-list-page | 14 | Merged to dev |
 | 42 | F-005: Order Detail, Approval, Suggestions | feature/batch-batch-42-order-detail-approval | 5 | Merged to dev |
+| 43 | F-002b: Account Detail Core | feature/batch-43-account-detail-core | 34 | Merged to dev |
+| 44 | F-002b: Account Detail Tabs | feature/batch-44-account-detail-tabs | 29 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 297 (T001-T245, T246-T283, T284-T297)
-- **Last completed task:** T297
-- **Global batch counter:** 42
+- **Completed:** 312 (T001-T245, T246-T283, T284-T297, T298-T312)
+- **Last completed task:** T312
+- **Global batch counter:** 44
