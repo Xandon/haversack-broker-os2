@@ -1,11 +1,11 @@
 # Phase 5 Orchestrator Manifest — Frontend Phase
 
 **Created:** 2026-02-27
-**Last Updated:** 2026-02-27 18:00 UTC
+**Last Updated:** 2026-02-27 19:00 UTC
 **Base Branch:** dev
 **Merge Mode:** auto (confirmed by user)
 **Baseline Tests:** 1356
-**Global Batch Counter:** 34
+**Global Batch Counter:** 35
 **PRD Source:** docs/prd-frontend.md
 **Phase:** Frontend UI/UX (FR-031 through FR-053)
 
@@ -17,7 +17,7 @@
 
 | # | Feature | Spec Dir | PRD References | Status | Batches | Tests Added | E2E |
 |---|---------|----------|---------------|--------|---------|-------------|-----|
-| 1 | F-000: Design System & Component Library | 014-design-system | FR-031 | BUILDING | 0/3 | -- | -- |
+| 1 | F-000: Design System & Component Library | 014-design-system | FR-031 | BUILDING | 1/3 | 0 | -- |
 | 2 | F-001: Global Search (Cmd+K) | 015-global-search | FR-032 | PENDING | -- | -- | -- |
 | 3 | F-002a: Account List & Search | 016-account-list | FR-033 | PENDING | -- | -- | -- |
 | 4 | F-002b: Account Detail View | 017-account-detail | FR-034 | PENDING | -- | -- | -- |
@@ -69,8 +69,8 @@ F-053 (UI Polish) depends on ALL above
 
 - **Active Feature:** 1 (F-000: Design System & Component Library)
 - **Active Stage:** BUILDING
-- **Active Step:** Batch 35 (Theme Foundation & Dependencies)
-- **Resume Point:** STAGE 3, Batch 35
+- **Active Step:** Batch 36 (Composite Patterns)
+- **Resume Point:** STAGE 3, Batch 36
 
 ## Feature 1: F-000: Design System & Component Library
 
@@ -89,7 +89,7 @@ F-053 (UI Polish) depends on ALL above
 - [x] 2.9 Validation gate — all checks passing
 
 ### Build Checklist
-- [ ] Batch 35: Theme Foundation & Dependencies (T246-T253) — 8 tasks
+- [x] Batch 35: Theme Foundation & Dependencies (T246-T253) — 8 tasks, 0 new tests (primitives), merged
 - [ ] Batch 36: Composite Patterns (T254-T265) — 12 tasks
 - [ ] Batch 37: Utility Hooks & Tests (T266-T270) — 5 tasks
 
