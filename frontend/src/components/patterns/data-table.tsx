@@ -23,6 +23,10 @@ export interface DataTableProps<TData, TValue> {
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
   isLoading?: boolean;
+  sorting?: SortingState;
+  onSortingChange?: (updater: SortingState | ((prev: SortingState) => SortingState)) => void;
+  manualSorting?: boolean;
+  columnVisibility?: VisibilityState;
   className?: string;
 }
 
@@ -35,10 +39,17 @@ function DataTable<TData, TValue>({
   hasNextPage = false,
   hasPreviousPage = false,
   isLoading = false,
+  sorting: externalSorting,
+  onSortingChange: externalOnSortingChange,
+  manualSorting = false,
+  columnVisibility: externalColumnVisibility,
   className,
 }: DataTableProps<TData, TValue>): React.ReactElement {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
+  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>({});
+
+  const sorting = externalSorting ?? internalSorting;
+  const columnVisibility = externalColumnVisibility ?? internalColumnVisibility;
 
   const table = useReactTable({
     data,
@@ -49,10 +60,11 @@ function DataTable<TData, TValue>({
       columnVisibility,
       pagination: { pageIndex: 0, pageSize },
     },
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange: externalOnSortingChange ?? setInternalSorting,
+    onColumnVisibilityChange: setInternalColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
+    manualSorting,
     manualPagination: true,
   });
 
