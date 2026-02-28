@@ -38,6 +38,12 @@
 | 16 | F-005: Order Entry Frontend | COMPLETE | 3 | 35 |
 | 17 | F-002b: Account Detail View | COMPLETE | 2 | 63 |
 | 18 | F-003: Activity Logging & Timeline | COMPLETE | 2 | 37 |
+| 19 | F-004: Task Management | COMPLETE | 2 | 37 |
+| 20 | F-002c: Account Forms | COMPLETE | 2 | 28 |
+| 21 | F-006: Product Catalog & Brands | COMPLETE | 2 | 48 |
+| 22 | F-007: Pipeline Kanban | COMPLETE | 1 | 23 |
+| 23 | F-007b: Opportunity CRUD | COMPLETE | 1 | 18 |
+| 24 | F-008: Commission Tracking | COMPLETE | 1 | 16 |
 
 ## Completed Batches
 
@@ -125,6 +131,15 @@
 | 2026-02-27 | dev (post-batch-44) | 1593 | +29 | PASS |
 | 2026-02-28 | dev (post-batch-45) | 1614 | +21 | PASS |
 | 2026-02-28 | dev (post-batch-46) | 1631 | +16 | PASS |
+| 2026-02-28 | dev (post-batch-47) | 1658 | +27 | PASS |
+| 2026-02-28 | dev (post-batch-48) | 1668 | +10 | PASS |
+| 2026-02-28 | dev (post-batch-49) | 1689 | +21 | PASS |
+| 2026-02-28 | dev (post-batch-50) | 1696 | +7 | PASS |
+| 2026-02-28 | dev (post-batch-51) | 1723 | +27 | PASS |
+| 2026-02-28 | dev (post-batch-52) | 1741 | +18 | PASS |
+| 2026-02-28 | dev (post-batch-53) | 1764 | +23 | PASS |
+| 2026-02-28 | dev (post-batch-54) | 1782 | +18 | PASS |
+| 2026-02-28 | dev (post-batch-55) | 1797 | +16 | PASS |
 
 ## Completed Batches (continued)
 
@@ -146,9 +161,32 @@
 | 44 | F-002b: Account Detail Tabs | feature/batch-44-account-detail-tabs | 29 | Merged to dev |
 | 45 | F-003: Activities List Page | feature/batch-batch-45-activities-list-dev | 21 | Merged to dev |
 | 46 | F-003: Activity Form + FAB | feature/batch-batch-46-activity-form-fab-dev | 16 | Merged to dev |
+| 47 | F-004: Task List Page | feature/batch-batch-47-task-list-page-batch-47-task-list | 27 | Merged to dev |
+| 48 | F-004: Task Form + Toggle | feature/batch-batch-48-task-form-toggle-batch-48-task-form-toggle | 10 | Merged to dev |
+| 49 | F-002c: Account Create Form | feature/batch-batch-49-account-create-form-dev | 21 | Merged to dev |
+| 50 | F-002c: Account Edit Form | feature/batch-batch-50-account-edit-form-dev | 7 | Merged to dev |
+| 51 | F-006: Product Hooks & List | feature/batch-batch-51-product-list-dev | 27 | Merged to dev |
+| 52 | F-006: Product/Brand Detail | feature/batch-batch-52-product-brand-detail-dev | 21 | Merged to dev |
+| 53 | F-007: Pipeline Kanban | feature/batch-batch-53-pipeline-kanban-dev | 23 | Merged to dev |
+| 54 | F-007b: Opportunity CRUD | feature/batch-batch-54-opportunity-crud-dev | 18 | Merged to dev |
+| 55 | F-008: Commission Tracking | feature/batch-batch-55-commission-tracking-dev | 16 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 324 (T001-T245, T246-T283, T284-T297, T298-T312, T313-T324)
-- **Last completed task:** T324
-- **Global batch counter:** 44
+- **Completed:** 395 (T001-T245, T246-T283, T284-T297, T298-T312, T313-T334, T335-T348, T349-T395)
+- **Last completed task:** T395
+- **Global batch counter:** 55
+
+## Regression History
+
+| Checkpoint | Total Tests | Frontend | Backend | Shared | Worker |
+|-----------|-------------|----------|---------|--------|--------|
+| Post-batch-47 | 1,658 | 378 | 979 | 245 | 55 |
+| Post-batch-48 | 1,668 | 388 | 979 | 245 | 55 |
+| Post-batch-49 | 1,689 | 408 | 979 | 245 | 55 |
+| Post-batch-50 | 1,696 | 415 | 979 | 245 | 55 |
+| Post-batch-51 | 1,723 | 442 | 979 | 245 | 55 |
+| Post-batch-52 | 1,741 | 460 | 979 | 245 | 55 |
+| Post-batch-53 | 1,764 | 483 | 979 | 245 | 55 |
+| Post-batch-54 | 1,782 | 501 | 979 | 245 | 55 |
+| Post-batch-55 | 1,797 | 517 | 979 | 245 | 55 |

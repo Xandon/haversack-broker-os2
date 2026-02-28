@@ -8,7 +8,7 @@ vi.mock('@/lib/api-client', () => ({
   apiClient: vi.fn(),
 }));
 
-import { useRepDashboard, useTeamDashboard, useCriticalAccounts } from './use-dashboard';
+import { useRepDashboard, useTeamDashboard, useCriticalAccounts, useRevenueByMonth, useTerritoryRevenue, usePipelineForecast } from './use-dashboard';
 
 function createWrapper(): ({ children }: { children: ReactNode }) => React.ReactElement {
   const queryClient = new QueryClient({
@@ -93,5 +93,80 @@ describe('useCriticalAccounts', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toHaveLength(1);
     expect(result.current.data?.[0].name).toBe('Test Account');
+  });
+});
+
+describe('FR-045: useRevenueByMonth', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('FR-045: fetches revenue by month data', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockData = [
+      { month: '2026-01', revenue: 15000 },
+      { month: '2026-02', revenue: 18000 },
+    ];
+    (apiClient as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockData });
+
+    const { result } = renderHook(() => useRevenueByMonth(12), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(2);
+    expect(result.current.data?.[0].month).toBe('2026-01');
+    expect(apiClient).toHaveBeenCalledWith('/api/dashboards/team/revenue-by-month?months=12');
+  });
+});
+
+describe('FR-045: useTerritoryRevenue', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('FR-045: fetches territory revenue data', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockData = [
+      { territoryId: 't1', territoryName: 'Pacific NW', revenue: 42500, orderCount: 18, accountCount: 12 },
+    ];
+    (apiClient as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockData });
+
+    const { result } = renderHook(() => useTerritoryRevenue('ytd'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0].territoryName).toBe('Pacific NW');
+    expect(apiClient).toHaveBeenCalledWith('/api/dashboards/team/territory-revenue?period=ytd');
+  });
+});
+
+describe('FR-045: usePipelineForecast', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('FR-045: fetches pipeline forecast data', async () => {
+    const { apiClient } = await import('@/lib/api-client');
+    const mockData = {
+      stages: [
+        { stage: 'prospect', count: 10, totalValue: 100000, weightedValue: 20000 },
+        { stage: 'qualified', count: 5, totalValue: 50000, weightedValue: 17500 },
+      ],
+      totalWeightedForecast: 37500,
+      totalOpenValue: 150000,
+    };
+    (apiClient as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockData });
+
+    const { result } = renderHook(() => usePipelineForecast(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.stages).toHaveLength(2);
+    expect(result.current.data?.totalWeightedForecast).toBe(37500);
+    expect(apiClient).toHaveBeenCalledWith('/api/dashboards/team/pipeline-forecast');
   });
 });

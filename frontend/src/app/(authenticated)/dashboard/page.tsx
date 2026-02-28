@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/providers/auth-provider';
-import { useRepDashboard, useTeamDashboard } from '@/hooks/use-dashboard';
+import { useRepDashboard, useTeamDashboard, useRevenueByMonth, useTerritoryRevenue, usePipelineForecast } from '@/hooks/use-dashboard';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { PeriodSelector } from '@/components/dashboard/period-selector';
 import { CriticalAccountsList } from '@/components/dashboard/critical-accounts-list';
+import { RevenueChart } from '@/components/dashboard/revenue-chart';
+import { TerritoryRevenueTable } from '@/components/dashboard/territory-revenue-table';
+import { PipelineForecastChart } from '@/components/dashboard/pipeline-forecast-chart';
+import { HealthDonutChart } from '@/components/dashboard/health-donut-chart';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,6 +79,7 @@ function RepDashboard({ period }: { period: DashboardPeriod }): React.ReactEleme
           </CardContent>
         </Card>
       </div>
+      <HealthDonutChart data={data?.accountHealth} isLoading={isLoading} />
       <CriticalAccountsList />
     </div>
   );
@@ -82,6 +87,9 @@ function RepDashboard({ period }: { period: DashboardPeriod }): React.ReactEleme
 
 function TeamDashboard({ period }: { period: DashboardPeriod }): React.ReactElement {
   const { data, isLoading } = useTeamDashboard(period);
+  const revenueByMonth = useRevenueByMonth(12);
+  const territoryRevenue = useTerritoryRevenue(period);
+  const pipelineForecast = usePipelineForecast();
 
   return (
     <div className="space-y-6">
@@ -108,6 +116,14 @@ function TeamDashboard({ period }: { period: DashboardPeriod }): React.ReactElem
           isLoading={isLoading}
         />
       </div>
+
+      <RevenueChart data={revenueByMonth.data} isLoading={revenueByMonth.isLoading} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <TerritoryRevenueTable data={territoryRevenue.data} isLoading={territoryRevenue.isLoading} />
+        <PipelineForecastChart data={pipelineForecast.data} isLoading={pipelineForecast.isLoading} />
+      </div>
+
       {isLoading ? (
         <Card>
           <CardHeader><Skeleton className="h-5 w-24" /></CardHeader>
