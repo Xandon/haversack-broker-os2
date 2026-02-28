@@ -13,6 +13,14 @@ handoffs:
     agent: e2e-test
     prompt: Run comprehensive end-to-end browser testing for the current feature
     send: true
+  - label: Run QA Sweep (domain)
+    agent: qa-sweep
+    prompt: Run domain-scoped QA sweep against the live Docker app for the current feature
+    send: true
+  - label: Run QA Sweep (full)
+    agent: qa-sweep
+    prompt: Run full-application QA sweep across all domains
+    send: true
 ---
 
 ## User Input
@@ -154,6 +162,7 @@ Based on the resume point:
 | PLANNING | Step 2.X unchecked | STAGE 2, continue from Step 2.X |
 | BUILDING | Batch N in progress | STAGE 3, continue from batch N |
 | E2E_TESTING | E2E in progress or failed | STAGE 4, Step 4.2 (re-run e2e-test) |
+| QA_TESTING | QA sweep in progress or failed | STAGE 4, Step 4.3 (re-run qa-sweep domain) |
 | COMPLETE | More features pending | STAGE 4, transition to next |
 | COMPLETE | All features done | STAGE 5, final acceptance |
 
@@ -551,13 +560,67 @@ bash scripts/verify-regression.sh
 
 6. Update manifest: `E2E: PASS — {N} tests, desktop + mobile`
 
-### Step 4.3: Mark Feature Complete
+### Step 4.3: QA Sweep — Live Docker Verification
+
+**Required:** Every completed feature MUST pass a domain-scoped QA sweep against the live Docker application before being marked complete. This catches runtime issues that coded Playwright tests miss — broken rendering, API failures under real infrastructure, database state problems, and RBAC gaps visible only through actual browser navigation.
+
+**Prerequisites:** Docker containers must be running with the app accessible at `http://localhost:3000` (frontend) and `http://localhost:3001` (backend). Database must be seeded. If Docker is not running, start it: `npm run docker:up`.
+
+1. **Determine the feature's domain name:**
+   Map the current feature to its QA sweep domain name:
+   - F-000: Design System → `design-system`
+   - F-001: Global Search → `search`
+   - F-002a/b/c: Accounts → `accounts`
+   - F-003: Activity Logging → `activities`
+   - F-004: Task Management → `tasks`
+   - F-005a/b/c: Orders → `orders`
+   - F-006: Products & Brands → `products`
+   - F-007/007b: Pipeline & Opportunities → `opportunities`
+   - F-008: Commissions → `commissions`
+   - F-009: Dashboard → `dashboard`
+   - F-010: Reports → `reports`
+   - F-011: AI Features → `ai`
+   - F-012: User Management → `users`
+   - F-013: Data Import → `imports`
+   - F-014: Data Quality → `quality`
+   - F-015: Email Integration → `email`
+   - F-016: Notifications → `notifications`
+
+2. **Run the domain-scoped QA sweep:**
+   Execute the `/qa-sweep domain {domain-name}` skill. This will:
+   - Navigate the live app in a real Chrome browser
+   - Exercise all CRUD operations for this domain
+   - Run curl API smoke tests against backend endpoints
+   - Query PostgreSQL to verify database state (tenant_id, audit trails, relationships)
+   - Fix any bugs found inline, commit each fix individually
+   - Generate a domain-specific report
+
+3. **Check results:**
+   - **PASS (no bugs or all bugs fixed)** -> proceed to Step 4.4
+   - **FAIL (unfixable issues)** -> **STOP** and report with full diagnostics. Update manifest: `Status: QA_FAIL`
+   - If QA sweep found and fixed bugs, verify Playwright E2E tests still pass:
+     ```bash
+     cd e2e && npx playwright test tests/{feature-slug}.spec.ts --reporter=list
+     ```
+
+4. **Report to user:**
+   ```
+   QA SWEEP RESULTS — {FEATURE_NAME} (domain: {domain-name})
+   Bugs found: {N} ({M} fixed, {K} remaining)
+   API health: {pass/fail count}
+   DB verification: {pass/fail count}
+   Screenshots: qa-screenshots/{domain-name}/
+   ```
+
+5. Update manifest: `QA Sweep: PASS — domain: {domain-name}, {N} bugs fixed`
+
+### Step 4.4: Mark Feature Complete
 
 1. Update manifest: feature status -> `COMPLETE`
-2. Record final test count, batches used, and E2E results
-3. Update `docs/progress.md` with feature completion summary (including E2E pass status)
+2. Record final test count, batches used, E2E results, and QA sweep results
+3. Update `docs/progress.md` with feature completion summary (including E2E pass status and QA sweep status)
 
-### Step 4.4: Check Next Feature
+### Step 4.5: Check Next Feature
 
 Parse manifest feature queue for the next PENDING feature.
 
@@ -568,6 +631,7 @@ Parse manifest feature queue for the next PENDING feature.
   Tests: {baseline} -> {new total} (+{added})
   Batches: {start}-{end} merged to {BASE_BRANCH}
   E2E: PASS — {N} Playwright tests, desktop + mobile
+  QA Sweep: PASS — domain: {domain}, {N} bugs fixed
   Report: npx playwright show-report e2e/playwright-report
 
   Next: {next feature name}
@@ -599,6 +663,29 @@ bash scripts/verify-regression.sh
 cd e2e && npx playwright test --reporter=list
 ```
 
+### Step 5.1.5: Full QA Sweep
+
+**Required:** Before final acceptance, run a complete QA sweep across ALL built domains to catch cross-feature regressions in the live Docker app.
+
+1. **Ensure Docker is running** with all services healthy and database seeded.
+2. **Run the full QA sweep:** Execute `/qa-sweep` (no domain filter — tests everything).
+   This will:
+   - Test every domain that has been built (auth, accounts, orders, etc.)
+   - Run the RBAC sweep (all 6 roles × all routes)
+   - Run API health checks on all endpoints
+   - Verify database state across all domains
+   - Fix bugs inline, commit individually on a `fix/qa-sweep-{date}` branch
+   - Generate a comprehensive report and PR
+3. **Check results:**
+   - **PASS** -> proceed to Step 5.2
+   - **FAIL (unfixable issues)** -> report to user, await guidance before continuing
+4. **Verify QA fixes didn't break tests:**
+   ```bash
+   bash scripts/verify-regression.sh
+   cd e2e && npx playwright test --reporter=list
+   ```
+5. Update manifest: `Full QA Sweep: PASS — {N} domains, {M} bugs fixed, RBAC: {pass/fail}`
+
 ### Step 5.2: Acceptance Report
 
 ```
@@ -629,9 +716,19 @@ cd e2e && npx playwright test --reporter=list
   Total E2E tests:       {count} (desktop + mobile)
   Failures fixed:        {count}
 
+  QA Sweep (Live Docker):
+  ----------------------
+  Domains tested:        {count}
+  Per-feature sweeps:    {count} passed
+  Full sweep:            PASS/FAIL
+  RBAC sweep:            {roles} x {routes} verified
+  Bugs found & fixed:    {count}
+  API health checks:     {pass}/{total}
+  DB verifications:      {pass}/{total}
+
   Feature Summary:
   ----------------------
-  {For each feature: name, batches, tests added, Playwright E2E pass/fail, status}
+  {For each feature: name, batches, tests added, Playwright E2E pass/fail, QA sweep pass/fail, status}
 
 ======================================================
   OVERALL STATUS: {READY FOR PRODUCTION MERGE / NEEDS ATTENTION}
@@ -706,10 +803,12 @@ Layer 2: Per-batch     finish-batch.sh (unit, integration, lint, typecheck, cove
 Layer 3: Pre-merge     merge-batch.sh (post-merge regression)
 Layer 4: Cross-batch   verify-regression.sh (on integration branch)
 Layer 5: Per-feature   Playwright E2E browser testing (STAGE 4, Step 4.2) — desktop + mobile
-Layer 6: Final         Full acceptance suite (STAGE 5) + E2E regression
+Layer 6: Per-feature   QA Sweep domain (STAGE 4, Step 4.3) — live Docker browser + API + DB verification
+Layer 7: Final         Full QA Sweep all domains (STAGE 5, Step 5.1.5) — RBAC sweep + cross-feature regression
+Layer 8: Final         Full acceptance suite (STAGE 5) + E2E regression
 ```
 
-Seven layers. Feature branch isolation means a failed batch never pollutes the integration branch. E2E browser testing catches visual, UX, RBAC, and data integrity issues that unit/integration tests miss.
+Nine layers. Feature branch isolation means a failed batch never pollutes the integration branch. Playwright E2E tests catch coded assertion failures. QA Sweep catches runtime issues in the live Docker app — broken rendering, API failures, database state problems, and RBAC gaps that only surface through real browser navigation and infrastructure.
 
 ---
 
@@ -721,6 +820,8 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 | Build batch fails verification | `Status: FAILED (attempt N/5)` | Retries from clean state |
 | Post-merge regression fails | `Status: REGRESSION_FAIL` | Reports to user, awaits guidance |
 | E2E testing fails | `Status: E2E_FAIL (attempt N/3)` | Fix issues and re-run Playwright tests |
+| QA sweep fails (domain) | `Status: QA_FAIL` | Report to user, await guidance |
+| QA sweep fails (full) | `Status: QA_FAIL (full sweep)` | Report to user, await guidance |
 | User wants to skip a feature | User says "skip {feature}" | Mark SKIPPED in manifest, advance |
 | BREAKING conflict found | `Status: BLOCKED (BREAKING)` | Present conflicts, await resolution |
 | Conversation ended mid-batch | Build checklist shows batch in progress | Resume from batch start (3A) |
@@ -778,8 +879,9 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 - [ ] Batch {N}: {description} -- {test count} tests
 - [ ] Batch {N+1}: {description} -- {test count} tests
 
-### E2E Validation
+### E2E & QA Validation
 - [ ] Playwright E2E -- {N} tests passing (desktop + mobile)
+- [ ] QA Sweep (domain: {name}) -- PASS/FAIL, {N} bugs fixed
 ```
 
 **Key properties:**
@@ -787,7 +889,7 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 - Checklists are updated one line at a time (minimal writes)
 - Batch numbering is global and sequential across all features (continues from 34)
 - Only the active feature has a detailed section; pending features show only their queue row
-- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `E2E_TESTING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`, `E2E_FAIL`
+- Feature status values: `PENDING`, `PLANNING`, `BUILDING`, `E2E_TESTING`, `QA_TESTING`, `COMPLETE`, `SKIPPED`, `BLOCKED`, `FAILED`, `REGRESSION_FAIL`, `E2E_FAIL`, `QA_FAIL`
 
 ---
 
