@@ -13,9 +13,12 @@ interface RevenueChartProps {
 }
 
 function formatMonth(month: string): string {
-  const [year, m] = month.split('-');
+  const parts = month.split('-');
+  const year = parts[0] ?? '';
+  const m = parts[1] ?? '01';
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${months[parseInt(m, 10) - 1]} '${year.slice(2)}`;
+  const label = months[parseInt(m, 10) - 1] ?? 'Jan';
+  return `${label} '${year.slice(2)}`;
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }): React.ReactElement | null {
