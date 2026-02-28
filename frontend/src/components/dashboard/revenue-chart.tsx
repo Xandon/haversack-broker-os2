@@ -23,7 +23,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return (
     <div className="rounded border bg-background p-2 text-sm shadow-sm">
       <p className="font-medium">{formatMonth(label)}</p>
-      <p className="text-muted-foreground">{formatCurrency(payload[0].value)}</p>
+      <p className="text-muted-foreground">{formatCurrency((payload[0] as { value: number }).value)}</p>
     </div>
   );
 }

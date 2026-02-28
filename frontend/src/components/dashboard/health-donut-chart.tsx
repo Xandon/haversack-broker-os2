@@ -19,7 +19,7 @@ const COLORS: Record<string, string> = {
 
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }): React.ReactElement | null {
   if (!active || !payload || !payload.length) return null;
-  const entry = payload[0];
+  const entry = payload[0] as { name: string; value: number };
   return (
     <div className="rounded border bg-background p-2 text-sm shadow-sm">
       <p className="font-medium">{entry.name}</p>
