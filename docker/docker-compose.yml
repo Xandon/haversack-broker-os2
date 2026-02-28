@@ -1,8 +1,9 @@
-version: '3.9'
+name: haversack
 
 services:
-  postgres:
+  haversack-db:
     image: postgres:16-alpine
+    container_name: haversack-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: haversack
@@ -11,17 +12,26 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - haversack-postgres-data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - haversack-network
 
-  redis:
+  haversack-redis:
     image: redis:7-alpine
+    container_name: haversack-redis
     restart: unless-stopped
     ports:
       - '6379:6379'
     volumes:
-      - redis-data:/data
+      - haversack-redis-data:/data
+    networks:
+      - haversack-network
 
 volumes:
-  postgres-data:
-  redis-data:
+  haversack-postgres-data:
+  haversack-redis-data:
+
+networks:
+  haversack-network:
+    name: haversack-network
