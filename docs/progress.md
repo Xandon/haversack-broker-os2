@@ -31,6 +31,8 @@
 | 10 | Dashboards & Reports | COMPLETE | 3 | 132 |
 | 11 | Business Rules Engine | COMPLETE | 1 | 46 |
 | 12 | Polish & NFRs | COMPLETE | 3 | 108 |
+| **Frontend Phase** | | | | |
+| 13 | F-000: Design System & Component Library | COMPLETE | 3 | 47 |
 
 ## Completed Batches
 
@@ -107,6 +109,8 @@
 | 2026-02-27 | dev (post-batch-33) | 1248 | +0 | PASS |
 | 2026-02-27 | dev (post-batch-34) | 1356 | +108 | PASS |
 | 2026-02-27 | dev (post-batch-35) | 1356 | +0 | PASS |
+| 2026-02-27 | dev (post-batch-36) | 1356 | +0 | PASS |
+| 2026-02-27 | dev (post-batch-37) | 1403 | +47 | PASS |
 
 ## Completed Batches (continued)
 
@@ -117,9 +121,11 @@
 | 33 | Polish & NFRs | feature/batch-batch-33-a11y-mobile | 0 | Merged to dev |
 | 34 | Polish & NFRs | feature/batch-batch-34-frontend-tests | 108 | Merged to dev |
 | 35 | F-000: Design System | feature/batch-35-design-system-foundation | 0 (primitives) | Merged to dev |
+| 36 | F-000: Design System | feature/batch-36-design-system-patterns | 0 (composites) | Merged to dev |
+| 37 | F-000: Design System | feature/batch-37-design-system-hooks-tests | 47 | Merged to dev |
 
 ## Task Completion
 
-- **Completed:** 253 (T001-T245, T246-T253)
-- **Last completed task:** T253
-- **Global batch counter:** 35
+- **Completed:** 270 (T001-T245, T246-T270)
+- **Last completed task:** T270
+- **Global batch counter:** 37
