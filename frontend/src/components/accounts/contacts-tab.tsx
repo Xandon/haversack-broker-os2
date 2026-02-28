@@ -309,7 +309,7 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
       <div className="space-y-4">
         <EmptyState
           title="No contacts yet"
-          message="Add contacts to keep track of key people at this account."
+          description="Add contacts to keep track of key people at this account."
           actionLabel="Add Contact"
           onAction={handleAddNew}
         />

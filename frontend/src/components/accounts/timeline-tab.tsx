@@ -147,7 +147,7 @@ export function TimelineTab({ accountId }: TimelineTabProps): React.ReactElement
       {allItems.length === 0 ? (
         <EmptyState
           title="No timeline activity"
-          message={
+          description={
             activityType
               ? `No ${activityType} activities found. Try a different filter.`
               : 'No activities, emails, or tasks recorded for this account yet.'

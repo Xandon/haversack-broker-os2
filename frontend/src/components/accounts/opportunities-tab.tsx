@@ -133,7 +133,7 @@ export function OpportunitiesTab({ accountId }: OpportunitiesTabProps): React.Re
     return (
       <EmptyState
         title="No opportunities"
-        message="No opportunities linked to this account yet."
+        description="No opportunities linked to this account yet."
       />
     );
   }

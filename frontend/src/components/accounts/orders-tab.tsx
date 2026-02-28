@@ -88,7 +88,7 @@ export function OrdersTab({ accountId }: OrdersTabProps): React.ReactElement {
     return (
       <EmptyState
         title="No orders yet"
-        message="Create a new order for this account."
+        description="Create a new order for this account."
         actionLabel="New Order"
         onAction={() => router.push(`/orders/new?accountId=${accountId}`)}
       />
