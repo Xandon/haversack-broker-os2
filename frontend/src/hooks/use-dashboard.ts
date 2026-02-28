@@ -76,3 +76,65 @@ export function useCriticalAccounts(): ReturnType<typeof useQuery<CriticalAccoun
     },
   });
 }
+
+export interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+}
+
+export interface TerritoryRevenue {
+  territoryId: string;
+  territoryName: string;
+  revenue: number;
+  orderCount: number;
+  accountCount: number;
+}
+
+export interface StageForecast {
+  stage: string;
+  count: number;
+  totalValue: number;
+  weightedValue: number;
+}
+
+export interface PipelineForecastData {
+  stages: StageForecast[];
+  totalWeightedForecast: number;
+  totalOpenValue: number;
+}
+
+export function useRevenueByMonth(months: number = 12): ReturnType<typeof useQuery<MonthlyRevenue[]>> {
+  return useQuery<MonthlyRevenue[]>({
+    queryKey: ['dashboard', 'revenue-by-month', months],
+    queryFn: async () => {
+      const response = await apiClient<{ data: MonthlyRevenue[] }>(
+        `/api/dashboards/team/revenue-by-month?months=${months}`,
+      );
+      return response.data;
+    },
+  });
+}
+
+export function useTerritoryRevenue(period: DashboardPeriod = 'current_month'): ReturnType<typeof useQuery<TerritoryRevenue[]>> {
+  return useQuery<TerritoryRevenue[]>({
+    queryKey: ['dashboard', 'territory-revenue', period],
+    queryFn: async () => {
+      const response = await apiClient<{ data: TerritoryRevenue[] }>(
+        `/api/dashboards/team/territory-revenue?period=${period}`,
+      );
+      return response.data;
+    },
+  });
+}
+
+export function usePipelineForecast(): ReturnType<typeof useQuery<PipelineForecastData>> {
+  return useQuery<PipelineForecastData>({
+    queryKey: ['dashboard', 'pipeline-forecast'],
+    queryFn: async () => {
+      const response = await apiClient<{ data: PipelineForecastData }>(
+        '/api/dashboards/team/pipeline-forecast',
+      );
+      return response.data;
+    },
+  });
+}

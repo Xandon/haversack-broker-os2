@@ -99,7 +99,7 @@ export function useCommissionStatements(
     queryKey: ['commission-statements', params],
     queryFn: async () => {
       const response = await apiClient<{ data: CommissionStatementResponse[]; pagination: { cursor: string | null; hasMore: boolean; total: number } }>(
-        `/api/commissions/statements${buildQueryString(params)}`,
+        `/api/commissions/statements${buildQueryString(params as Record<string, string | number | boolean | undefined>)}`,
       );
       return response;
     },
