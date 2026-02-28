@@ -2,7 +2,7 @@
 
 **Started**: 2026-02-28
 **Base Branch**: dev
-**Global Batch Counter**: 14
+**Global Batch Counter**: 15
 
 ## Feature Completion
 
@@ -22,6 +22,7 @@
 | 11  | F-014: Data Quality Scorecard                    | COMPLETE | 1       | 19    |
 | 12  | F-015: Email Integration                         | COMPLETE | 1       | 21    |
 | 13  | Page Assembly (20 pages + layouts)               | COMPLETE | 1       | 0     |
+| 14  | Page Tests (20 test files, FR-P001–FR-P018)      | COMPLETE | 1       | 167   |
 
 ## Batch History
 
@@ -40,7 +41,8 @@
 | B011  | F-016         | feature/notifications       | MERGED | 24          |
 | B012  | F-014         | feature/data-quality        | MERGED | 19          |
 | B013  | F-015         | feature/email-integration   | MERGED | 21          |
-| B014  | Page Assembly | feature/page-assembly       | READY  | 0           |
+| B014  | Page Assembly | feature/page-assembly       | MERGED | 0           |
+| B015  | Page Tests    | feature/page-tests          | READY  | 167         |
 
 ## Regression History
 
@@ -61,3 +63,4 @@
 | 2026-02-28 | 287         | F-014 Data Quality Scorecard complete                     |
 | 2026-02-28 | 308         | F-015 Email Integration complete                          |
 | 2026-02-28 | 308         | Page Assembly complete (20 pages, 2 layouts, 0 new tests) |
+| 2026-02-28 | 475         | Page Tests complete (20 test files, 167 new tests)        |
