@@ -353,8 +353,8 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
       />
 
       <ConfirmationDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        isOpen={Boolean(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
         title="Delete Contact"
         description={
           deleteTarget
@@ -364,7 +364,6 @@ export function ContactsTab({ accountId, contacts }: ContactsTabProps): React.Re
         onConfirm={handleDelete}
         confirmLabel="Delete"
         variant="destructive"
-        isLoading={deleteContact.isPending}
       />
     </div>
   );
