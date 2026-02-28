@@ -153,7 +153,7 @@ describe('FR-032: CommandPalette component', () => {
       expect(screen.getByText('Accounts')).toBeDefined();
       expect(screen.getByText('Contacts')).toBeDefined();
       expect(screen.getByText('Products')).toBeDefined();
-      expect(screen.getByText('Pacific Foods')).toBeDefined();
+      expect(screen.getAllByText('Pacific Foods').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Jane Doe')).toBeDefined();
       expect(screen.getByText('Sourdough')).toBeDefined();
     });
@@ -337,8 +337,8 @@ describe('FR-032: CommandPalette component', () => {
       expect(screen.getByPlaceholderText(/search accounts/i)).toBeDefined();
     });
 
-    // Should show a close button for mobile
-    expect(screen.getByRole('button', { name: /close/i })).toBeDefined();
+    // Should show our custom close button for mobile (distinct from Radix's built-in)
+    expect(screen.getByLabelText('Close search')).toBeDefined();
 
     window.matchMedia = originalMatchMedia;
   });
@@ -363,7 +363,7 @@ describe('FR-032: CommandPalette component', () => {
       expect(screen.getByPlaceholderText(/search accounts/i)).toBeDefined();
     });
 
-    const closeBtn = screen.getByRole('button', { name: /close/i });
+    const closeBtn = screen.getByLabelText('Close search');
     fireEvent.click(closeBtn);
 
     await waitFor(() => {
@@ -510,13 +510,13 @@ describe('FR-032: CommandPalette component', () => {
       expect(screen.getByText('Accounts')).toBeDefined();
       expect(screen.getByText('Contacts')).toBeDefined();
       expect(screen.getByText('Products')).toBeDefined();
-      expect(screen.getByText('Pacific Foods')).toBeDefined();
+      expect(screen.getAllByText('Pacific Foods').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Jane Doe')).toBeDefined();
       expect(screen.getByText('Artisan Sourdough')).toBeDefined();
     });
 
-    // Step 6: Click a result to navigate
-    fireEvent.click(screen.getByText('Pacific Foods'));
+    // Step 6: Click account result to navigate (first occurrence of Pacific Foods is the account)
+    fireEvent.click(screen.getAllByText('Pacific Foods')[0]);
 
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/accounts/acc-1');
