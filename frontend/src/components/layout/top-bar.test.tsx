@@ -6,6 +6,10 @@ const { mockLogout } = vi.hoisted(() => ({
   mockLogout: vi.fn(),
 }));
 
+vi.mock('@/components/notifications/notification-bell', () => ({
+  NotificationBell: () => <div data-testid="notification-bell">Bell</div>,
+}));
+
 vi.mock('@/providers/auth-provider', () => ({
   useAuth: vi.fn().mockReturnValue({
     user: { id: '1', email: 'test@example.com', role: 'rep', firstName: 'Jane', lastName: 'Doe' },
