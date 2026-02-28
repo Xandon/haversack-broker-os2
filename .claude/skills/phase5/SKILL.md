@@ -311,6 +311,15 @@ Write `FEATURE_DIR/conflicts.md`.
      - Each P1 user story gets its own batch
      - P2/P3 stories grouped (max 8-10 tasks per batch)
    - Branch names: `feature/batch-{N}-{slug}` where N continues global counter
+   - **Playwright E2E task** — the LAST task in the FINAL batch MUST be a Playwright E2E test:
+     - File: `e2e/tests/{feature-slug}.spec.ts` (NEW)
+     - Follow patterns in existing `e2e/tests/auth.spec.ts` and `e2e/tests/dashboard.spec.ts`
+     - Use the `loginAs` fixture from `e2e/fixtures/auth.fixture.ts`
+     - Cover every user story: login, navigate to the feature page, perform each user journey, assert expected UI elements are visible
+     - Test both happy path and key error states
+     - Screenshots are captured automatically by Playwright config (`screenshot: 'on'`)
+     - Test runs on desktop Chrome AND mobile Pixel 5 (configured in `e2e/playwright.config.ts`)
+     - Mark as P1 priority, depends on all other tasks in the feature
 2. Task IDs continue from the last task in progress.md (currently T245, so start at T246+).
 3. Include dependency chain and batch boundaries.
 
@@ -494,26 +503,53 @@ git checkout {BASE_BRANCH}
 bash scripts/verify-regression.sh
 ```
 
-### Step 4.2: E2E Feature Validation
+### Step 4.2: Playwright E2E Validation
 
-**Required:** Every completed feature MUST pass E2E browser testing before being marked complete.
+**Required:** Every completed feature MUST pass Playwright E2E browser testing before being marked complete.
 
-1. Invoke the `e2e-test` skill with the current feature name:
-   - The skill launches parallel research agents, starts the application, and tests every user journey with browser automation + database validation.
-   - It covers: user journey testing, RBAC enforcement, tenant isolation, responsive viewports (320px, 375px, 768px, 1440px), and database record verification.
-   - Screenshots are saved to `e2e-screenshots/{feature-slug}/`.
-   - A detailed report is written to `e2e-screenshots/{feature-slug}/report.md`.
+**Prerequisites:** Docker containers must be running (`npm run docker:up`) with database seeded (`docker exec haversack-backend npx tsx prisma/seed.ts`). The Playwright config at `e2e/playwright.config.ts` auto-starts the dev server if not already running.
 
-2. Wait for the skill to complete and check the exit status:
-   - **E2E: PASS** -> proceed to Step 4.3
-   - **E2E: FAIL** -> fix the reported issues:
-     a. Read the report at `e2e-screenshots/{feature-slug}/report.md`
-     b. Fix each failing acceptance criterion and high-severity issue
-     c. Commit fixes: `fix(e2e): {description}`
-     d. Re-run the e2e-test skill (max 3 attempts)
-     e. If still failing after 3 attempts: **STOP** and report with full diagnostics. Update manifest: `Status: E2E_FAIL (attempt 3/3)`
+1. **Ensure Playwright browsers are installed:**
+   ```bash
+   cd e2e && npx playwright install --with-deps chromium 2>/dev/null
+   ```
 
-3. Update manifest: `E2E: PASS — {N} journeys, {M} screenshots, {K} issues fixed`
+2. **Run the feature's Playwright E2E tests:**
+   ```bash
+   cd e2e && npx playwright test tests/{feature-slug}.spec.ts --reporter=list
+   ```
+   This runs the test suite against both desktop Chrome and mobile Pixel 5 viewports.
+   Screenshots are automatically saved to `e2e/test-results/` for every test.
+   An HTML report is generated at `e2e/playwright-report/`.
+
+3. **Check results:**
+   - **ALL PASS** -> proceed to Step 4.3
+   - **ANY FAIL** -> fix the reported issues:
+     a. Read the Playwright error output to identify the failure
+     b. Check screenshots in `e2e/test-results/` for visual evidence
+     c. Fix the code (UI component, route, or test itself)
+     d. Commit fixes: `fix(e2e): {description}`
+     e. Re-run the failing tests (max 3 attempts)
+     f. If still failing after 3 attempts: **STOP** and report with full diagnostics. Update manifest: `Status: E2E_FAIL (attempt 3/3)`
+
+4. **Run the FULL E2E suite** (not just the feature's tests) to catch regressions:
+   ```bash
+   cd e2e && npx playwright test --reporter=list
+   ```
+   All existing E2E tests (auth, dashboard, and all previous features) must still pass.
+
+5. **Report to user:**
+   ```
+   E2E RESULTS — {FEATURE_NAME}
+   Desktop Chrome: {N} tests passed
+   Mobile Pixel 5: {N} tests passed
+   Screenshots: e2e/test-results/
+   HTML Report: e2e/playwright-report/index.html
+   ```
+   Tell the user they can open the HTML report to visually review screenshots:
+   `npx playwright show-report e2e/playwright-report`
+
+6. Update manifest: `E2E: PASS — {N} tests, desktop + mobile`
 
 ### Step 4.3: Mark Feature Complete
 
@@ -531,8 +567,8 @@ Parse manifest feature queue for the next PENDING feature.
   FEATURE COMPLETE: {name}
   Tests: {baseline} -> {new total} (+{added})
   Batches: {start}-{end} merged to {BASE_BRANCH}
-  E2E: PASS — {N} journeys, {M} screenshots
-  Report: e2e-screenshots/{feature-slug}/report.md
+  E2E: PASS — {N} Playwright tests, desktop + mobile
+  Report: npx playwright show-report e2e/playwright-report
 
   Next: {next feature name}
   Run /phase5 resume in a new conversation.
@@ -560,7 +596,7 @@ Update manifest:
 git checkout {BASE_BRANCH}
 git pull origin {BASE_BRANCH}
 bash scripts/verify-regression.sh
-npm run test:e2e 2>/dev/null || echo "No E2E tests configured"
+cd e2e && npx playwright test --reporter=list
 ```
 
 ### Step 5.2: Acceptance Report
@@ -587,16 +623,15 @@ npm run test:e2e 2>/dev/null || echo "No E2E tests configured"
   Type check clean:          {YES/NO}
   Build succeeds:            {YES/NO}
 
-  E2E Summary:
+  Playwright E2E:
   ----------------------
-  Per-feature E2E:       {count} features tested
-  Total journeys:        {count}
-  Total screenshots:     {count}
-  Issues fixed in E2E:   {count}
+  Per-feature specs:     {count} features with e2e specs
+  Total E2E tests:       {count} (desktop + mobile)
+  Failures fixed:        {count}
 
   Feature Summary:
   ----------------------
-  {For each feature: name, batches, tests added, E2E status, status}
+  {For each feature: name, batches, tests added, Playwright E2E pass/fail, status}
 
 ======================================================
   OVERALL STATUS: {READY FOR PRODUCTION MERGE / NEEDS ATTENTION}
@@ -670,7 +705,7 @@ Layer 1: Per-task      Task tests pass + no regressions
 Layer 2: Per-batch     finish-batch.sh (unit, integration, lint, typecheck, coverage, build)
 Layer 3: Pre-merge     merge-batch.sh (post-merge regression)
 Layer 4: Cross-batch   verify-regression.sh (on integration branch)
-Layer 5: Per-feature   E2E browser testing via e2e-test skill (STAGE 4, Step 4.2)
+Layer 5: Per-feature   Playwright E2E browser testing (STAGE 4, Step 4.2) — desktop + mobile
 Layer 6: Final         Full acceptance suite (STAGE 5) + E2E regression
 ```
 
@@ -685,7 +720,7 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 | Context exhausted mid-planning | Step 2.X marked [x], 2.Y still [ ] | Continues from step 2.Y |
 | Build batch fails verification | `Status: FAILED (attempt N/5)` | Retries from clean state |
 | Post-merge regression fails | `Status: REGRESSION_FAIL` | Reports to user, awaits guidance |
-| E2E testing fails | `Status: E2E_FAIL (attempt N/3)` | Fix issues and re-run e2e-test skill |
+| E2E testing fails | `Status: E2E_FAIL (attempt N/3)` | Fix issues and re-run Playwright tests |
 | User wants to skip a feature | User says "skip {feature}" | Mark SKIPPED in manifest, advance |
 | BREAKING conflict found | `Status: BLOCKED (BREAKING)` | Present conflicts, await resolution |
 | Conversation ended mid-batch | Build checklist shows batch in progress | Resume from batch start (3A) |
@@ -744,7 +779,7 @@ Seven layers. Feature branch isolation means a failed batch never pollutes the i
 - [ ] Batch {N+1}: {description} -- {test count} tests
 
 ### E2E Validation
-- [ ] E2E browser testing -- {N} journeys, {M} screenshots, {K} issues fixed
+- [ ] Playwright E2E -- {N} tests passing (desktop + mobile)
 ```
 
 **Key properties:**
