@@ -16,6 +16,11 @@ services:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - haversack-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U haversack -d haversack_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   haversack-redis:
     image: redis:7-alpine
@@ -25,6 +30,65 @@ services:
       - '6379:6379'
     volumes:
       - haversack-redis-data:/data
+    networks:
+      - haversack-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  haversack-backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: haversack-backend
+    restart: unless-stopped
+    depends_on:
+      haversack-db:
+        condition: service_healthy
+      haversack-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://haversack:haversack_dev@haversack-db:5432/haversack_dev
+      REDIS_URL: redis://haversack-redis:6379
+      JWT_ACCESS_SECRET: change-me-in-production
+      JWT_REFRESH_SECRET: change-me-in-production
+      PORT: '4000'
+      FRONTEND_URL: http://localhost
+    ports:
+      - '4000:4000'
+    networks:
+      - haversack-network
+
+  haversack-frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    container_name: haversack-frontend
+    restart: unless-stopped
+    depends_on:
+      - haversack-backend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost/api
+    ports:
+      - '3000:3000'
+    networks:
+      - haversack-network
+
+  haversack-nginx:
+    image: nginx:alpine
+    container_name: haversack-nginx
+    restart: unless-stopped
+    depends_on:
+      - haversack-frontend
+      - haversack-backend
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - haversack-network
 

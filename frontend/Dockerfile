@@ -1,22 +1,41 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
+# --- Install all dependencies (monorepo root + workspaces) ---
 FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/
+COPY packages/shared/package.json ./packages/shared/
+COPY backend/package.json ./backend/
+COPY worker/package.json ./worker/
+RUN npm ci --ignore-scripts
 
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
+# --- Build shared package + frontend ---
+FROM deps AS build
+COPY tsconfig.base.json ./
+# Build shared package
+COPY packages/shared/tsconfig.json ./packages/shared/
+COPY packages/shared/src ./packages/shared/src
+RUN cd packages/shared && npx tsc
+# Copy frontend source and build
+COPY frontend/ ./frontend/
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN cd frontend && npm run build
 
+# --- Production runner ---
 FROM base AS runner
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
-COPY --from=build /app/public ./public
-COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy standalone output
+COPY --from=build --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
+COPY --from=build /app/frontend/public ./frontend/public
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "server.js"]
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "frontend/server.js"]
