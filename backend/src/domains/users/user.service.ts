@@ -99,6 +99,29 @@ export function createUserService(prisma: PrismaClient) {
       });
     },
 
+    async getByEmail(email: string) {
+      return prisma.user.findFirst({
+        where: { email, deletedAt: null, isActive: true },
+        select: {
+          id: true,
+          tenantId: true,
+          email: true,
+          passwordHash: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+        },
+      });
+    },
+
+    async updateLastLogin(id: string) {
+      return prisma.user.update({
+        where: { id },
+        data: { lastLoginAt: new Date() },
+      });
+    },
+
     async checkEmailUnique(tenantId: string, email: string, excludeId?: string) {
       const existing = await prisma.user.findFirst({
         where: {

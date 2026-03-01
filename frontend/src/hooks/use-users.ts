@@ -1,7 +1,7 @@
 import type { CreateUserInput, UpdateUserInput } from '@haversack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from '../lib/api-client.js';
+import { apiClient } from '../lib/api-client';
 
 interface User {
   id: string;

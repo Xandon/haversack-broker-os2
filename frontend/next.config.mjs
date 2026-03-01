@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  transpilePackages: ['@haversack/shared'],
   eslint: {
     dirs: ['src'],
   },
